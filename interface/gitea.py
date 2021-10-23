@@ -120,6 +120,7 @@ class Gitea(Forge):
             rn.set_type(notification_type)
             rn.set_title(subject["title"])
             rn.set_state(subject["state"])
+            rn.set_repo_url(n["repository"]["html_url"])
 
             if notification_type == REPOSITORY:
                 print(n)
@@ -127,7 +128,7 @@ class Gitea(Forge):
                 comment_url = subject["latest_comment_url"]
                 print(comment_url)
                 if len(comment_url) != 0:
-                    resp = requests.request("GET", comment_url);
+                    resp = requests.request("GET", comment_url)
                     comment = resp.json()
                     if date_parse(comment["updated_at"]) > since:
                         c = Comment()
@@ -165,8 +166,7 @@ class Gitea(Forge):
         print(url)
         headers = self._auth()
         payload = {"oarganization" :"bot"}
-        response = requests.request("POST", url, json=payload, headers=headers)
-        print(response.json())
+        _response = requests.request("POST", url, json=payload, headers=headers)
 
 
 if __name__ == "__main__":
@@ -180,7 +180,8 @@ if __name__ == "__main__":
 #    g.create_repository("tmp", "lib created")
 #    g.subscribe("bot", "tmp")
 #    g.subscribe("realaravinth", "tmp")
-#    g.get_notifications(since=date_parse("2021-10-10T17:06:02+05:30")).notifications
+#    notifications = g.get_notifications(since=date_parse("2021-10-10T17:06:02+05:30"))
+#    print(json.dumps(notifications.get_payload()))
 #    pr = CreatePullrequest()
 #    pr.set_base("master")
 #    pr.set_body("PR body")
@@ -189,4 +190,4 @@ if __name__ == "__main__":
 #    pr.set_repo("tmp")
 #    pr.set_head("bot:master-fork")
 #    print(g.create_pull_request(pr))
-    g.fork(owner, repo)
+#    g.fork(owner, repo)

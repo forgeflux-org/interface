@@ -111,6 +111,11 @@ class Notification(Payload):
         """ set comment update time"""
         self.payload["status"] = comment.get_payload()
 
+    def set_repo_url(self,repo_url: str):
+        """ set repository URL update time"""
+        self.payload["repo_url"] = repo_url
+
+
     def set_title(self,title):
         """ set issue title"""
         self.payload["title"] = title
@@ -120,6 +125,12 @@ class NotificationResp:
     def __init__(self, notifications: [Notification], last_read: datetime.datetime):
         self.notifications = notifications
         self.last_read = last_read
+    def get_payload(self):
+        notifications = []
+        for n in self.notifications:
+            notifications.append(n.get_payload())
+
+        return notifications
 
 class CreatePullrequest(Payload):
     # see https://docs.github.com/en/rest/reference/pulls
@@ -204,5 +215,9 @@ class Forge:
         raise NotImplementedError
 
     def fork(self, owner: str, repo:str):
+        """ Fork a repository """
+        raise NotImplementedError
+
+    def close_pr(self, owner: str, repo:str):
         """ Fork a repository """
         raise NotImplementedError
