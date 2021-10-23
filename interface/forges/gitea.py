@@ -147,7 +147,7 @@ class Gitea(Forge):
             val.append(rn)
         return NotificationResp(val, date_parse(last_read))
 
-    def create_pull_request(self, pr: CreatePullrequest):
+    def create_pull_request(self, owner: str, repo: str, pr: CreatePullrequest):
         url = self._get_url(format("/repos/%s/%s/pulls" % (owner, repo)))
         headers = self._auth()
 
