@@ -14,13 +14,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import requests
-import local_settings
 from urllib.parse import urlparse, urlunparse
-import utils
-from forge import CreateIssue, RepositoryInfo
+import requests
 
-class GitHub:
+from interface import local_settings
+from . import utils
+from .base import Forge, CreateIssue, RepositoryInfo
+
+
+class GitHub(Forge):
     def __init__(self):
         self.host = urlparse(utils.clean_url(local_settings.GITHUB_HOST))
 
@@ -32,7 +34,7 @@ class GitHub:
         return url
 
     def _auth(self):
-        return {'Authorization': format("token %s" % (local_settings.GITHUB_API_KEY))}
+        return {"Authorization": format("token %s" % (local_settings.GITHUB_API_KEY))}
 
     def get_issues(self, owner: str, repo: str, *args, **kwargs):
         """Get the issues present in a provided repository"""
@@ -52,12 +54,19 @@ class GitHub:
         """Creates an issue on a repository"""
         url = self._get_url(format("/repos/%s/%s/issues" % (owner, repo)))
 
+        # Defining authorization headers and a payload
         headers = self._auth()
         payload = issue.get_payload()
+
+        # Sending in a POST request
         response = requests.request("POST", url, json=payload, headers=headers)
+
+        # Returns the response with a JSON output
         return response.json()
 
     def _into_repository(self, data) -> RepositoryInfo:
+        """Getting and setting data"""
+
         info = RepositoryInfo()
         info.set_description(data["description"])
         info.set_name(data["name"])
@@ -66,12 +75,14 @@ class GitHub:
 
     def get_repository(self, owner: str, repo: str) -> RepositoryInfo:
         """Get repository details"""
+
         url = self._get_url(format("/repos/%s/%s" % (owner, repo)))
         response = requests.request("GET", url)
         data = response.json()
         info = self._into_repository(data)
-        print("Payload deets",  info.get_payload())
+        print("Payload deets", info.get_payload())
         return info
+
 
 if __name__ == "__main__":
     # Testing the API primitively with a simple call
@@ -81,4 +92,12 @@ if __name__ == "__main__":
     issue = CreateIssue()
     issue.set_title("testing yet again")
     print(g.create_issue(owner, repo, issue))
-    print(g._into_repository({"name": "G V Datta Adithya", "description": "Octowhat?", "owner": {"login": "userwhat?"}}))
+    print(
+        g._into_repository(
+            {
+                "name": "G V Datta Adithya",
+                "description": "Octowhat?",
+                "owner": {"login": "userwhat?"},
+            }
+        )
+    )
