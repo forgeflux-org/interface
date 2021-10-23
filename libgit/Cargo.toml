@@ -7,11 +7,16 @@ license = "AGPLv3 or later version"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[lib]
-crate-type = ["cdylib"]
-
+#[lib]
+#name = "libgit"
+#path = "src/lib.rs"
+#crate-type = ["cdylib"]
 
 [dependencies]
+git2 = "0.13.23"
+url = "2.2"
+thiserror = "1.0.30"
+validator = "0.14.0"
 
 [dependencies.pyo3]
 version = "0.14.3"
