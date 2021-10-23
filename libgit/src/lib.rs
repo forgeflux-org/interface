@@ -1,3 +1,21 @@
+/* git interface for forgefedv2 interface
+ * Bridges software forges to create a distributed software development environment
+ * Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -51,6 +69,39 @@ pub struct InterfaceAdmin {
     pub email: String,
     #[pyo3(get, set)]
     pub name: String,
+}
+
+#[pymethods]
+impl InterfaceAdmin {
+    #[new]
+    pub fn new(email: String, name: String) -> FResult<Self> {
+        if !validator::validate_email(&email) {
+            return Err(FError::NotAnEmail(email));
+        };
+        Ok(Self { email, name })
+    }
+}
+
+#[pymethods]
+impl Patch {
+    #[new]
+    pub fn new(
+        message: String,
+        author_name: String,
+        author_email: String,
+        patch: String,
+    ) -> FResult<Self> {
+        if !validator::validate_email(&author_email) {
+            return Err(FError::NotAnEmail(author_email));
+        };
+
+        Ok(Self {
+            message,
+            author_email,
+            author_name,
+            patch,
+        })
+    }
 }
 
 pub const UPSTREAM_REMOTE: &str = "upstream";
@@ -283,6 +334,8 @@ fn connect_local(repo: &Repo) -> FResult<Remote> {
 #[pyo3(name = "libgit")]
 fn my_extension(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Repo>()?;
+    m.add_class::<InterfaceAdmin>()?;
+    m.add_class::<Patch>()?;
     m.add("RemoteNameExists", py.get_type::<RemoteNameExists>())?;
     m.add("IOError", py.get_type::<error::PyIOError>())?;
     m.add("GitError", py.get_type::<error::GitError>())?;
