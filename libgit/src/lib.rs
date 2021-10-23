@@ -53,6 +53,39 @@ pub struct InterfaceAdmin {
     pub name: String,
 }
 
+#[pymethods]
+impl InterfaceAdmin {
+    #[new]
+    pub fn new(email: String, name: String) -> FResult<Self> {
+        if !validator::validate_email(&email) {
+            return Err(FError::NotAnEmail(email));
+        };
+        Ok(Self { email, name })
+    }
+}
+
+#[pymethods]
+impl Patch {
+    #[new]
+    pub fn new(
+        message: String,
+        author_name: String,
+        author_email: String,
+        patch: String,
+    ) -> FResult<Self> {
+        if !validator::validate_email(&author_email) {
+            return Err(FError::NotAnEmail(author_email));
+        };
+
+        Ok(Self {
+            message,
+            author_email,
+            author_name,
+            patch,
+        })
+    }
+}
+
 pub const UPSTREAM_REMOTE: &str = "upstream";
 pub const LOCAL_REMOTE: &str = "local";
 pub const IGNORE_FILE: &str = ".fignore";
@@ -283,6 +316,8 @@ fn connect_local(repo: &Repo) -> FResult<Remote> {
 #[pyo3(name = "libgit")]
 fn my_extension(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Repo>()?;
+    m.add_class::<InterfaceAdmin>()?;
+    m.add_class::<Patch>()?;
     m.add("RemoteNameExists", py.get_type::<RemoteNameExists>())?;
     m.add("IOError", py.get_type::<error::PyIOError>())?;
     m.add("GitError", py.get_type::<error::GitError>())?;
