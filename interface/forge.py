@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """ defines basic data structuctures and interfaces used in a forge fed interface"""
+import datetime
 
 class Payload:
     """ Payload base class. self.mandatory should be defined"""
@@ -68,6 +69,57 @@ class CreateIssue(Payload):
         """ set issue open status"""
         self.payload["closed"] = closed
 
+class Comment(Payload):
+    def __init__(self):
+        mandatory = ["body", "author", "updated_at", "url"]
+        super().__init__(mandatory)
+
+    def set_updated_at(self,date):
+        """ set comment update time"""
+        self.payload["updated_at"] = date
+
+    def set_body(self,body):
+        """ set issue body"""
+        self.payload["body"] = body
+
+    def set_author(self, author):
+        """ set issue author"""
+        self.payload["author"] = author
+
+    def set_url(self, url):
+        """ set url of comment"""
+        self.payload["url"] = url
+
+class Notification(Payload):
+    def __init__(self):
+        mandatory = ["type", "state", "updated_at", "title"]
+        super().__init__(mandatory)
+
+    def set_updated_at(self,date):
+        """ set comment update time"""
+        self.payload["updated_at"] = date
+
+    def set_type(self,notification_type):
+        """ set comment update time"""
+        self.payload["type"] = notification_type
+
+    def set_state(self,state):
+        """ set comment update time"""
+        self.payload["state"] = state
+
+    def set_comment(self,comment: Comment):
+        """ set comment update time"""
+        self.payload["status"] = comment.get_payload()
+
+    def set_title(self,title):
+        """ set issue title"""
+        self.payload["title"] = title
+
+
+class NotificationResp:
+    def __init__(self, notifications: [Notification], last_read: datetime.datetime):
+        self.notifications = notifications
+        self.last_read = last_read
 
 class Forge:
     """ Forge characteristics. All interfaces must implement this class"""
@@ -83,6 +135,14 @@ class Forge:
         """ Get repository details"""
         raise NotImplementedError
 
-    def create_repository(self, repo: str):
+    def create_repository(self, repo: str, description: str):
         """ Create new repository """
+        raise NotImplementedError
+
+    def subscribe(self, owner: str, repo: str):
+        """ subscribe to events in repository"""
+        raise NotImplementedError
+
+    def get_notifications(self, since: datetime.datetime) -> NotificationResp:
+        """ subscribe to events in repository"""
         raise NotImplementedError
