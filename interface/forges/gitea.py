@@ -62,7 +62,6 @@ class Gitea(Forge):
         url = self._get_url(format("/repos/%s/%s/issues" % (owner, repo)))
 
         headers = self._auth()
-        payload = {}
         response = requests.request("GET", url, params=query, headers=headers)
         return response.json()
 
@@ -86,9 +85,9 @@ class Gitea(Forge):
         """ Get repository details"""
         url = self._get_url(format("/repos/%s/%s" % (owner, repo)))
         response = requests.request("GET", url)
-        data = response.json();
+        data = response.json()
         info = self._into_repository(data)
-        return info.get_payload()
+        return info
 
     def create_repository(self, repo: str, description: str):
         url = self._get_url("/user/repos/")
