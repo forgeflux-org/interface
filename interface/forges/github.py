@@ -88,6 +88,23 @@ class GitHub(Forge):
         print("Payload deets", info.get_payload())
         return info
 
+    def create_repository(self, repo: str, description: str):
+        """Creates a repository in the users forge"""
+        url = self._get_url("/users/repos/")
+        payload = {"name": repo, "description": description}
+        headers = self._auth()
+        _response = requests.request("POST", url, json=payload, headers=headers)
+
+    def subscribe(self, owner: str, repo: str):
+        """Subscribes/watches a repository"""
+        url = self._get_url(format("/repos/%s/%s/subscription" % (owner, repo)))
+        headers = self._auth()
+        _response = requests.request("PUT", url, headers=headers)
+
+    def get_notifications(self, since: datetime.datetime) -> NotificationResp:
+        """Notifications for watched repositories"""
+        return "ToBeImplemented"
+
 
 if __name__ == "__main__":
     # Testing the API primitively with a simple call
