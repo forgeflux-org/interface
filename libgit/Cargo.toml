@@ -1,0 +1,18 @@
+[package]
+name = "libgit"
+version = "0.1.0"
+edition = "2021"
+authors = ["Aravinth Manivannan <realaravinth@batsense.net>"]
+license = "AGPLv3 or later version"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+
+[dependencies]
+
+[dependencies.pyo3]
+version = "0.14.3"
+features = ["auto-initialize"]
