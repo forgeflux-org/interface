@@ -21,14 +21,16 @@ import sys
 sys.path.append("..")
 import local_settings
 import utils
-from forge import Forge, CreateIssue, RepositoryInfo
+from forge import Forge, CreateIssue, RepositoryInfo, NotificationResp
 
 
 class GitHub(Forge):
     def __init__(self):
+        """Initializes the class variables"""
         self.host = urlparse(utils.clean_url(local_settings.GITHUB_HOST))
 
     def _get_url(self, path: str) -> str:
+        """Retrieves the forge url"""
         if path.startswith("/"):
             path = path[1:]
 
@@ -36,6 +38,7 @@ class GitHub(Forge):
         return url
 
     def _auth(self):
+        """Authorizes the request with a token"""
         return {"Authorization": format("token %s" % (local_settings.GITHUB_API_KEY))}
 
     def get_issues(self, owner: str, repo: str, *args, **kwargs):
