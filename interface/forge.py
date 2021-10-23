@@ -121,6 +121,55 @@ class NotificationResp:
         self.notifications = notifications
         self.last_read = last_read
 
+class CreatePullrequest(Payload):
+    # see https://docs.github.com/en/rest/reference/pulls
+    def __init__(self):
+        mandatory = ["owner", "message", "repo", "head", "base", "title"]
+        super().__init__(mandatory)
+
+    def set_owner(self, name):
+        """ Set owner name of repository"""
+        self.payload["owner"] = name
+
+    def set_repo(self, repo):
+        """ Set owner name of repository"""
+        self.payload["repo"] = repo
+
+    def set_head(self, head):
+        """
+        From GitHub Docs:
+
+        The name of the branch you want the changes pulled into.
+        This should be an existing branch on the current repository.
+        You cannot submit a pull request to one repository that requests a merge to
+        a base of another repository.
+        """
+        self.payload["head"] = head
+
+    def set_base(self, base):
+        """
+        From GitHub Docs:
+        The name of the branch you want the changes pulled into.
+        This should be an existing branch on the current repository.
+        You cannot submit a pull request to one repository that requests a merge to
+        a base of another repository.
+        """
+        self.payload["base"] = base
+
+    def set_title(self, title):
+        """ set title of the PR"""
+        self.payload["title"] = title
+
+    def set_message(self, message):
+        """ set message of the PR"""
+        self.payload["message"] = message
+
+    def set_body(self, body):
+        """ set title of the PR message"""
+        self.payload["body"] = body
+
+
+
 class Forge:
     """ Forge characteristics. All interfaces must implement this class"""
     def get_issues(self, owner: str, repo: str, *args, **kwargs):
@@ -145,4 +194,11 @@ class Forge:
 
     def get_notifications(self, since: datetime.datetime) -> NotificationResp:
         """ subscribe to events in repository"""
+        raise NotImplementedError
+
+    def create_pull_request(self, pr: CreatePullrequest) -> str:
+        """
+            create pull request
+            return value is the URL(HTML page) of the newely created PR
+        """
         raise NotImplementedError
