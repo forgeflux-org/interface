@@ -7,10 +7,10 @@ license = "AGPLv3 or later version"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-#[lib]
-#name = "libgit"
-#path = "src/lib.rs"
-#crate-type = ["cdylib"]
+[lib]
+name = "libgit"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
 
 [dependencies]
 git2 = "0.13.23"
