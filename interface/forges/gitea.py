@@ -17,9 +17,11 @@ from dateutil.parser import parse as date_parse
 import datetime
 from urllib.parse import urlparse, urlunparse, urlencode
 import requests
+import sys
 
 from rfc3339 import rfc3339
 
+sys.path.append("..")
 import local_settings
 import utils
 from forge import CreateIssue, Forge, RepositoryInfo, Comment
@@ -169,18 +171,19 @@ class Gitea(Forge):
         _response = requests.request("POST", url, json=payload, headers=headers)
 
 
-if __name__ == "__main__":
-    owner = "realaravinth"
-    repo = "tmp"
-    g = Gitea()
-    issue = CreateIssue()
-    issue.set_title("from lib")
-    #print(g.create_issue(owner, repo, issue))
+#if __name__ == "__main__":
+#    owner = "realaravinth"
+#    repo = "tmp"
+#    g = Gitea()
+#    issue = CreateIssue()
+#    issue.set_title("from lib")
+#    #print(g.create_issue(owner, repo, issue))
 #    print(g.get_repository(owner, repo))
 #    g.create_repository("tmp", "lib created")
 #    g.subscribe("bot", "tmp")
 #    g.subscribe("realaravinth", "tmp")
 #    notifications = g.get_notifications(since=date_parse("2021-10-10T17:06:02+05:30"))
+#    import json
 #    print(json.dumps(notifications.get_payload()))
 #    pr = CreatePullrequest()
 #    pr.set_base("master")
