@@ -17,8 +17,8 @@
 import requests
 import local_settings
 from urllib.parse import urlparse, urlunparse
-import interface.utils as utils
-from interface.forge import CreateIssue
+import utils
+from forge import CreateIssue, RepositoryInfo
 
 class GitHub:
     def __init__(self):
@@ -57,6 +57,22 @@ class GitHub:
         response = requests.request("POST", url, json=payload, headers=headers)
         return response.json()
 
+    def _into_repository(self, data) -> RepositoryInfo:
+        info = RepositoryInfo()
+        info.set_description(data["description"])
+        info.set_name(data["name"])
+        info.set_owner_name(data["owner"]["login"])
+        return info
+
+    def get_repository(self, owner: str, repo: str) -> RepositoryInfo:
+        """Get repository details"""
+        url = self._get_url(format("/repos/%s/%s" % (owner, repo)))
+        response = requests.request("GET", url)
+        data = response.json()
+        info = self._into_repository(data)
+        print("Payload deets",  info.get_payload())
+        return info
+
 if __name__ == "__main__":
     # Testing the API primitively with a simple call
     owner = "dat-adi"
@@ -65,3 +81,4 @@ if __name__ == "__main__":
     issue = CreateIssue()
     issue.set_title("testing yet again")
     print(g.create_issue(owner, repo, issue))
+    print(g._into_repository({"name": "G V Datta Adithya", "description": "Octowhat?", "owner": {"login": "userwhat?"}}))
