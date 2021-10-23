@@ -202,3 +202,7 @@ class Forge:
             return value is the URL(HTML page) of the newely created PR
         """
         raise NotImplementedError
+
+    def fork(self, owner: str, repo:str):
+        """ Fork a repository """
+        raise NotImplementedError

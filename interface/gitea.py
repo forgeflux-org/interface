@@ -22,7 +22,8 @@ from rfc3339 import rfc3339
 
 import local_settings
 import utils
-from forge import CreateIssue, Forge, RepositoryInfo, Comment, Notification, NotificationResp
+from forge import CreateIssue, Forge, RepositoryInfo, Comment
+from forge import Notification, NotificationResp, CreatePullrequest
 
 ISSSUE="Issue"
 PULL ="pull"
@@ -107,7 +108,7 @@ class Gitea(Forge):
         response = requests.request("GET", url, params=query, headers=headers)
         notifications = response.json()
         last_read = ""
-        resp = []
+        val = []
         for n in notifications:
             # resp notification
             rn = Notification()
@@ -140,10 +141,34 @@ class Gitea(Forge):
                             url = pr_url
                             c.set_url(comment["pull_request_url"])
                         rn.set_comment(c)
-            resp.append(rn)
-        return NotificationResp(resp, date_parse(last_read))
+            val.append(rn)
+        return NotificationResp(val, date_parse(last_read))
 
-                
+    def create_pull_request(self, pr: CreatePullrequest):
+        url = self._get_url(format("/repos/%s/%s/pulls" % (owner, repo)))
+        headers = self._auth()
+
+        payload  = pr.get_payload()
+        for key in ["repo", "owner"]:
+            del payload[key]
+
+        payload["assignees"] = []
+        payload["lables"] = [0]
+        payload["milestones"] = 0
+
+        response = requests.request("POST", url, json=payload, headers=headers)
+        return response.json()["html_url"]
+
+    def fork(self, owner: str, repo:str):
+        """ Fork a repository """
+        url = self._get_url(format("/repos/%s/%s/forks" % (owner, repo)))
+        print(url)
+        headers = self._auth()
+        payload = {"oarganization" :"bot"}
+        response = requests.request("POST", url, json=payload, headers=headers)
+        print(response.json())
+
+
 if __name__ == "__main__":
     owner = "realaravinth"
     repo = "tmp"
@@ -155,4 +180,13 @@ if __name__ == "__main__":
 #    g.create_repository("tmp", "lib created")
 #    g.subscribe("bot", "tmp")
 #    g.subscribe("realaravinth", "tmp")
-    g.get_notifications(since=date_parse("2021-10-10T17:06:02+05:30"))
+#    g.get_notifications(since=date_parse("2021-10-10T17:06:02+05:30")).notifications
+#    pr = CreatePullrequest()
+#    pr.set_base("master")
+#    pr.set_body("PR body")
+#    pr.set_title("demo pr from lib")
+#    pr.set_owner("realaravinth")
+#    pr.set_repo("tmp")
+#    pr.set_head("bot:master-fork")
+#    print(g.create_pull_request(pr))
+    g.fork(owner, repo)
