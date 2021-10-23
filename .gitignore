@@ -145,3 +145,6 @@ node_modules/
 dist/
 northstar.db
 instance
+
+libgit/src/main.rs
+tmp
