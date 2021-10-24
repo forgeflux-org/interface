@@ -17,15 +17,12 @@ from dateutil.parser import parse as date_parse
 import datetime
 from urllib.parse import urlparse, urlunparse, urlencode
 import requests
-import sys
 
 from rfc3339 import rfc3339
 
-sys.path.append("..")
-import local_settings
-import utils
-from forge import CreateIssue, Forge, RepositoryInfo, Comment
-from forge import Notification, NotificationResp, CreatePullrequest
+from interface import local_settings, utils
+from interface.forge import CreateIssue, Forge, RepositoryInfo, Comment
+from interface.forge import Notification, NotificationResp, CreatePullrequest
 
 ISSSUE="Issue"
 PULL ="pull"
@@ -33,7 +30,8 @@ COMMIT = "commit"
 REPOSITORY = "repository"
 
 class Gitea(Forge):
-    def __init__(self):
+    def __init__(self, base_url: str, admin_user: str, admin_email):
+        super().__init__(base_url=base_url, admin_user=admin_user, admin_email=admin_email)
         self.host = urlparse(utils.clean_url(local_settings.GITEA_HOST))
 
     def _auth(self):
