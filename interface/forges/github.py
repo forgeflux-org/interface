@@ -14,15 +14,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from dateutil.parser import parse as date_parse
 from urllib.parse import urlparse, urlunparse
 import requests
 import sys
+import datetime
+import rfc3339
 
 sys.path.append("..")
 import local_settings
 import utils
-from forge import Forge, CreateIssue, RepositoryInfo, NotificationResp
+from forge import CreateIssue, Forge, RepositoryInfo, Comment
+from forge import Notification, NotificationResp, CreatePullrequest
 
+ISSUE = "Issue"
+PULL = "pull"
+COMMIT = "commit"
+REPOSITORY = "repository"
 
 class GitHub(Forge):
     def __init__(self):
@@ -103,7 +111,63 @@ class GitHub(Forge):
 
     def get_notifications(self, since: datetime.datetime) -> NotificationResp:
         """Notifications for watched repositories"""
-        return "ToBeImplemented"
+        query = {}
+        query["since"] = rfc3339(since)
+        url = self._get_url("/notifications")
+        headerse = self._auth()
+        response = requests.request("GET", url, params=query, headers=headers)
+        notifications = response.json()
+        last_read = ""
+        val = []
+        for n in notifications:
+            rn = Notification()
+            subject = n["subject"]
+            notification_type = subject["type"]
+
+            last_read = n["updated_at"]
+            rn.set_updated_at(last_read)
+            rn.set_type(notification_type)
+            rn.set_title(subject["title"])
+            rn.set_state(subject["state"])
+            rn.set_repo_url(n["repository"]["html_url"])
+
+            if notification_type == REPOSITORY:
+                print(n)
+            if notification_type == ISSUE:
+                comment_url = subject["latest_comment_url"]
+                print(comment_url)
+                if len(comment_url) != 0:
+                    resp = requests.request("GET", comment_url)
+                    comment = resp.json()
+                    if date_parse(comment["updated_at"]) > since:
+                        c = Comment()
+                        c.set_updated_at(comment["updated_at"])
+                        c.set_author(comment["user"]["login"])
+                        c.set_body(comment["body"])
+                        pr_url = comment["pull_request_url"]
+                        if len(comment["pull_request_url"]) == 0:
+                            c.set_url(comment["issue_url"])
+                        else:
+                            url = pr_url
+                            c.set_url(comment["pull_request_url"])
+                        rn.set_comment(c)
+            val.append(rn)
+        return NotificationResp(val, date_parse(last_read))
+
+    def create_pull_request(self, owner: str, repo: str, pr: CreatePullrequest):
+        url = self._get_url(format("/repos/%s/%s/pulls" % (owner, repo)))
+        headers = self._auth()
+
+        payload = pr.get_payload()
+        for key in ["repo", "owner"]:
+            del payload[key]
+
+        payload["assignees"] = []
+        payload["labels"] = [0]
+        payload["milestones"] = 0
+
+        response = requests.request("POST", url, json=payload, headers=headers)
+        return response.json()["html_url"]
 
 
 if __name__ == "__main__":
@@ -114,6 +178,8 @@ if __name__ == "__main__":
     issue = CreateIssue()
     issue.set_title("testing yet again")
     print(g.create_issue(owner, repo, issue))
+    g.subscribe("dat-adi", "tmp")
+
     print(
         g._into_repository(
             {
