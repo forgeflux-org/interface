@@ -21,6 +21,9 @@ from flask.cli import with_appcontext
 from yoyo import read_migrations
 from yoyo import get_backend
 
+from .forge import Forge
+from . import local_settings
+
 
 def get_db() -> sqlite3.Connection:
     """Get database connection"""
@@ -31,6 +34,13 @@ def get_db() -> sqlite3.Connection:
         g.db.row_factory = sqlite3.Row
     return g.db
 
+def get_forge() -> Forge:
+    if "forge" not in g:
+        g.forge = Gitea(
+                base_url=local_settings.GITEA_HOST,
+                admin_user=local_settings.ADMIN_USER, 
+                admin_email=local_settings.ADMIN_EMAIL)
+    return g.forge
 
 def close_db(e=None):
     db = g.pop("db", None)
