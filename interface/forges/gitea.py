@@ -196,8 +196,7 @@ class Gitea(Forge):
     def get_local_push_url(self, repo:str) -> str:
         return format("git@%s:%s/%s.git", self.host.netloc, local_settings.GITEA_USERNAME, repo)
 
-
-
+      
 #if __name__ == "__main__":
 #    owner = "realaravinth"
 #    repo = "tmp"
