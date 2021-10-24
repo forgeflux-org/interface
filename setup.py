@@ -13,5 +13,16 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-""" defines basic data structuctures and interfaces used in a forge fed interface"""
 
+from setuptools import find_packages, setup
+
+setup(
+    name='interface',
+    version='0.1.0',
+    packages=find_packages(),
+    include_package_data=True,
+    zip_safe=False,
+    install_requires=[
+        'flask[async]',
+    ],
+)
