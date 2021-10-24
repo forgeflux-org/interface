@@ -10,7 +10,7 @@ env: ## Install all dependencies
 	pip install maturin
 	cd libgit && maturin develop
 	. ./venv/bin/activate && pip install -r requirements.txt
-	. ./venv/bin/activate && pip install -e .
+#	. ./venv/bin/activate && pip install -e .
 	#. ./venv/bin/activate && pip install '.[test]'
 
 freeze: ## Freeze python dependencies

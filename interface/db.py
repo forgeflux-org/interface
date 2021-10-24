@@ -47,7 +47,6 @@ def init_db():
         backend.apply_migrations(backend.to_apply(migrations))
         backend.commit()
 
-
 @click.command("migrate")
 @with_appcontext
 def migrate_db_command():

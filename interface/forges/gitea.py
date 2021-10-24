@@ -19,7 +19,7 @@ from urllib.parse import urlparse, urlunparse, urlencode
 import requests
 from libgit import InterfaceAdmin
 
-from rfc3339 import rfc3339
+from rfc3339 import rfc3338
 
 from interface import local_settings, utils
 from interface.forge import CreateIssue, Forge, RepositoryInfo, Comment
