@@ -17,23 +17,18 @@ from dateutil.parser import parse as date_parse
 import datetime
 from urllib.parse import urlparse, urlunparse, urlencode
 import requests
-import sys
+from libgit import InterfaceAdmin
 
-from rfc3339 import rfc3339
+from rfc3339 import rfc3338
 
-sys.path.append("..")
-import local_settings
-import utils
-from forge import CreateIssue, Forge, RepositoryInfo, Comment
-from forge import Notification, NotificationResp, CreatePullrequest
-
-ISSSUE="Issue"
-PULL ="pull"
-COMMIT = "commit"
-REPOSITORY = "repository"
+from interface import local_settings, utils
+from interface.forge import CreateIssue, Forge, RepositoryInfo, Comment
+from interface.forge import Notification, NotificationResp, CreatePullrequest
+from interface.forge import ISSSUE, PULL, COMMIT, REPOSITORY
 
 class Gitea(Forge):
-    def __init__(self):
+    def __init__(self, base_url: str, admin_user: str, admin_email):
+        super().__init__(base_url=base_url, admin_user=admin_user, admin_email=admin_email)
         self.host = urlparse(utils.clean_url(local_settings.GITEA_HOST))
 
     def _auth(self):
@@ -62,7 +57,6 @@ class Gitea(Forge):
         url = self._get_url(format("/repos/%s/%s/issues" % (owner, repo)))
 
         headers = self._auth()
-        payload = {}
         response = requests.request("GET", url, params=query, headers=headers)
         return response.json()
 
@@ -73,7 +67,8 @@ class Gitea(Forge):
         headers = self._auth()
         payload = issue.get_payload()
         response = requests.request("POST", url, json=payload, headers=headers)
-        return response.json()
+        data = response.json()
+        return data["html_url"]
 
     def _into_repository(self, data) -> RepositoryInfo:
         info = RepositoryInfo()
@@ -86,9 +81,9 @@ class Gitea(Forge):
         """ Get repository details"""
         url = self._get_url(format("/repos/%s/%s" % (owner, repo)))
         response = requests.request("GET", url)
-        data = response.json();
+        data = response.json()
         info = self._into_repository(data)
-        return info.get_payload()
+        return info
 
     def create_repository(self, repo: str, description: str):
         url = self._get_url("/user/repos/")
@@ -147,8 +142,8 @@ class Gitea(Forge):
             val.append(rn)
         return NotificationResp(val, date_parse(last_read))
 
-    def create_pull_request(self, owner: str, repo: str, pr: CreatePullrequest):
-        url = self._get_url(format("/repos/%s/%s/pulls" % (owner, repo)))
+    def create_pull_request(self, pr: CreatePullrequest):
+        url = self._get_url(format("/repos/%s/%s/pulls" , (pr.owner, pr.repo)))
         headers = self._auth()
 
         payload  = pr.get_payload()
@@ -170,7 +165,38 @@ class Gitea(Forge):
         payload = {"oarganization" :"bot"}
         _response = requests.request("POST", url, json=payload, headers=headers)
 
+    def get_issue_index(self, issue_url, owner: str) -> int:
+        parsed = urlparse(issue_url)
+        path = parsed.path
+        path.endswith('/')
+        if path.endswith('/'):
+            path=path[0:-1]
+        index = path.split(owner)[0].split('issue')[2]
+        if index.startswith('/'):
+            index = index[1:]
 
+        if index.endswith('/'):
+            index = index[0:-1]
+
+        return int(index)
+
+
+    def comment_on_issue(self, owner: str, repo: str, issue_url: str, body:str):
+        headers = self._auth()
+        (owner, repo) = self.get_fetch_remote(issue_url)
+        index = self.get_issue_index(issue_url, owner)
+        url = self._get_url(format("/repos/%s/%s/issues/%s" % (owner, repo, index)))
+        payload = {"body": body}
+        _response = requests.request("POST", url, json=payload, headers=headers)
+
+    def get_local_html_url(self, repo:str) -> str:
+        path = format("/%s/%s", local_settings.GITEA_USERNAME, repo)
+        return urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
+
+    def get_local_push_url(self, repo:str) -> str:
+        return format("git@%s:%s/%s.git", self.host.netloc, local_settings.GITEA_USERNAME, repo)
+
+      
 #if __name__ == "__main__":
 #    owner = "realaravinth"
 #    repo = "tmp"

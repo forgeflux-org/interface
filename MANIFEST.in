@@ -1,0 +1,2 @@
+include migrations/
+global-exclude *.pyc:q
