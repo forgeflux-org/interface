@@ -27,7 +27,7 @@ import utils
 from forge import CreateIssue, Forge, RepositoryInfo, Comment
 from forge import Notification, NotificationResp, CreatePullrequest
 
-ISSSUE = "Issue"
+ISSUE = "Issue"
 PULL = "pull"
 COMMIT = "commit"
 REPOSITORY = "repository"
@@ -126,7 +126,7 @@ class Gitea(Forge):
 
             if notification_type == REPOSITORY:
                 print(n)
-            if notification_type == ISSSUE:
+            if notification_type == ISSUE:
                 comment_url = subject["latest_comment_url"]
                 print(comment_url)
                 if len(comment_url) != 0:
