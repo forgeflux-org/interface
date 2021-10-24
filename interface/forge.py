@@ -17,11 +17,15 @@
 from rfc3339 import rfc3339
 import datetime
 from urllib.parse import urlparse, urlunparse
-import libgit
+import libgit as forge_libgit
+
+
+from flask import current_app, g
 
 from interface.utils import clean_url, get_branch_name, get_patch
-import interface.local_settings
-import interface.db
+from interface.forges.gitea import Gitea
+from interface import local_settings
+from interface import db
 
 ISSSUE="Issue"
 PULL ="pull"
@@ -199,7 +203,7 @@ class Forge:
         if all([self.base_url.scheme != "http", self.base_url.scheme != "https"]):
             print(self.base_url.scheme)
             raise Exception("scheme should be wither http or https")
-        self.admin = libgit.InterfaceAdmin(admin_email, admin_user)
+        self.admin = forge_libgit.InterfaceAdmin(admin_email, admin_user)
 
 
     def _lock_repo(self, local_url):
@@ -247,7 +251,7 @@ class Forge:
         local_push_url = self.get_local_push_url(local_name)
 
         if self._lock_repo(local_url):
-            repo = libgit.Repo(local_settings.BASE_DIR, local_push_url, upstream_url)
+            repo = forge_libgit.Repo(local_settings.BASE_DIR, local_push_url, upstream_url)
             default_branch = repo.default_branch()
             repo.push_local(default_branch)
             self._unlock_repo(local_url)
@@ -263,23 +267,23 @@ class Forge:
         path = format("/%s/%s" % (repo[0], repo[1]))
         return urlunparse((self.base_url.scheme, self.base_url.netloc, path, "", "", ""))
 
-    def apply_patch(self, patch: libgit.Patch, repository_url: str, pr_url: str) -> str:
+    def apply_patch(self, patch: forge_libgit.Patch, repository_url: str, pr_url: str) -> str:
         """apply patch"""
-        (_, repo) = forge.get_owner_repo_from_url(repository_url)
+        (_, repo) = self.get_owner_repo_from_url(repository_url)
         local_url = self.get_local_html_url(repo)
         local_push_url = self.get_local_push_url(repo)
         branch = get_branch_name(pr_url)
         if self._lock_repo(local_url):
-            repo = libgit.Repo(local_settings.BASE_DIR, local_push_url, repository_url)
+            repo = forge_libgit.Repo(local_settings.BASE_DIR, local_push_url, repository_url)
             repo.apply_patch(patch, self.admin, branch)
-            repo.push_loca(branch_name)
+            repo.push_loca(branch)
             self._unlock_repo(local_url)
         return branch
 
 
-    def process_patch(self, patch: libgit.Patch, local_url: str, upstream_url, branch_name) -> str:
+    def process_patch(self, patch: forge_libgit.Patch, local_url: str, upstream_url, branch_name) -> str:
         """ process patch"""
-        repo = libgit.Repo(local_settings.BASE_DIR, local_url, upstream_url)
+        repo = forge_libgit.Repo(local_settings.BASE_DIR, local_url, upstream_url)
         repo.fetch_upstream()
         repo.apply_patch(patch, self.admin, branch_name)
 
@@ -344,9 +348,6 @@ class Forge:
         raise NotImplementedError
 
 def get_forge() -> Forge:
-    if "forge" not in g:
-        g.forge = Gitea(
-                base_url=local_settings.GITEA_HOST,
+    return Gitea(base_url=local_settings.GITEA_HOST,
                 admin_user=local_settings.ADMIN_USER, 
                 admin_email=local_settings.ADMIN_EMAIL)
-    return g.forge

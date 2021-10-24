@@ -21,16 +21,17 @@ import sqlite3
 from flask import Flask
 
 from . import db
-from .api.v1 import bp as V1_bp
-from . import forge
-from .forges import Gitea
+#from .api.v1 import bp as V1_bp
+#from . import forge
+#from .forges import Gitea
 from . import local_settings
+#from . import runner
 
 
-FORGE = Gitea(base_url=local_settings.GITEA_HOST,
-        admin_user=local_settings.ADMIN_USER, 
-        admin_email=local_settings.ADMIN_EMAIL)
-
+#FORGE = Gitea(base_url=local_settings.GITEA_HOST,
+#        admin_user=local_settings.ADMIN_USER, 
+#        admin_email=local_settings.ADMIN_EMAIL)
+#
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
@@ -55,7 +56,9 @@ def create_app(test_config=None):
         response.headers["Permissions-Policy"] = "interest-cohort=()"
         return response
 
-    app.register_blueprint(V1_bp)
+#    runner.run(app)
+
+#    app.register_blueprint(V1_bp)
     return app
 
 
