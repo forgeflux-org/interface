@@ -70,7 +70,8 @@ class Gitea(Forge):
         headers = self._auth()
         payload = issue.get_payload()
         response = requests.request("POST", url, json=payload, headers=headers)
-        return response.json()
+        data = response.json()
+        return data["html_url"]
 
     def _into_repository(self, data) -> RepositoryInfo:
         info = RepositoryInfo()
@@ -165,6 +166,30 @@ class Gitea(Forge):
         print(url)
         headers = self._auth()
         payload = {"oarganization" :"bot"}
+        _response = requests.request("POST", url, json=payload, headers=headers)
+
+    def get_issue_index(self, issue_url, owner: str) -> int:
+        parsed = urlparse(issue_url)
+        path = parsed.path
+        path.endswith('/')
+        if path.endswith('/'):
+            path=path[0:-1]
+        index = path.split(owner)[0].split('issue')[2]
+        if index.startswith('/'):
+            index = index[1:]
+
+        if index.endswith('/'):
+            index = index[0:-1]
+
+        return int(index)
+
+
+    def comment_on_issue(self, owner: str, repo: str, issue_url: str, body:str):
+        headers = self._auth()
+        (owner, repo) = self.get_fetch_remote(issue_url)
+        index = self.get_issue_index(issue_url, owner)
+        url = self._get_url(format("/repos/%s/%s/issues/%s" % (owner, repo, index)))
+        payload = {"body": body}
         _response = requests.request("POST", url, json=payload, headers=headers)
 
 

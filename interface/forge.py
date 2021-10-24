@@ -212,13 +212,22 @@ class Forge:
         repo.fetch_upstream()
         repo.apply_patch(patch, self.admin, branch_name)
 
+    def get_owner_repo_from_url(self, url: str) -> (str, str):
+        """ Get (owner, repo) from repository URL"""
+        url = self.get_fetch_remote(url)
+        parsed = urlparse(url)
+        details = parsed.path.split('/')[1:3]
+        (owner, repo) = (details[0], details[1])
+        return (owner, repo)
+
+
     """ Forge characteristics. All interfaces must implement this class"""
     def get_issues(self, owner: str, repo: str, *args, **kwargs):
         """ Get issues on a repository. Supports pagination via 'page' optional param"""
         raise NotImplementedError
 
-    def create_issue(self, owner: str, repo: str, issue: CreateIssue):
-        """ Creates issue on a repository"""
+    def create_issue(self, owner: str, repo: str, issue: CreateIssue) -> str:
+        """ Creates issue on a repository. reurns html url of the newly created issue"""
         raise NotImplementedError
 
     def get_repository(self, owner: str, repo: str) -> RepositoryInfo:
@@ -251,3 +260,7 @@ class Forge:
     def close_pr(self, owner: str, repo:str):
         """ Fork a repository """
         raise NotImplementedError
+
+    def comment_on_issue(self, owner: str, repo: str, issue_url: str, body:str):
+        """Add comment on an existing issue"""
+        raise NotADirectoryError
