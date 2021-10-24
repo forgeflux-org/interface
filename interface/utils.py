@@ -39,3 +39,6 @@ def get_branch_name(pull_request_url: str) -> str:
     """ Get branch name from pull request URL """
     parsed = urlparse(pull_request_url)
     return format("%s%s" % (parsed.netloc, parsed.path.replace("/", "-")))
+
+def get_local_repository_from_foreign_repo(repo_url: str) -> str:
+    return get_branch_name(repo_url)

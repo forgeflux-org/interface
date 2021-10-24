@@ -1,6 +1,6 @@
 default: ## Run app
-	cd libgit && maturin develop
-	@. ./venv/bin/activate && FLASK_APP=interface/__init__.py FLASK_ENV=development flask run
+	cd libgit && maturin build
+	. ./venv/bin/activate && FLASK_APP=interface/__init__.py FLASK_ENV=development flask run
 
 docker: ## Build Docker image from source
 	docker build -t forgedfed/interface .

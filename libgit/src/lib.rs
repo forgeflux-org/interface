@@ -37,7 +37,7 @@ use url::Url;
 pub mod error;
 use error::*;
 
-#[pyclass(name = "Repo")]
+#[pyclass(name = "Repo", module = "libgit")]
 pub struct Repo {
     #[allow(dead_code)]
     upstream: Url,
@@ -50,7 +50,7 @@ pub struct Repo {
 }
 
 #[derive(Debug, Clone)]
-#[pyclass(name = "Patch")]
+#[pyclass(name = "Patch", module = "libgit")]
 pub struct Patch {
     #[pyo3(get, set)]
     pub message: String,
@@ -63,7 +63,7 @@ pub struct Patch {
 }
 
 #[derive(Debug, Clone)]
-#[pyclass(name = "InterfaceAdmin")]
+#[pyclass(name = "InterfaceAdmin", module = "libgit")]
 pub struct InterfaceAdmin {
     #[pyo3(get, set)]
     pub email: String,
@@ -179,6 +179,13 @@ impl Repo {
         remote.fetch(&[default_branch.as_str().unwrap()], None, None)?;
         remote.disconnect()?;
         Ok(())
+    }
+
+    pub fn default_branch(&self) -> FResult<String> {
+        let mut remote = connect_upstream(&self)?;
+        let default_branch = remote.default_branch()?;
+        remote.disconnect()?;
+        Ok(default_branch.as_str().unwrap().to_string())
     }
 
     pub fn push_local(&self, branch: &str) -> FResult<()> {

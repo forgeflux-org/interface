@@ -17,6 +17,7 @@ from dateutil.parser import parse as date_parse
 import datetime
 from urllib.parse import urlparse, urlunparse, urlencode
 import requests
+from libgit import InterfaceAdmin
 
 from rfc3339 import rfc3339
 
@@ -146,7 +147,7 @@ class Gitea(Forge):
         return NotificationResp(val, date_parse(last_read))
 
     def create_pull_request(self, pr: CreatePullrequest):
-        url = self._get_url(format("/repos/%s/%s/pulls" % (owner, repo)))
+        url = self._get_url(format("/repos/%s/%s/pulls" , (pr.owner, pr.repo)))
         headers = self._auth()
 
         payload  = pr.get_payload()
@@ -191,6 +192,14 @@ class Gitea(Forge):
         url = self._get_url(format("/repos/%s/%s/issues/%s" % (owner, repo, index)))
         payload = {"body": body}
         _response = requests.request("POST", url, json=payload, headers=headers)
+
+    def get_local_html_url(self, repo:str) -> str:
+        path = format("/%s/%s", local_settings.GITEA_USERNAME, repo)
+        return urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
+
+    def get_local_push_url(self, repo:str) -> str:
+        return format("git@%s:%s/%s.git", self.host.netloc, local_settings.GITEA_USERNAME, repo)
+
 
 
 #if __name__ == "__main__":

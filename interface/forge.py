@@ -14,13 +14,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """ defines basic data structuctures and interfaces used in a forge fed interface"""
+from rfc3339 import rfc3339
 import datetime
 from urllib.parse import urlparse, urlunparse
+import libgit
 
-from libgit import Repo, InterfaceAdmin, Patch
-
-from .utils import clean_url, get_branch_name, get_patch
-from . import local_settings
+from interface.utils import clean_url, get_branch_name, get_patch
+import interface.local_settings
+import interface.db
 
 class Payload:
     """ Payload base class. self.mandatory should be defined"""
@@ -193,7 +194,46 @@ class Forge:
         if all([self.base_url.scheme != "http", self.base_url.scheme != "https"]):
             print(self.base_url.scheme)
             raise Exception("scheme should be wither http or https")
-        self.admin = InterfaceAdmin(admin_email, admin_user)
+        self.admin = libgit.InterfaceAdmin(admin_email, admin_user)
+
+
+
+    def git_clone(self, upstream_url: str, local_name: str):
+        conn = db.get_db()
+        cur = conn.cursor()
+        local_url = self.get_local_html_url(local_name)
+        local_push_url = self.get_local_push_url(local_name)
+        res = cur.execute(
+                "SELECT ID, is_locked from interface_repositories WHERE html_url = ?",
+                (local_url,),).fetch_one()
+
+        def upload():
+            repo = libgit.Repo(local_settings.BASE_DIR, local_push_url, upstream_url)
+            default_branch = repo.default_branch()
+            repo.push_local(default_branch)
+
+        now = rfc3339(datetime.datetime.now())
+        if len(res) == 0:
+            cur.execute(
+                "INSERT OR IGNORE INTO interface_repositories (html_url, is_locked) VALUES (?);",
+                (local_url, now),
+            )
+            conn.commit()
+            upload()
+        else:
+            if res[0]["is_locked"] is None:
+                cur.execute(
+                    "UPDATE interface_repositories is_locked = ? WHERE html_url = ?;",
+                    (now, local_url),
+                )
+                conn.commit()
+                upload()
+                cur.execute(
+                    "UPDATE interface_repositories is_locked = ? WHERE html_url = ?;",
+                    (None, local_url),
+                )
+                conn.commit()
+
 
     def get_fetch_remote(self, url: str) -> str:
         """Get fetch remote for possible forge URL"""
@@ -206,9 +246,9 @@ class Forge:
         path = format("/%s/%s" % (repo[0], repo[1]))
         return urlunparse((self.base_url.scheme, self.base_url.netloc, path, "", "", ""))
 
-    def process_patch(self, patch: Patch, local_url: str, upstream_url, branch_name) -> str:
+    def process_patch(self, patch: libgit.Patch, local_url: str, upstream_url, branch_name) -> str:
         """ process patch"""
-        repo = Repo(local_settings.BASE_DIR, local_url, upstream_url)
+        repo = libgit.Repo(local_settings.BASE_DIR, local_url, upstream_url)
         repo.fetch_upstream()
         repo.apply_patch(patch, self.admin, branch_name)
 
@@ -219,6 +259,13 @@ class Forge:
         details = parsed.path.split('/')[1:3]
         (owner, repo) = (details[0], details[1])
         return (owner, repo)
+
+    def get_local_html_url(self, repo: str) -> str:
+        """ get local repository's HTML url"""
+        raise NotImplementedError
+
+    def get_local_push_url(self, repo: str) -> str:
+        raise NotImplementedError
 
 
     """ Forge characteristics. All interfaces must implement this class"""
@@ -263,4 +310,12 @@ class Forge:
 
     def comment_on_issue(self, owner: str, repo: str, issue_url: str, body:str):
         """Add comment on an existing issue"""
-        raise NotADirectoryError
+        raise NotImplementedError
+
+def get_forge() -> Forge:
+    if "forge" not in g:
+        g.forge = Gitea(
+                base_url=local_settings.GITEA_HOST,
+                admin_user=local_settings.ADMIN_USER, 
+                admin_email=local_settings.ADMIN_EMAIL)
+    return g.forge
