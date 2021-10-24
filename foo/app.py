@@ -50,6 +50,7 @@ def get_patch(url: str) -> str:
         url += ".patch"
     resp = requests.get(url)
     if resp.status_code == 200:
+        print("patch", resp.text)
         return resp.text
 
 def clean_url(url: str):
@@ -104,7 +105,7 @@ def init_app(app):
 
 
 ISSSUE="Issue"
-PULL ="pull"
+PULL ="Pull"
 COMMIT = "commit"
 REPOSITORY = "repository"
 
@@ -190,6 +191,17 @@ class Notification(Payload):
     def set_updated_at(self,date):
         """ set comment update time"""
         self.payload["updated_at"] = date
+
+    def set_upstream(self,upstream):
+        """ set comment update time"""
+        print("settings upstream", upstream)
+        self.payload["upstream"] = upstream
+
+
+    def set_pr_url(self,url):
+        """ set comment pr url"""
+        self.payload["pr_url"] = url
+
 
     def set_type(self,notification_type):
         """ set comment update time"""
@@ -357,11 +369,12 @@ class Forge:
         return branch
 
 
-    def process_patch(self, patch: forge_libgit.Patch, local_url: str, upstream_url, branch_name) -> str:
+    def process_patch(self, patch: str, local_url: str, upstream_url, branch_name) -> str:
         """ process patch"""
         repo = forge_libgit.Repo(local_settings.BASE_DIR, local_url, upstream_url)
         repo.fetch_upstream()
-        repo.apply_patch(patch, self.admin, branch_name)
+        patch = repo.process_patch(patch, branch_name)
+        print(patch)
 
     def get_owner_repo_from_url(self, url: str) -> (str, str):
         """ Get (owner, repo) from repository URL"""
@@ -518,6 +531,12 @@ class Gitea(Forge):
 
             if notification_type == REPOSITORY:
                 print(n)
+            if notification_type == PULL:
+                rn.set_pr_url(requests.request("GET", subject["url"]).json()["html_url"])
+                rn.set_upstream(n["repository"]["description"])
+                print(n["repository"]["description"])
+
+
             if notification_type == ISSSUE:
                 comment_url = subject["latest_comment_url"]
                 print(comment_url)
@@ -776,7 +795,7 @@ def fork_foreign_repository():
     repository_url = client.get_repository(repository_url)
     info = client.get_repository_info(repository_url)
     local_name = get_local_repository_from_foreign_repo(repository_url)
-    forge.create_repository(repo=local_name, description=info["description"])
+    forge.create_repository(repo=local_name, description=repository_url)
     forge.git_clone(repository_url, local_name)
     return jsonify({})
 
@@ -975,7 +994,6 @@ def run(app):
         def background_job(app):
             with app.app_context():
                 global RUNNING
-                print(RUNNING)
                 if RUNNING:
                     scheduler.enter(local_settings.JOB_RUNNER_DELAY, 8, background_job)
                     return
@@ -987,15 +1005,22 @@ def run(app):
 
                 forge = get_forge()
                 notifications = forge.get_notifications(since=date_parse(last_run)).get_payload()
-                print(notifications)
-                #for n in notifications:
-                #    import json
-                #    print(json.dumps(n))
+#                print(notifications)
+                for n in notifications:
+                    (owner, repo) = forge.get_owner_repo_from_url(n["repo_url"])
+                    if all([n["type"] == PULL, owner == local_settings.ADMIN_USER]):
+                        print("pr_url")
+                        patch = get_patch(n["pr_url"])
+    #patch = libgit.Patch(data["message"], data["author_name"], data["author_email"])
+                        local = n["repo_url"]
+                        upstream = n["upstream"]
+                        #print(local, upstream)
+                        patch  = forge.process_patch(patch, local, upstream, get_branch_name(n["pr_url"]))
+#                       # patch = libgit.Patch(n["title"], n["owner"], local_settings.ADMIN_EMAIL)
+                        print(patch)
 
-#               #     if all([n["type"] == PULL, n["owner"] == local_settings.ADMIN_USER]):
 
-#               #     if n["type"] == 
-                logger.warning('hello from background_job %s', time.time())
+#                    if n["type"] == 
                 scheduler.enter(local_settings.JOB_RUNNER_DELAY, 8, background_job, argument=(app,))
                 RUNNING = False
 
@@ -1012,7 +1037,6 @@ def create_app(test_config=None):
     )
 
     init_app(app)
-
     if test_config is None:
         app.config.from_pyfile("config.py", silent=True)
     else:
