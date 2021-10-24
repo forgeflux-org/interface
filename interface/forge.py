@@ -23,6 +23,11 @@ from interface.utils import clean_url, get_branch_name, get_patch
 import interface.local_settings
 import interface.db
 
+ISSSUE="Issue"
+PULL ="pull"
+COMMIT = "commit"
+REPOSITORY = "repository"
+
 class Payload:
     """ Payload base class. self.mandatory should be defined"""
     def __init__(self, mandatory: [str]):

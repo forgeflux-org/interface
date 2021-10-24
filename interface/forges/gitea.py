@@ -24,11 +24,7 @@ from rfc3339 import rfc3339
 from interface import local_settings, utils
 from interface.forge import CreateIssue, Forge, RepositoryInfo, Comment
 from interface.forge import Notification, NotificationResp, CreatePullrequest
-
-ISSSUE="Issue"
-PULL ="pull"
-COMMIT = "commit"
-REPOSITORY = "repository"
+from interface.forge import ISSSUE, PULL, COMMIT, REPOSITORY
 
 class Gitea(Forge):
     def __init__(self, base_url: str, admin_user: str, admin_email):
