@@ -29,6 +29,7 @@ FORK_FOREIGN = "/fork/foreign"
 SUBSCRIBE = "/subscribe"
 COMMENT_ON_ISSUE  = "/issues/comment"
 CREATE_ISSUE = "/issue/create"
+CREATE_PULL_REQUEST = "/pull/create"
 
 class ForgeClient:
     def __init__(self, forge: forge.Forge):

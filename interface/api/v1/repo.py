@@ -223,3 +223,47 @@ def comment_on_issue():
     (owner, repo) = forge.get_owner_repo_from_url(data["repository_url"])
     forge.comment_on_issue(owner, repo, issue_url=data["issue_url"], body=data["body"])
     return jsonify({})
+
+
+@bp.route(COMMENT_ON_ISSUE, methods=["POST"])
+def create_pull_request():
+    """
+        get repository URL
+
+        ## Request
+        {
+            "repository_url": string // of the target issue
+            "pr_url": string // pull request url
+            "message": string // message body
+            "head": string
+            "base" string
+            "title": string
+            "patch": string
+            "author_name": string
+            "author_email": string
+        }
+
+        ## Response
+         { }
+    """
+    data =  request.json()
+    forge = get_forge()
+    repository_url = data["repository_url"]
+    (owner, repo) = forge.get_owner_repo_from_url(repository_url)
+    try:
+        forge.fork(owner, repo)
+    except:
+        pass
+    forge.comment_on_issue(owner, repo, issue_url=data["issue_url"], body=data["body"])
+    patch = libgit.Patch(data["message"], data["author_name"], data["author_email"])
+    branch = forge.apply_patch(patch, repository_url, data["pr_url"])
+    pr = CreatePullrequest()
+    pr.set_base(data["base"])
+    pr.set_body(data["message"])
+    pr.set_title(data["title"])
+    pr.set_owner(owner)
+    pr.set_repo(repo)
+    pr.set_head(format("%s:%s", forge.admin.name, branch))
+
+    resp = {"html_url" : forge.create_pull_request(pr) }
+    return jsonify(resp)

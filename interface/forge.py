@@ -197,20 +197,13 @@ class Forge:
         self.admin = libgit.InterfaceAdmin(admin_email, admin_user)
 
 
-
-    def git_clone(self, upstream_url: str, local_name: str):
+    def _lock_repo(self, local_url):
         conn = db.get_db()
         cur = conn.cursor()
-        local_url = self.get_local_html_url(local_name)
-        local_push_url = self.get_local_push_url(local_name)
+
         res = cur.execute(
                 "SELECT ID, is_locked from interface_repositories WHERE html_url = ?",
                 (local_url,),).fetch_one()
-
-        def upload():
-            repo = libgit.Repo(local_settings.BASE_DIR, local_push_url, upstream_url)
-            default_branch = repo.default_branch()
-            repo.push_local(default_branch)
 
         now = rfc3339(datetime.datetime.now())
         if len(res) == 0:
@@ -219,7 +212,7 @@ class Forge:
                 (local_url, now),
             )
             conn.commit()
-            upload()
+            return True
         else:
             if res[0]["is_locked"] is None:
                 cur.execute(
@@ -227,13 +220,32 @@ class Forge:
                     (now, local_url),
                 )
                 conn.commit()
-                upload()
                 cur.execute(
                     "UPDATE interface_repositories is_locked = ? WHERE html_url = ?;",
                     (None, local_url),
                 )
                 conn.commit()
+                return True
+            return False
 
+    def _unlock_repo(self, local_url):
+        conn = db.get_db()
+        cur = conn.cursor()
+        cur.execute(
+                    "UPDATE interface_repositories is_locked = ? WHERE html_url = ?;",
+                    (None, local_url),
+                )
+        conn.commit()
+
+    def git_clone(self, upstream_url: str, local_name: str):
+        local_url = self.get_local_html_url(local_name)
+        local_push_url = self.get_local_push_url(local_name)
+
+        if self._lock_repo(local_url):
+            repo = libgit.Repo(local_settings.BASE_DIR, local_push_url, upstream_url)
+            default_branch = repo.default_branch()
+            repo.push_local(default_branch)
+            self._unlock_repo(local_url)
 
     def get_fetch_remote(self, url: str) -> str:
         """Get fetch remote for possible forge URL"""
@@ -245,6 +257,20 @@ class Forge:
         repo = parsed.path.split('/')[1:3]
         path = format("/%s/%s" % (repo[0], repo[1]))
         return urlunparse((self.base_url.scheme, self.base_url.netloc, path, "", "", ""))
+
+    def apply_patch(self, patch: libgit.Patch, repository_url: str, pr_url: str) -> str:
+        """apply patch"""
+        (_, repo) = forge.get_owner_repo_from_url(repository_url)
+        local_url = self.get_local_html_url(repo)
+        local_push_url = self.get_local_push_url(repo)
+        branch = get_branch_name(pr_url)
+        if self._lock_repo(local_url):
+            repo = libgit.Repo(local_settings.BASE_DIR, local_push_url, repository_url)
+            repo.apply_patch(patch, self.admin, branch)
+            repo.push_loca(branch_name)
+            self._unlock_repo(local_url)
+        return branch
+
 
     def process_patch(self, patch: libgit.Patch, local_url: str, upstream_url, branch_name) -> str:
         """ process patch"""
