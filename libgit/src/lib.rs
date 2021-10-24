@@ -244,6 +244,13 @@ impl Repo {
             &tree_mailmap,
             &[&commit],
         )?;
+
+        let mut checkout_options = CheckoutBuilder::new();
+        checkout_options.force();
+        let head_obj = head.peel(ObjectType::Tree)?;
+        self.repo
+            .checkout_tree(&head_obj, Some(&mut checkout_options))?;
+        self.repo.set_head(head.name().unwrap())?;
         Ok(())
     }
 
