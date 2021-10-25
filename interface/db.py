@@ -21,7 +21,8 @@ from flask.cli import with_appcontext
 from yoyo import read_migrations
 from yoyo import get_backend
 
-import interface.local_settings
+from interface import local_settings
+
 
 def get_db() -> sqlite3.Connection:
     """Get database connection"""
@@ -32,11 +33,13 @@ def get_db() -> sqlite3.Connection:
         g.db.row_factory = sqlite3.Row
     return g.db
 
+
 def close_db(e=None):
     db = g.pop("db", None)
 
     if db is not None:
         db.close()
+
 
 def init_db():
     """Apply database migrations"""
@@ -46,6 +49,7 @@ def init_db():
     with backend.lock():
         backend.apply_migrations(backend.to_apply(migrations))
         backend.commit()
+
 
 @click.command("migrate")
 @with_appcontext

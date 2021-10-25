@@ -17,40 +17,45 @@ from dateutil.parser import parse as date_parse
 import datetime
 from urllib.parse import urlparse, urlunparse, urlencode
 import requests
-from libgit import InterfaceAdmin
 
-from rfc3339 import rfc3338
+import libgit
+import rfc3339
 
 from interface import local_settings, utils
-from interface.forge import CreateIssue, Forge, RepositoryInfo, Comment
-from interface.forge import Notification, NotificationResp, CreatePullrequest
-from interface.forge import ISSSUE, PULL, COMMIT, REPOSITORY
+
+from .base import Forge
+from .payload import CreateIssue, RepositoryInfo, CreatePullrequest
+from .notifications import Notification, NotificationResp, Comment
+from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
+
 
 class Gitea(Forge):
     def __init__(self, base_url: str, admin_user: str, admin_email):
-        super().__init__(base_url=base_url, admin_user=admin_user, admin_email=admin_email)
+        super().__init__(
+            base_url=base_url, admin_user=admin_user, admin_email=admin_email
+        )
         self.host = urlparse(utils.clean_url(local_settings.GITEA_HOST))
 
     def _auth(self):
-        return {'Authorization': format("token %s" % (local_settings.GITEA_API_KEY))}
+        return {"Authorization": format("token %s" % (local_settings.GITEA_API_KEY))}
 
     def _get_url(self, path: str) -> str:
         prefix = "/api/v1/"
-        if path.startswith('/'):
-            path=path[1:]
+        if path.startswith("/"):
+            path = path[1:]
 
         path = format("%s%s" % (prefix, path))
         url = urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
         return url
 
     def get_issues(self, owner: str, repo: str, *args, **kwargs):
-        """ Get issues on a repository. Supports pagination via 'page' optional param"""
+        """Get issues on a repository. Supports pagination via 'page' optional param"""
         query = {}
-        since = kwargs.get('since')
+        since = kwargs.get("since")
         if since is not None:
             query["since"] = since
 
-        page = kwargs.get('page')
+        page = kwargs.get("page")
         if page is not None:
             query["page"] = page
 
@@ -61,7 +66,7 @@ class Gitea(Forge):
         return response.json()
 
     def create_issue(self, owner: str, repo: str, issue: CreateIssue):
-        """ Creates issue on a repository"""
+        """Creates issue on a repository"""
         url = self._get_url(format("/repos/%s/%s/issues" % (owner, repo)))
 
         headers = self._auth()
@@ -78,7 +83,7 @@ class Gitea(Forge):
         return info
 
     def get_repository(self, owner: str, repo: str) -> RepositoryInfo:
-        """ Get repository details"""
+        """Get repository details"""
         url = self._get_url(format("/repos/%s/%s" % (owner, repo)))
         response = requests.request("GET", url)
         data = response.json()
@@ -87,7 +92,7 @@ class Gitea(Forge):
 
     def create_repository(self, repo: str, description: str):
         url = self._get_url("/user/repos/")
-        payload = { "name" : repo, "description": description}
+        payload = {"name": repo, "description": description}
         headers = self._auth()
         _response = requests.request("POST", url, json=payload, headers=headers)
 
@@ -96,10 +101,9 @@ class Gitea(Forge):
         headers = self._auth()
         _response = requests.request("PUT", url, headers=headers)
 
-
     def get_notifications(self, since: datetime.datetime) -> NotificationResp:
         query = {}
-        query["since"] =  rfc3339(since)
+        query["since"] = rfc3339.rfc3339(since)
         url = self._get_url("/notifications")
         headers = self._auth()
         response = requests.request("GET", url, params=query, headers=headers)
@@ -121,7 +125,14 @@ class Gitea(Forge):
 
             if notification_type == REPOSITORY:
                 print(n)
-            if notification_type == ISSSUE:
+            if notification_type == PULL:
+                rn.set_pr_url(
+                    requests.request("GET", subject["url"]).json()["html_url"]
+                )
+                rn.set_upstream(n["repository"]["description"])
+                print(n["repository"]["description"])
+
+            if notification_type == ISSUE:
                 comment_url = subject["latest_comment_url"]
                 print(comment_url)
                 if len(comment_url) != 0:
@@ -143,10 +154,10 @@ class Gitea(Forge):
         return NotificationResp(val, date_parse(last_read))
 
     def create_pull_request(self, pr: CreatePullrequest):
-        url = self._get_url(format("/repos/%s/%s/pulls" , (pr.owner, pr.repo)))
+        url = self._get_url(format("/repos/%s/%s/pulls", (pr.owner, pr.repo)))
         headers = self._auth()
 
-        payload  = pr.get_payload()
+        payload = pr.get_payload()
         for key in ["repo", "owner"]:
             del payload[key]
 
@@ -157,31 +168,30 @@ class Gitea(Forge):
         response = requests.request("POST", url, json=payload, headers=headers)
         return response.json()["html_url"]
 
-    def fork(self, owner: str, repo:str):
-        """ Fork a repository """
+    def fork(self, owner: str, repo: str):
+        """Fork a repository"""
         url = self._get_url(format("/repos/%s/%s/forks" % (owner, repo)))
         print(url)
         headers = self._auth()
-        payload = {"oarganization" :"bot"}
+        payload = {"oarganization": "bot"}
         _response = requests.request("POST", url, json=payload, headers=headers)
 
     def get_issue_index(self, issue_url, owner: str) -> int:
         parsed = urlparse(issue_url)
         path = parsed.path
-        path.endswith('/')
-        if path.endswith('/'):
-            path=path[0:-1]
-        index = path.split(owner)[0].split('issue')[2]
-        if index.startswith('/'):
+        path.endswith("/")
+        if path.endswith("/"):
+            path = path[0:-1]
+        index = path.split(owner)[0].split("issue")[2]
+        if index.startswith("/"):
             index = index[1:]
 
-        if index.endswith('/'):
+        if index.endswith("/"):
             index = index[0:-1]
 
         return int(index)
 
-
-    def comment_on_issue(self, owner: str, repo: str, issue_url: str, body:str):
+    def comment_on_issue(self, owner: str, repo: str, issue_url: str, body: str):
         headers = self._auth()
         (owner, repo) = self.get_fetch_remote(issue_url)
         index = self.get_issue_index(issue_url, owner)
@@ -189,16 +199,17 @@ class Gitea(Forge):
         payload = {"body": body}
         _response = requests.request("POST", url, json=payload, headers=headers)
 
-    def get_local_html_url(self, repo:str) -> str:
+    def get_local_html_url(self, repo: str) -> str:
         path = format("/%s/%s", local_settings.GITEA_USERNAME, repo)
         return urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
 
-    def get_local_push_url(self, repo:str) -> str:
-        return format("git@%s:%s/%s.git", self.host.netloc, local_settings.GITEA_USERNAME, repo)
+    def get_local_push_url(self, repo: str) -> str:
+        return format(
+            "git@%s:%s/%s.git", self.host.netloc, local_settings.GITEA_USERNAME, repo
+        )
 
 
-
-#if __name__ == "__main__":
+# if __name__ == "__main__":
 #    owner = "realaravinth"
 #    repo = "tmp"
 #    g = Gitea()

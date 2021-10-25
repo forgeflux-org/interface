@@ -15,46 +15,47 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from urllib.parse import urlparse, urlunparse
 import requests
+from urllib.parse import urlparse, urlunparse
 
 from flask import g
 
-from interface import forge
-from interface import db
-#from interface.api.v1.repo import GET_REPOSITORY
+from interface.forges.base import Forge
+from interface.db import get_db
 
 GET_REPOSITORY = "/fetch"
 GET_REPOSITORY_INFO = "/info"
 FORK_LOCAL = "/fork/local"
 FORK_FOREIGN = "/fork/foreign"
 SUBSCRIBE = "/subscribe"
-COMMENT_ON_ISSUE  = "/issues/comment"
+COMMENT_ON_ISSUE = "/issues/comment"
 CREATE_ISSUE = "/issue/create"
 CREATE_PULL_REQUEST = "/pull/create"
 
+
 class ForgeClient:
-    def __init__(self, forge: forge.Forge):
+    def __init__(self, forge: Forge):
         self.forge = forge
         self.interfaces = [
-                    {
-                        "forge": "https://github.com",
-                        "interface": "https://github-interface.shuttlecraft.io",
-                    },
-                    {
-                        "forge": "https://git.batsense.net",
-                        "interface": "https://gitea-interface.shuttlecraft.io",
-                    }
-                ]
+            {
+                "forge": "https://github.com",
+                "interface": "https://github-interface.shuttlecraft.io",
+            },
+            {
+                "forge": "https://git.batsense.net",
+                "interface": "https://gitea-interface.shuttlecraft.io",
+            },
+        ]
+
     def _construct_url(self, interface_url: str, path: str) -> str:
-        """ Get interface API routes"""
+        """Get interface API routes"""
         prefix = "/api/v1/"
-        if path.startswith('/'):
-            path=path[1:]
+        if path.startswith("/"):
+            path = path[1:]
 
         path = format("%s%s" % (prefix, path))
         parsed = urlparse(interface_url)
         url = urlunparse((parsed.scheme, parsed.netloc, path, "", "", ""))
         return url
-
 
     def find_interface(self, url: str):
         parsed = urlparse(url)
@@ -62,29 +63,48 @@ class ForgeClient:
             if urlparse(interface["forge"]).netloc == parsed.netloc:
                 return interface["interface"]
 
-
     def get_repository(self, repo_url: str):
-        """ Get foreign repository url """
+        """Get foreign repository url"""
         interface_url = self.forge.find_interface(repo_url)
-        interface_api_url = self._construct_url(interface_url=interface_url, path=GET_REPOSITORY)
+        interface_api_url = self._construct_url(
+            interface_url=interface_url, path=GET_REPOSITORY
+        )
 
-        payload = { "url": repo_url }
+        payload = {"url": repo_url}
         response = requests.request("POST", interface_api_url, json=payload)
         data = response.json()
         return data["repository_url"]
 
     def get_repository_info(self, repo_url: str):
-        """ Get foreign repository url """
+        """Get foreign repository url"""
         interface_url = self.forge.find_interface(repo_url)
-        interface_api_url = self._construct_url(interface_url=interface_url, path=GET_REPOSITORY_INFO)
+        interface_api_url = self._construct_url(
+            interface_url=interface_url, path=GET_REPOSITORY_INFO
+        )
 
-        payload = { "repository_url": repo_url }
+        payload = {"repository_url": repo_url}
         response = requests.request("POST", interface_api_url, json=payload)
         data = response.json()
         return data
 
 
+#    def send_contributions(self, patch, upstream, pr_url, message):
+#        interface_url = self.forge.find_interface(upstream)
+#        interface_api_url = self._construct_url(interface_url=interface_url, path=GET_REPOSITORY)
+#        payload  = {
+#           "repository_url": upstream,
+#            "pr_url": pr_url
+#            "message": string
+#            "head": "master"
+#            "base" string
+#            "title": string
+#            "patch": string
+#            "author_name": string
+#            "author_email": string
+#
+
+
 def get_client() -> ForgeClient:
     if "client" not in g:
-        g.client = ForgeClient(db.get_forge())
+        g.client = ForgeClient(get_forge())
     return g.client

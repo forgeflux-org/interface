@@ -1,5 +1,5 @@
 """
-Forge behavior
+Run ForgeFed Interface flask application
 """
 # Bridges software forges to create a distributed software development environment
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
@@ -13,15 +13,12 @@ Forge behavior
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from .gitea import Gitea
-from .. import local_settings
 
+from interface.app import create_app
 
-def get_forge():
-    return Gitea(
-        local_settings.GITEA_HOST,
-        local_settings.GITEA_USERNAME,
-        local_settings.ADMIN_EMAIL,
-    )
+if __name__ == "__main__":
+    app = create_app()
+    app.run(threaded=True, port=7000)

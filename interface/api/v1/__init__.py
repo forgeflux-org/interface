@@ -1,3 +1,6 @@
+"""
+Version 1 API
+"""
 # Bridges software forges to create a distributed software development environment
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
 #
@@ -14,6 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from flask import Blueprint
 from . import repo
+from . import issues
+from . import notifications
 
 bp = Blueprint("API_V1", __name__, url_prefix="/api/v1")
 bp.register_blueprint(repo.bp)
+bp.register_blueprint(notifications.bp)
+bp.register_blueprint(issues.bp)

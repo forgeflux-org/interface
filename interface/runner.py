@@ -1,3 +1,6 @@
+"""
+A job runner that receives events(notifications) and runs revelant jobs on them
+"""
 # Bridges software forges to create a distributed software development environment
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
 #
@@ -21,89 +24,95 @@ import datetime
 
 
 from interface import local_settings
-from interface.forge import get_forge, Notification, PULL, ISSSUE
+from interface.forges import get_forge
+from interface.forges.notifications import PULL, ISSUE
+from interface.forges.utils import get_patch, get_branch_name
 from interface.db import get_db
 from interface.forges.gitea import date_parse
 
-
-
 RUNNING = False
-APP = ""
 
-def init(app):
-   # global APP
-    with app.app_context():
-        conn = get_db()
-        cur = conn.cursor()
-        last_run = date_parse("2021-10-10T17:06:02+05:30")
-        cur.execute(
-            "INSERT OR IGNORE INTO interface_jobs_run (this_interface_url, last_run) VALUES (?, ?);",
-            (local_settings.INTERFACE_URL, str(last_run)),
+
+class Runner:
+    def __init__(self, app):
+        self.app = app
+        logging.getLogger("jobs").setLevel(logging.WARNING)
+        self.logger = logging.getLogger("jobs")
+        self.scheduler = sched.scheduler(time.time, time.sleep)
+        self.forge = get_forge()
+
+        with self.app.app_context():
+            conn = get_db()
+            cur = conn.cursor()
+            last_run = date_parse("2021-10-10T17:06:02+05:30")
+            cur.execute(
+                """
+                INSERT OR IGNORE INTO interface_jobs_run 
+                    (this_interface_url, last_run) VALUES (?, ?);
+                """,
+                (local_settings.INTERFACE_URL, str(last_run)),
             )
-        conn.commit()
+            conn.commit()
 
-def update_time(time: datetime.datetime, app):
-   # global APP
-    with app.app_context():
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute(
+    def _update_time(self, last_run: datetime.datetime):
+        with self.app.app_context():
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute(
                 "UPDATE interface_jobs_run set last_run = ? WHERE this_interface_url = ?;",
-                (str(time), local_settings.INTERFACE_URL),
+                (str(last_run), local_settings.INTERFACE_URL),
             )
-        conn.commit()
+            conn.commit()
 
-
-def get_last_run(app):
-    with app.app_context():
-        conn = get_db()
-        cur = conn.cursor()
-        res = cur.execute(
+    def get_last_run(self):
+        with self.app.app_context():
+            conn = get_db()
+            cur = conn.cursor()
+            res = cur.execute(
                 "SELECT last_run FROM interface_jobs_run WHERE this_interface_url = ?;",
                 (local_settings.INTERFACE_URL,),
             ).fetchone()
-        return res[0]
+            return res[0]
 
-#def proces_pull_request():
+    def _background_job(self):
+        with self.app.app_context():
+            global RUNNING
+            if RUNNING:
+                self.scheduler.enter(
+                    local_settings.JOB_RUNNER_DELAY, 8, self._background_job
+                )
+                return
+            else:
+                RUNNING = True
 
+            last_run = self.get_last_run()
+            print(last_run)
 
+            notifications = self.forge.get_notifications(
+                since=date_parse(last_run)
+            ).get_payload()
+            #                    print(notifications)
+            for n in notifications:
+                (owner, _repo) = self.forge.get_owner_repo_from_url(n["repo_url"])
+                if all([n["type"] == PULL, owner == local_settings.ADMIN_USER]):
+                    patch = get_patch(n["pr_url"])
+                    local = n["repo_url"]
+                    upstream = n["upstream"]
+                    patch = self.forge.process_patch(
+                        patch, local, upstream, get_branch_name(n["pr_url"])
+                    )
+                    print(patch)
 
-def run(app):
-    #global APP
-    #APP = app
-    with app.app_context():
-        logging.getLogger('jobs').setLevel(logging.WARNING)
-        logger = logging.getLogger('jobs')
-        scheduler = sched.scheduler(time.time, time.sleep)
+            #                        if n["type"] ==
+            RUNNING = False
+            self.scheduler.enter(
+                local_settings.JOB_RUNNER_DELAY, 8, self._background_job
+            )
+            # argument=(app,))
 
-        init(app)
-
-        def background_job(app):
-            with app.app_context():
-                global RUNNING
-                print(RUNNING)
-                if RUNNING:
-                    scheduler.enter(local_settings.JOB_RUNNER_DELAY, 8, background_job)
-                    return
-                else:
-                    RUNNING = True
-
-                last_run = get_last_run(app)
-                print(last_run)
-
-                forge = get_forge()
-                notifications = forge.get_notifications(since=last_run).get_payload()
-                print(notifications)
-                #for n in notifications:
-                #    import json
-                #    print(json.dumps(n))
-
-#               #     if all([n["type"] == PULL, n["owner"] == local_settings.ADMIN_USER]):
-
-#               #     if n["type"] == 
-                logger.warning('hello from background_job %s', time.time())
-                scheduler.enter(local_settings.JOB_RUNNER_DELAY, 8, background_job, argument=(app,))
-                RUNNING = False
-
-        scheduler.enter(local_settings.JOB_RUNNER_DELAY, 8, background_job, argument=(app,))
-        threading.Thread(target=scheduler.run).start()
+    def run(self):
+        """Start job runner"""
+        self.scheduler.enter(
+            local_settings.JOB_RUNNER_DELAY, 8, self._background_job
+        )  # argument=(self,))
+        threading.Thread(target=self.scheduler.run).start()
