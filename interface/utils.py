@@ -16,8 +16,6 @@
 from urllib.parse import urlparse, urlunparse
 import requests
 
-from libgit import Repo, InterfaceAdmin, Patch
-
 
 def clean_url(url: str):
     """Remove paths and tracking elements from URL"""
