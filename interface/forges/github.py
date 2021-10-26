@@ -21,6 +21,7 @@ from interface import local_settings
 from . import utils
 from .base import Forge, CreateIssue, RepositoryInfo
 
+
 class GitHub(Forge):
     def __init__(self):
         self.host = urlparse(utils.clean_url(local_settings.GITHUB_HOST))
@@ -34,7 +35,8 @@ class GitHub(Forge):
 
     def _auth(self):
         return {"Authorization": format("token %s" % (local_settings.GITHUB_API_KEY))}
-def get_issues(self, owner: str, repo: str, *args, **kwargs):
+
+    def get_issues(self, owner: str, repo: str, *args, **kwargs):
         """Get the issues present in a provided repository"""
 
         # Defining a formatted url with the repo details

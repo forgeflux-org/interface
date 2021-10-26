@@ -18,7 +18,7 @@ Issues related routes
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from flask import Blueprint, jsonify, request
 
-from interface.forges import get_forge
+from interface.git import get_forge
 from interface.client import CREATE_ISSUE, COMMENT_ON_ISSUE
 from interface.forges.payload import CreateIssue
 
@@ -45,8 +45,8 @@ def create_issue():
      }
     """
     data = request.json()
-    forge = get_forge()
-    (owner, repo) = forge.get_owner_repo_from_url(data["repository_url"])
+    git = get_forge()
+    (owner, repo) = git.forge.get_owner_repo_from_url(data["repository_url"])
 
     c = CreateIssue()
     c.set_title(data["title"])
@@ -54,7 +54,7 @@ def create_issue():
     c.set_due_date(data["due_date"])
     c.set_closed(data["closed"])
 
-    resp = {"html_url": forge.create_issue(owner, repo, c)}
+    resp = {"html_url": git.forge.create_issue(owner, repo, c)}
     return jsonify(resp)
 
 
@@ -73,7 +73,9 @@ def comment_on_issue():
      { }
     """
     data = request.json()
-    forge = get_forge()
-    (owner, repo) = forge.get_owner_repo_from_url(data["repository_url"])
-    forge.comment_on_issue(owner, repo, issue_url=data["issue_url"], body=data["body"])
+    git = get_forge()
+    (owner, repo) = git.forge.get_owner_repo_from_url(data["repository_url"])
+    git.forge.comment_on_issue(
+        owner, repo, issue_url=data["issue_url"], body=data["body"]
+    )
     return jsonify({})

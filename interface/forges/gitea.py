@@ -13,15 +13,13 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from dateutil.parser import parse as date_parse
 import datetime
-from urllib.parse import urlparse, urlunparse, urlencode
+from dateutil.parser import parse as date_parse
+from urllib.parse import urlunparse, urlencode
 import requests
 
-import libgit
-import rfc3339
-
-from interface import local_settings, utils
+from rfc3339 import rfc3339
+from interface import local_settings
 
 from .base import Forge
 from .payload import CreateIssue, RepositoryInfo, CreatePullrequest
@@ -30,11 +28,8 @@ from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
 
 
 class Gitea(Forge):
-    def __init__(self, base_url: str, admin_user: str, admin_email):
-        super().__init__(
-            base_url=base_url, admin_user=admin_user, admin_email=admin_email
-        )
-        self.host = urlparse(utils.clean_url(local_settings.GITEA_HOST))
+    def __init__(self):  # self, base_url: str, admin_user: str, admin_email):
+        super().__init__(local_settings.GITEA_HOST)
 
     def _auth(self):
         return {"Authorization": format("token %s" % (local_settings.GITEA_API_KEY))}
@@ -103,7 +98,7 @@ class Gitea(Forge):
 
     def get_notifications(self, since: datetime.datetime) -> NotificationResp:
         query = {}
-        query["since"] = rfc3339.rfc3339(since)
+        query["since"] = rfc3339(since)
         url = self._get_url("/notifications")
         headers = self._auth()
         response = requests.request("GET", url, params=query, headers=headers)

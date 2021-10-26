@@ -19,7 +19,7 @@ Repository related routes
 from flask import Blueprint, jsonify, request
 from libgit import Patch
 
-from interface.forges import get_forge
+from interface.git import get_forge
 from interface.forges.payload import CreatePullrequest
 from interface.forges.utils import get_local_repository_from_foreign_repo
 from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO, FORK_FOREIGN
@@ -44,7 +44,7 @@ def get_repository():
     }
     """
     data = request.json()
-    payload = {"repository_url": get_forge().get_fetch_remote(data["url"])}
+    payload = {"repository_url": get_forge().forge.get_fetch_remote(data["url"])}
     return jsonify(payload)
 
 
@@ -66,9 +66,9 @@ def get_repository_info():
     }
     """
     data = request.json()
-    forge = get_forge()
+    git = get_forge()
     (owner, repo) = forge.get_owner_repo_from_url(data["repository_url"])
-    resp = forge.get_repository(owner, repo).get_payload()
+    resp = git.forge.get_repository(owner, repo).get_payload()
     return jsonify(resp)
 
 
@@ -86,9 +86,9 @@ def fork_local_repository():
     { } # empty json
     """
     data = request.json()
-    forge = get_forge()
-    (owner, repo) = forge.get_owner_repo_from_url(data["repository_url"])
-    forge.fork(owner, repo)
+    git = get_forge()
+    (owner, repo) = git.forge.get_owner_repo_from_url(data["repository_url"])
+    git.forge.fork(owner, repo)
     return jsonify({})
 
 
@@ -106,14 +106,14 @@ def fork_foreign_repository():
     { } # empty json
     """
     data = request.json()
-    forge = get_forge()
+    git = get_forge()
     repository_url = data["repository_url"]
     client = get_client()
     repository_url = client.get_repository(repository_url)
     info = client.get_repository_info(repository_url)
     local_name = get_local_repository_from_foreign_repo(repository_url)
-    forge.create_repository(repo=local_name, description=repository_url)
-    forge.git_clone(repository_url, local_name)
+    git.forge.create_repository(repo=local_name, description=repository_url)
+    git.git_clone(repository_url, local_name)
     return jsonify({})
 
 
@@ -139,23 +139,25 @@ def create_pull_request():
      { }
     """
     data = request.json()
-    forge = get_forge()
+    git = get_forge()
     repository_url = data["repository_url"]
-    (owner, repo) = forge.get_owner_repo_from_url(repository_url)
+    (owner, repo) = git.forge.get_owner_repo_from_url(repository_url)
     try:
-        forge.fork(owner, repo)
+        git.forge.fork(owner, repo)
     except:
         pass
-    forge.comment_on_issue(owner, repo, issue_url=data["issue_url"], body=data["body"])
+    git.forge.comment_on_issue(
+        owner, repo, issue_url=data["issue_url"], body=data["body"]
+    )
     patch = Patch(data["message"], data["author_name"], data["author_email"])
-    branch = forge.apply_patch(patch, repository_url, data["pr_url"])
+    branch = git.apply_patch(patch, repository_url, data["pr_url"])
     pr = CreatePullrequest()
     pr.set_base(data["base"])
     pr.set_body(data["message"])
     pr.set_title(data["title"])
     pr.set_owner(owner)
     pr.set_repo(repo)
-    pr.set_head(format("%s:%s", forge.admin.name, branch))
+    pr.set_head(format("%s:%s", git.admin.name, branch))
 
-    resp = {"html_url": forge.create_pull_request(pr)}
+    resp = {"html_url": git.forge.create_pull_request(pr)}
     return jsonify(resp)

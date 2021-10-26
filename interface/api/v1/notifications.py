@@ -16,7 +16,7 @@
 from flask import Blueprint, jsonify, request
 
 from interface import db
-from interface.forges import get_forge
+from interface.git import get_forge
 from interface.client import SUBSCRIBE
 
 bp = Blueprint("API_V1_NOTIFICATIONS", __name__, url_prefix="/notifications")
@@ -37,11 +37,11 @@ def subscribe():
     { } # empty json
     """
     data = request.json()
-    forge = get_forge()
-    repository_url = forge.get_fetch_remote(data["repository_url"])
-    interface_url = forge.get_fetch_remote(data["interface_url"])
-    (owner, repo) = forge.get_owner_repo_from_url(repository_url)
-    forge.subscribe(owner, repo)
+    git = get_forge()
+    repository_url = git.forge.get_fetch_remote(data["repository_url"])
+    interface_url = git.forge.get_fetch_remote(data["interface_url"])
+    (owner, repo) = git.forge.get_owner_repo_from_url(repository_url)
+    git.forge.subscribe(owner, repo)
 
     conn = db.get_db()
     cur = conn.cursor()
