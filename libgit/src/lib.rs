@@ -49,8 +49,8 @@ pub struct Repo {
     path: PathBuf,
 }
 
-#[derive(Debug, Clone)]
 #[pyclass(name = "Patch", module = "libgit")]
+#[derive(Debug, Clone)]
 pub struct Patch {
     #[pyo3(get, set)]
     pub message: String,
@@ -62,8 +62,8 @@ pub struct Patch {
     pub patch: String,
 }
 
-#[derive(Debug, Clone)]
 #[pyclass(name = "InterfaceAdmin", module = "libgit")]
+#[derive(Debug, Clone)]
 pub struct InterfaceAdmin {
     #[pyo3(get, set)]
     pub email: String,
