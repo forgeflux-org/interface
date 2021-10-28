@@ -29,6 +29,9 @@ from interface.ns import NameService
 class Forge:
     def __init__(self, host):  # self, base_url: str, admin_user: str, admin_email):
         self.host = urlparse(clean_url(host))
+        if all([self.host.scheme != "http", self.host.scheme != "https"]):
+            print(self.host.scheme)
+            raise Exception("scheme should be either http or https")
         self.ns = NameService(self.get_forge_url())
 
     def get_fetch_remote(self, url: str) -> str:
