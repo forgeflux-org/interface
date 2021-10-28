@@ -23,11 +23,13 @@ from urllib.parse import urlparse, urlunparse
 from .notifications import NotificationResp
 from .payload import RepositoryInfo, CreatePullrequest, CreateIssue
 from .utils import clean_url
+from interface.ns import NameService
 
 
 class Forge:
     def __init__(self, host):  # self, base_url: str, admin_user: str, admin_email):
         self.host = urlparse(clean_url(host))
+        self.ns = NameService(self.get_forge_url())
 
     def get_fetch_remote(self, url: str) -> str:
         """Get fetch remote for possible forge URL"""
@@ -47,6 +49,10 @@ class Forge:
         details = parsed.path.split("/")[1:3]
         (owner, repo) = (details[0], details[1])
         return (owner, repo)
+
+    def get_forge_url(self) -> str:
+        """get URL of software for that this interface is servicing"""
+        raise NotImplementedError
 
     def get_local_html_url(self, repo: str) -> str:
         """get local repository's HTML url"""
