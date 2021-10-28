@@ -1,3 +1,6 @@
+"""
+Forge behavior
+"""
 # Bridges software forges to create a distributed software development environment
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
 #
@@ -13,3 +16,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from .gitea import Gitea
+from .. import local_settings
+
+
+def get_forge():
+    return Gitea(
+        local_settings.GITEA_HOST,
+        local_settings.GITEA_USERNAME,
+        local_settings.ADMIN_EMAIL,
+    )

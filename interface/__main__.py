@@ -1,3 +1,6 @@
+"""
+Run ForgeFed Interface flask application
+"""
 # Bridges software forges to create a distributed software development environment
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
 #
@@ -13,12 +16,9 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from urllib.parse import urlparse, urlunparse
-import requests
 
+from interface.app import create_app
 
-def clean_url(url: str):
-    """Remove paths and tracking elements from URL"""
-    parsed = urlparse(url)
-    cleaned = urlunparse((parsed.scheme, parsed.netloc, "", "", "", ""))
-    return cleaned
+if __name__ == "__main__":
+    app = create_app()
+    app.run(threaded=True, port=7000)

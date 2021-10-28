@@ -307,7 +307,9 @@ impl Repo {
             git2::ResetType::Hard,
             Some(&mut checkout_options),
         )?;
-        Ok(processed_patch.as_str().unwrap().to_owned())
+        let patch = processed_patch.as_str().unwrap().to_owned();
+        println!("{}", patch);
+        Ok(patch)
     }
 }
 fn rm_file(repo: &Repo, file: &DiffFile) -> FResult<()> {

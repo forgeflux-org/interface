@@ -16,12 +16,10 @@
 
 from urllib.parse import urlparse, urlunparse
 import requests
-import sys
 
-sys.path.append("..")
-import local_settings
-import utils
-from forge import Forge, CreateIssue, RepositoryInfo
+from interface import local_settings
+from . import utils
+from .base import Forge, CreateIssue, RepositoryInfo
 
 
 class GitHub(Forge):
