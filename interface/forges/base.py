@@ -16,7 +16,7 @@ class Forge:
         self.base_url = urlparse(clean_url(base_url))
         if all([self.base_url.scheme != "http", self.base_url.scheme != "https"]):
             print(self.base_url.scheme)
-            raise Exception("scheme should be wither http or https")
+            raise Exception("scheme should be either http or https")
         self.admin = InterfaceAdmin(admin_email, admin_user)
 
     def _lock_repo(self, local_url):
