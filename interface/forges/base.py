@@ -26,8 +26,64 @@ from .utils import clean_url
 
 
 class Forge:
-    def __init__(self, host):  # self, base_url: str, admin_user: str, admin_email):
-        self.host = urlparse(clean_url(host))
+    def __init__(self, base_url: str, admin_user: str, admin_email):
+        self.base_url = urlparse(clean_url(base_url))
+        if all([self.base_url.scheme != "http", self.base_url.scheme != "https"]):
+            print(self.base_url.scheme)
+            raise Exception("scheme should be either http or https")
+        self.admin = InterfaceAdmin(admin_email, admin_user)
+
+    def _lock_repo(self, local_url):
+        conn = get_db()
+        cur = conn.cursor()
+
+        res = cur.execute(
+            "SELECT ID, is_locked from interface_repositories WHERE html_url = ?",
+            (local_url,),
+        ).fetch_one()
+
+        now = rfc3339.rfc3339(datetime.datetime.now())
+        if len(res) == 0:
+            cur.execute(
+                "INSERT OR IGNORE INTO interface_repositories (html_url, is_locked) VALUES (?);",
+                (local_url, now),
+            )
+            conn.commit()
+            return True
+        else:
+            if res[0]["is_locked"] is None:
+                cur.execute(
+                    "UPDATE interface_repositories is_locked = ? WHERE html_url = ?;",
+                    (now, local_url),
+                )
+                conn.commit()
+                cur.execute(
+                    "UPDATE interface_repositories is_locked = ? WHERE html_url = ?;",
+                    (None, local_url),
+                )
+                conn.commit()
+                return True
+            return False
+
+    def _unlock_repo(self, local_url):
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE interface_repositories is_locked = ? WHERE html_url = ?;",
+            (None, local_url),
+        )
+        conn.commit()
+
+    def git_clone(self, upstream_url: str, local_name: str):
+        local_url = self.get_local_html_url(local_name)
+        local_push_url = self.get_local_push_url(local_name)
+
+        if self._lock_repo(local_url):
+            repo = Repo(local_settings.BASE_DIR, local_push_url, upstream_url)
+            default_branch = repo.default_branch()
+            repo.push_local(default_branch)
+            self._unlock_repo(local_url)
+>>>>>>> a284569 (fix typos)
 
     def get_fetch_remote(self, url: str) -> str:
         """Get fetch remote for possible forge URL"""

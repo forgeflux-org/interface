@@ -1,6 +1,6 @@
 default: ## Run app
 	cd libgit && maturin build
-	. ./venv/bin/activate && pythom -m interface
+	. ./venv/bin/activate && python -m interface
 
 docker: ## Build Docker image from source
 	docker build -t forgedfed/interface .
