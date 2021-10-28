@@ -24,7 +24,7 @@ import datetime
 
 
 from interface import local_settings
-from interface.forges import get_forge
+from interface.git import get_forge
 from interface.forges.notifications import PULL, ISSUE
 from interface.forges.utils import get_patch, get_branch_name
 from interface.db import get_db
@@ -39,7 +39,7 @@ class Runner:
         logging.getLogger("jobs").setLevel(logging.WARNING)
         self.logger = logging.getLogger("jobs")
         self.scheduler = sched.scheduler(time.time, time.sleep)
-        self.forge = get_forge()
+        self.git = get_forge()
 
         with self.app.app_context():
             conn = get_db()
@@ -47,7 +47,7 @@ class Runner:
             last_run = date_parse("2021-10-10T17:06:02+05:30")
             cur.execute(
                 """
-                INSERT OR IGNORE INTO interface_jobs_run 
+                INSERT OR IGNORE INTO interface_jobs_run
                     (this_interface_url, last_run) VALUES (?, ?);
                 """,
                 (local_settings.INTERFACE_URL, str(last_run)),
@@ -88,17 +88,17 @@ class Runner:
             last_run = self.get_last_run()
             print(last_run)
 
-            notifications = self.forge.get_notifications(
+            notifications = self.git.forge.get_notifications(
                 since=date_parse(last_run)
             ).get_payload()
             #                    print(notifications)
             for n in notifications:
-                (owner, _repo) = self.forge.get_owner_repo_from_url(n["repo_url"])
+                (owner, _repo) = self.git.forge.get_owner_repo_from_url(n["repo_url"])
                 if all([n["type"] == PULL, owner == local_settings.ADMIN_USER]):
                     patch = get_patch(n["pr_url"])
                     local = n["repo_url"]
                     upstream = n["upstream"]
-                    patch = self.forge.process_patch(
+                    patch = self.git.process_patch(
                         patch, local, upstream, get_branch_name(n["pr_url"])
                     )
                     print(patch)
