@@ -27,7 +27,6 @@ from .notifications import Notification, NotificationResp, Comment
 from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
 
 
-
 class Gitea(Forge):
     def __init__(self):  # self, base_url: str, admin_user: str, admin_email):
         super().__init__(local_settings.GITEA_HOST)

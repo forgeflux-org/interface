@@ -31,6 +31,7 @@ PULL = "pull"
 COMMIT = "commit"
 REPOSITORY = "repository"
 
+
 class GitHub(Forge):
     def __init__(self):
         """Initializes the class variables"""
@@ -183,25 +184,24 @@ if __name__ == "__main__":
     print("HOST : ", g.host)
     print("GET URL : ", g._get_url(f"/repos/{owner}/{repo}"))
     print("AUTH : ", g._auth())
-#    print("ISSUES : ", g.get_issues(owner, repo))
-#    print("GET REPO : ", g.get_repository("dat-adi", "tmp"))
+    #    print("ISSUES : ", g.get_issues(owner, repo))
+    #    print("GET REPO : ", g.get_repository("dat-adi", "tmp"))
 
-#    issue = CreateIssue()
-#    issue.set_title("another test, to be extra sure.")
-#    print(g.create_issue(owner, repo, issue))
-#    print("SUBSCRIBE : ", g.subscribe("dat-adi", "tmp"))
+    #    issue = CreateIssue()
+    #    issue.set_title("another test, to be extra sure.")
+    #    print(g.create_issue(owner, repo, issue))
+    #    print("SUBSCRIBE : ", g.subscribe("dat-adi", "tmp"))
 
     print(
-            "INTO REPOSITORY : ",
+        "INTO REPOSITORY : ",
         g._into_repository(
             {
                 "name": "G V Datta Adithya",
                 "description": "Octowhat?",
                 "owner": {"login": "userwhat?"},
             }
-        )
+        ),
     )
-
 
     """
     notifications = g.get_notifications(since=date_parse("2021-10-10T17:06:02+05:30"))
