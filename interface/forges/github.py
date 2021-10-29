@@ -23,8 +23,8 @@ from rfc3339 import rfc3339
 
 from interface import local_settings
 from . import utils
-from .base import CreateIssue, Forge, RepositoryInfo
-from .notifications import Notification, Comment, NotificationResp, CreatePullRequest
+from .base import CreateIssue, Forge, RepositoryInfo, CreatePullrequest
+from .notifications import Notification, Comment, NotificationResp
 from .notifications import ISSUE, REPOSITORY
 
 
