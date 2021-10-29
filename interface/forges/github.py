@@ -23,13 +23,9 @@ from rfc3339 import rfc3339
 
 from interface import local_settings
 from . import utils
-from .base import CreateIssue, Forge, RepositoryInfo, Comment
-from .base import Notification, NotificationResp, CreatePullrequest
-
-ISSUE = "Issue"
-PULL = "pull"
-COMMIT = "commit"
-REPOSITORY = "repository"
+from .base import CreateIssue, Forge, RepositoryInfo
+from .notifications import Notification, Comment, NotificationResp, CreatePullRequest
+from .notifications import ISSUE, REPOSITORY
 
 
 class GitHub(Forge):
