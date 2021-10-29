@@ -18,15 +18,13 @@ from dateutil.parser import parse as date_parse
 import datetime
 from urllib.parse import urlparse, urlunparse
 import requests
-import sys
 
 from rfc3339 import rfc3339
 
-sys.path.append("..")
-import local_settings
-import utils
-from forge import CreateIssue, Forge, RepositoryInfo, Comment
-from forge import Notification, NotificationResp, CreatePullrequest
+from interface import local_settings
+from . import utils
+from .base import CreateIssue, Forge, RepositoryInfo, Comment
+from .base import Notification, NotificationResp, CreatePullrequest
 
 ISSUE = "Issue"
 PULL = "pull"

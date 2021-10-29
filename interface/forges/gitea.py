@@ -13,24 +13,24 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from dateutil.parser import parse as date_parse
 import datetime
-from urllib.parse import urlparse, urlunparse, urlencode
+from dateutil.parser import parse as date_parse
+from urllib.parse import urlunparse, urlencode
 import requests
-from libgit import InterfaceAdmin
 
-from rfc3339 import rfc3338
+from rfc3339 import rfc3339
+from interface import local_settings
 
-from interface import local_settings, utils
-from interface.forge import CreateIssue, Forge, RepositoryInfo, Comment
-from interface.forge import Notification, NotificationResp, CreatePullrequest
-from interface.forge import ISSSUE, PULL, COMMIT, REPOSITORY
+from .base import Forge
+from .payload import CreateIssue, RepositoryInfo, CreatePullrequest
+from .notifications import Notification, NotificationResp, Comment
+from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
+
 
 
 class Gitea(Forge):
-    def __init__(self, base_url: str, admin_user: str, admin_email):
-        super().__init__(base_url=base_url, admin_user=admin_user, admin_email=admin_email)
-        self.host = urlparse(utils.clean_url(local_settings.GITEA_HOST))
+    def __init__(self):  # self, base_url: str, admin_user: str, admin_email):
+        super().__init__(local_settings.GITEA_HOST)
 
     def _auth(self):
         return {"Authorization": format("token %s" % (local_settings.GITEA_API_KEY))}
@@ -142,8 +142,8 @@ class Gitea(Forge):
             val.append(rn)
         return NotificationResp(val, date_parse(last_read))
 
-    def create_pull_request(self, pr: CreatePullrequest):
-        url = self._get_url(format("/repos/%s/%s/pulls" , (pr.owner, pr.repo)))
+    def create_pull_request(self, owner: str, repo: str, pr: CreatePullrequest):
+        url = self._get_url(format("/repos/%s/%s/pulls" % (owner, repo)))
         headers = self._auth()
 
         payload = pr.get_payload()
@@ -168,20 +168,19 @@ class Gitea(Forge):
     def get_issue_index(self, issue_url, owner: str) -> int:
         parsed = urlparse(issue_url)
         path = parsed.path
-        path.endswith('/')
-        if path.endswith('/'):
-            path=path[0:-1]
-        index = path.split(owner)[0].split('issue')[2]
-        if index.startswith('/'):
+        path.endswith("/")
+        if path.endswith("/"):
+            path = path[0:-1]
+        index = path.split(owner)[0].split("issue")[2]
+        if index.startswith("/"):
             index = index[1:]
 
-        if index.endswith('/'):
+        if index.endswith("/"):
             index = index[0:-1]
 
         return int(index)
 
-
-    def comment_on_issue(self, owner: str, repo: str, issue_url: str, body:str):
+    def comment_on_issue(self, owner: str, repo: str, issue_url: str, body: str):
         headers = self._auth()
         (owner, repo) = self.get_fetch_remote(issue_url)
         index = self.get_issue_index(issue_url, owner)
@@ -189,14 +188,17 @@ class Gitea(Forge):
         payload = {"body": body}
         _response = requests.request("POST", url, json=payload, headers=headers)
 
-    def get_local_html_url(self, repo:str) -> str:
+    def get_local_html_url(self, repo: str) -> str:
         path = format("/%s/%s", local_settings.GITEA_USERNAME, repo)
         return urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
 
-    def get_local_push_url(self, repo:str) -> str:
-        return format("git@%s:%s/%s.git", self.host.netloc, local_settings.GITEA_USERNAME, repo)
+    def get_local_push_url(self, repo: str) -> str:
+        return format(
+            "git@%s:%s/%s.git", self.host.netloc, local_settings.GITEA_USERNAME, repo
+        )
 
-#if __name__ == "__main__":
+
+# if __name__ == "__main__":
 #    owner = "realaravinth"
 #    repo = "tmp"
 #    g = Gitea()

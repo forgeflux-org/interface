@@ -49,8 +49,8 @@ pub struct Repo {
     path: PathBuf,
 }
 
-#[derive(Debug, Clone)]
 #[pyclass(name = "Patch", module = "libgit")]
+#[derive(Debug, Clone)]
 pub struct Patch {
     #[pyo3(get, set)]
     pub message: String,
@@ -62,8 +62,8 @@ pub struct Patch {
     pub patch: String,
 }
 
-#[derive(Debug, Clone)]
 #[pyclass(name = "InterfaceAdmin", module = "libgit")]
+#[derive(Debug, Clone)]
 pub struct InterfaceAdmin {
     #[pyo3(get, set)]
     pub email: String,
@@ -307,7 +307,9 @@ impl Repo {
             git2::ResetType::Hard,
             Some(&mut checkout_options),
         )?;
-        Ok(processed_patch.as_str().unwrap().to_owned())
+        let patch = processed_patch.as_str().unwrap().to_owned();
+        println!("{}", patch);
+        Ok(patch)
     }
 }
 fn rm_file(repo: &Repo, file: &DiffFile) -> FResult<()> {
