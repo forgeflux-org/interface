@@ -27,7 +27,6 @@ from .notifications import Notification, NotificationResp, Comment
 from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
 
 
-
 class Gitea(Forge):
     def __init__(self):  # self, base_url: str, admin_user: str, admin_email):
         super().__init__(local_settings.GITEA_HOST)
@@ -121,6 +120,11 @@ class Gitea(Forge):
 
             if notification_type == REPOSITORY:
                 print(n)
+            if notification_type == PULL:
+                rn.set_pr_url(request.request("GET", subject["url"]).json()["html_url"])
+                rn.set_upstream(n["repository"]["description"])
+                print(n["repository"]["description"])
+
             if notification_type == ISSUE:
                 comment_url = subject["latest_comment_url"]
                 print(comment_url)
