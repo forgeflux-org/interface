@@ -45,6 +45,9 @@ class GitHub(Forge):
         """Authorizes the request with a token"""
         return {"Authorization": format("token %s" % (local_settings.GITHUB_API_KEY))}
 
+    def get_forge_url(self) -> str:
+        return urlunparse((self.host.scheme, self.host.netloc, "", "", "", ""))
+
     def get_issues(self, owner: str, repo: str, *args, **kwargs):
         """Get the issues present in a provided repository"""
 

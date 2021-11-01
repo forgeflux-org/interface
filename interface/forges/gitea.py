@@ -60,6 +60,9 @@ class Gitea(Forge):
         response = requests.request("GET", url, params=query, headers=headers)
         return response.json()
 
+    def get_forge_url(self) -> str:
+        return urlunparse((self.host.scheme, self.host.netloc, "", "", "", ""))
+
     def create_issue(self, owner: str, repo: str, issue: CreateIssue):
         """Creates issue on a repository"""
         url = self._get_url(format("/repos/%s/%s/issues" % (owner, repo)))

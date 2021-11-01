@@ -12,3 +12,5 @@ BASE_DIR = ""
 ADMIN_EMAIL = ""
 ADMIN_USER = ""
 JOB_RUNNER_DELAY = 10  ## in seconds
+
+DEFAULT_NORTHSTAR = "https://northstar.forgefed.io"
