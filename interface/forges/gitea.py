@@ -124,9 +124,7 @@ class Gitea(Forge):
             if notification_type == REPOSITORY:
                 print(n)
             if notification_type == PULL:
-                rn.set_pr_url(
-                    requests.request("GET", subject["url"]).json()["html_url"]
-                )
+                rn.set_pr_url(request.request("GET", subject["url"]).json()["html_url"])
                 rn.set_upstream(n["repository"]["description"])
                 print(n["repository"]["description"])
 

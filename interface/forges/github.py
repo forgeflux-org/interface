@@ -14,19 +14,27 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from dateutil.parser import parse as date_parse
+import datetime
 from urllib.parse import urlparse, urlunparse
 import requests
 
+from rfc3339 import rfc3339
+
 from interface import local_settings
 from . import utils
-from .base import Forge, CreateIssue, RepositoryInfo
+from .base import CreateIssue, Forge, RepositoryInfo, CreatePullrequest
+from .notifications import Notification, Comment, NotificationResp
+from .notifications import ISSUE, REPOSITORY
 
 
 class GitHub(Forge):
     def __init__(self):
+        """Initializes the class variables"""
         self.host = urlparse(utils.clean_url(local_settings.GITHUB_HOST))
 
     def _get_url(self, path: str) -> str:
+        """Retrieves the forge url"""
         if path.startswith("/"):
             path = path[1:]
 
@@ -34,6 +42,7 @@ class GitHub(Forge):
         return url
 
     def _auth(self):
+        """Authorizes the request with a token"""
         return {"Authorization": format("token %s" % (local_settings.GITHUB_API_KEY))}
 
     def get_forge_url(self) -> str:
@@ -43,7 +52,8 @@ class GitHub(Forge):
         """Get the issues present in a provided repository"""
 
         # Defining a formatted url with the repo details
-        url = format("https://api.github.com/repos/%s/%s/issues" % (owner, repo))
+        url = self._get_url(format("/repos/%s/%s/issues" % (owner, repo)))
+        print(url)
 
         # Requesting the issues present in the repo
         # GitHub provides a paginated response for 30
@@ -86,21 +96,122 @@ class GitHub(Forge):
         print("Payload deets", info.get_payload())
         return info
 
+    def create_repository(self, repo: str, description: str):
+        """Creates a repository in the users forge"""
+        url = self._get_url("/users/repos/")
+        payload = {"name": repo, "description": description}
+        headers = self._auth()
+        _response = requests.request("POST", url, json=payload, headers=headers)
+
+    def subscribe(self, owner: str, repo: str):
+        """Subscribes/watches a repository"""
+        url = self._get_url(format("/repos/%s/%s/subscription" % (owner, repo)))
+        headers = self._auth()
+        _response = requests.request("PUT", url, headers=headers)
+
+    def get_notifications(self, since: datetime.datetime) -> NotificationResp:
+        """Notifications for watched repositories"""
+        query = {}
+        query["since"] = rfc3339(since)
+        url = self._get_url("/notifications")
+        headers = self._auth()
+        response = requests.request("GET", url, params=query, headers=headers)
+        notifications = response.json()
+        last_read = ""
+        val = []
+        for n in notifications:
+            rn = Notification()
+            subject = n["subject"]
+            notification_type = subject["type"]
+
+            last_read = n["updated_at"]
+            rn.set_updated_at(last_read)
+            rn.set_type(notification_type)
+            rn.set_title(subject["title"])
+            rn.set_state(subject["state"])
+            rn.set_repo_url(n["repository"]["html_url"])
+
+            if notification_type == REPOSITORY:
+                print(n)
+            if notification_type == ISSUE:
+                comment_url = subject["latest_comment_url"]
+                print(comment_url)
+                if len(comment_url) != 0:
+                    resp = requests.request("GET", comment_url)
+                    comment = resp.json()
+                    if date_parse(comment["updated_at"]) > since:
+                        c = Comment()
+                        c.set_updated_at(comment["updated_at"])
+                        c.set_author(comment["user"]["login"])
+                        c.set_body(comment["body"])
+                        pr_url = comment["pull_request_url"]
+                        if len(comment["pull_request_url"]) == 0:
+                            c.set_url(comment["issue_url"])
+                        else:
+                            url = pr_url
+                            c.set_url(comment["pull_request_url"])
+                        rn.set_comment(c)
+            val.append(rn)
+        print(last_read)
+        return NotificationResp(val, date_parse(last_read))
+
+    def create_pull_request(self, owner: str, repo: str, pr: CreatePullrequest):
+        """Creates a POST request for the Pull Request"""
+        url = self._get_url(format("/repos/%s/%s/pulls" % (owner, repo)))
+        headers = self._auth()
+
+        payload = pr.get_payload()
+        for key in ["repo", "owner"]:
+            del payload[key]
+
+        payload["assignees"] = []
+        payload["lables"] = [0]
+        payload["milestones"] = 0
+
+        response = requests.request("POST", url, json=payload, headers=headers)
+        print(response.json())
+        return response.json()
+
 
 if __name__ == "__main__":
     # Testing the API primitively with a simple call
+
+    # Setting owner and repo
     owner = "dat-adi"
     repo = "tmp"
     g = GitHub()
-    issue = CreateIssue()
-    issue.set_title("testing yet again")
-    print(g.create_issue(owner, repo, issue))
+    print("HOST : ", g.host)
+    print("GET URL : ", g._get_url(f"/repos/{owner}/{repo}"))
+    print("AUTH : ", g._auth())
+    #    print("ISSUES : ", g.get_issues(owner, repo))
+    #    print("GET REPO : ", g.get_repository("dat-adi", "tmp"))
+
+    #    issue = CreateIssue()
+    #    issue.set_title("another test, to be extra sure.")
+    #    print(g.create_issue(owner, repo, issue))
+    #    print("SUBSCRIBE : ", g.subscribe("dat-adi", "tmp"))
+
     print(
+        "INTO REPOSITORY : ",
         g._into_repository(
             {
                 "name": "G V Datta Adithya",
                 "description": "Octowhat?",
                 "owner": {"login": "userwhat?"},
             }
-        )
+        ),
     )
+
+    """
+    notifications = g.get_notifications(since=date_parse("2021-10-10T17:06:02+05:30"))
+    print(notifications)
+
+    pr = CreatePullrequest()
+    pr.set_owner(owner)
+    pr.set_repo(repo)
+    pr.set_base("main")
+    pr.set_head("dev")
+    pr.set_title("How many more tests?")
+    pr.set_body("Does this create a PR?")
+    print(g.create_pull_request(owner, repo, pr))
+    """
