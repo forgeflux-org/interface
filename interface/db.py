@@ -20,6 +20,7 @@ from flask import current_app, g
 from flask.cli import with_appcontext
 from yoyo import read_migrations
 from yoyo import get_backend
+from libgit import System
 
 from interface import local_settings
 
@@ -32,6 +33,13 @@ def get_db() -> sqlite3.Connection:
         )
         g.db.row_factory = sqlite3.Row
     return g.db
+
+
+def get_git_system() -> System:
+    """Get git system"""
+    if "git_system" not in g:
+        g.git_system = System(local_settings.BASE_DIR)
+    return g.git_system
 
 
 def close_db(e=None):
