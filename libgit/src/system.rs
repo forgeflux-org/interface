@@ -28,15 +28,6 @@ use sled::{Db, Tree};
 use crate::error::*;
 use crate::{InterfaceAdmin, Patch, Repo};
 
-#[pyclass(name = "System", module = "libgit")]
-pub struct System {
-    #[allow(dead_code)]
-    db: Db,
-    pub remotes: Tree,
-    pub lock: Tree,
-    pub base: String,
-}
-
 #[derive(Deserialize, Serialize)]
 struct Lock {
     is_locked: bool,
@@ -57,6 +48,16 @@ impl Lock {
     }
 }
 
+#[pyclass(name = "System", module = "libgit")]
+#[derive(Debug, Clone)]
+pub struct System {
+    #[allow(dead_code)]
+    db: Db,
+    pub remotes: Tree,
+    pub lock: Tree,
+    pub base: String,
+}
+
 #[pymethods]
 impl System {
     #[new]
@@ -74,7 +75,7 @@ impl System {
         })
     }
 
-    pub fn init_repo(&self, base: &str, local: String, upstream: String) -> FResult<()> {
+    pub fn init_repo(&self, local: String, upstream: String) -> FResult<()> {
         let lock = Lock::new(false);
         self.lock
             .insert(local.as_bytes(), bincode::serialize(&lock).unwrap())
@@ -84,7 +85,7 @@ impl System {
             .insert(local.as_bytes(), upstream.as_bytes())
             .unwrap();
 
-        Repo::new(base, local, upstream)?;
+        Repo::new(&self.base, local, upstream)?;
         Ok(())
     }
 

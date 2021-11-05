@@ -37,6 +37,7 @@ use url::Url;
 pub mod error;
 pub mod system;
 use error::*;
+pub use system::System;
 
 #[pyclass(name = "Patch", module = "libgit")]
 #[derive(Debug, Clone)]
@@ -358,7 +359,7 @@ fn connect_local(repo: &Repo) -> FResult<Remote> {
 #[pyo3(name = "libgit")]
 fn my_extension(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Repo>()?;
-    m.add_class::<system::System>()?;
+    m.add_class::<System>()?;
     m.add_class::<InterfaceAdmin>()?;
     m.add_class::<Patch>()?;
     m.add("RemoteNameExists", py.get_type::<RemoteNameExists>())?;

@@ -1,7 +1,7 @@
 [package]
 name = "libgit"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 authors = ["Aravinth Manivannan <realaravinth@batsense.net>"]
 license = "AGPLv3 or later version"
 
