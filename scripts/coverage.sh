@@ -1,13 +1,17 @@
+#!/bin/bash
 readonly GRCOV_DOWNLOAD="https://github.com/mozilla/grcov/releases/download/v0.8.2/grcov-linux-x86_64.tar.bz2"
-readonly GRCOV_TARBAL="grcov.tar.bz2"
-readonly GRCOV="grcov"
-
+readonly TMP_DIR=$(pwd)/tmp
 readonly PROJECT_ROOT=$(pwd)/libgit
+readonly GRCOV_TARBAL="$TMP_DIR/grcov.tar.bz2"
+readonly GRCOV="$TMP_DIR/grcov"
+
 
 clean_up() {
 	cd $PROJECT_ROOT
-	/bin/rm default.profraw  lcov.info || true
-	cd $cur_dir
+	/bin/rm default.profraw  lcov.info *.profraw || true
+	cd target
+	/bin/rm default.profraw  lcov.info *.profraw || true
+	cargo clean
 }
 
 download() {
@@ -15,29 +19,34 @@ download() {
 	then 
 		echo "[*] Downloading grcov"
 		wget --quiet  --output-doc=$GRCOV_TARBAL $GRCOV_DOWNLOAD;
+		cd $TMP_DIR
 		tar -xf $GRCOV_TARBAL;
+		cd $PROJECT_ROOT
 	fi
 }
 
 build_and_test() {
-	RUSTFLAGES="-Zinstrument-coverage"
-	LLVM_PROFILE_FILE="libgit-%p-%m.profraw"
-
+	export RUSTFLAGS="-Zinstrument-coverage"
 	cd $PROJECT_ROOT
+
 	echo "[*] Building project"
 	cargo build
 
+	export LLVM_PROFILE_FILE="target/libgit-%p-%m.profraw"
+
 	echo "[*] Running tests"
-    cargo test --all --all-features --no-fail-fast
+    cargo test
 
 	echo "[*] Generating coverage"
-	../$GRCOV . --binary-path  \
+	$GRCOV target/ --binary-path  \
 		./target/debug/ \
 		-s . -t lcov --branch \
 		--ignore-not-existing \
-		--ignore "/*" -o lcov.info
+		--ignore "../*" -o target/lcov.info
 }
 
+cd $PROJECT_ROOT
+mkdir $TMP_DIR || true
 clean_up
 download
 build_and_test
