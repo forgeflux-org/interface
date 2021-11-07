@@ -1,0 +1,48 @@
+name: Coverage
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - master
+
+jobs:
+  build_and_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - stable
+
+    name: ${{ matrix.version }} - x86_64-unknown-linux-gnu
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: ⚡ Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+            libgit/target
+          key: ${{ runner.os }}-cargo-${{ matrix.version }}
+
+      - name: Install ${{ matrix.version }}
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.version }}-x86_64-unknown-linux-gnu
+          profile: minimal
+          override: true
+
+      - name: Generate coverage file
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          args: '--manifest-path ./libgit/Cargo.toml -t 1200'
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          files: ./libgit/cobertura.xml

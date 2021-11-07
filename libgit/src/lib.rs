@@ -264,7 +264,7 @@ impl Repo {
     /// process patch for federated transport
     pub(crate) fn process_patch(&self, patch: String, branch_name: String) -> FResult<String> {
         let buf: Vec<u8> = patch.into();
-        let diff = git2::Diff::from_buffer(&buf)?;
+        let diff = git2::Diff::from_buffer(&buf).unwrap();
         let head = self.repo.head()?;
         let head_commit = head.peel_to_commit()?;
         let mut tmp_branch = self.repo.branch(&branch_name, &head_commit, false)?;
@@ -336,7 +336,11 @@ fn rm_file(repo: &Repo, file: &DiffFile) -> FResult<()> {
 }
 
 fn get_ref(branch: &str) -> String {
-    format!("refs/heads/{}", branch)
+    if branch.contains("refs/heads/") {
+        branch.to_owned()
+    } else {
+        format!("refs/heads/{}", branch)
+    }
 }
 
 fn connect_upstream(repo: &Repo) -> FResult<Remote> {
@@ -374,16 +378,211 @@ fn my_extension(py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
-    use std::env::temp_dir;
+    use std::env;
+    use std::fs;
+    use std::io::Write;
 
-    const UPSTREAM: &str = "https://github.com/forgefedv2/forgedfed-spec";
+    pub const AUTHOR: &str = "Tester";
+    pub const AUTHOR_EMAIL: &str = "tester@foo.com";
+
+    pub fn make_changes(repo: &Repo, branch_name: &str) -> String {
+        fn change_and_commit(repo: &Repo, file: &str, change: &str) {
+            let path = repo.path.join(file);
+            let mut options = fs::OpenOptions::new();
+            options.write(true).append(true).create_new(!path.exists());
+            let mut fd = options
+                .open(&path)
+                .expect(&format!("{:?}", path.as_os_str()));
+
+            fd.write_all(change.as_bytes()).unwrap();
+            fd.flush().unwrap();
+            let author = Signature::now(AUTHOR, AUTHOR_EMAIL).unwrap();
+
+            let mut index = repo.repo.index().unwrap();
+            index
+                .add_all(["*"].iter(), IndexAddOption::DEFAULT, None)
+                .unwrap();
+            index.write().unwrap();
+            let id_mailmap = index.write_tree().unwrap();
+            let tree_mailmap = repo.repo.find_tree(id_mailmap).unwrap();
+
+            let cur_head = repo.repo.head().unwrap();
+            //  let commit_tree = tmp_ref.peel_to_tree()?;
+            let commit = cur_head.peel_to_commit().unwrap();
+
+            repo.repo
+                .commit(
+                    Some("HEAD"),
+                    &author,
+                    &author,
+                    &file,
+                    &tree_mailmap,
+                    &[&commit],
+                )
+                .unwrap();
+        }
+        // src/lib.rs
+        let files = [
+            ("src/lib.rs", "change lib.rs"),
+            ("README.md", "change readme"),
+        ];
+
+        let head = repo.repo.head().unwrap();
+
+        let tmp_branch = repo
+            .repo
+            .branch(
+                &branch_name,
+                &repo.repo.head().unwrap().peel_to_commit().unwrap(),
+                false,
+            )
+            .unwrap();
+
+        repo.repo
+            .set_head(tmp_branch.get().name().unwrap())
+            .unwrap();
+
+        for (file, change) in files {
+            change_and_commit(repo, &file, change);
+        }
+
+        let new_files = ["foo", "bar"];
+        let mut ignore = String::new();
+        for i in new_files {
+            ignore.push_str(i);
+            ignore.push('\n');
+            change_and_commit(repo, &i, i);
+        }
+
+        change_and_commit(&repo, IGNORE_FILE, &ignore);
+
+        let mut diff = repo
+            .repo
+            .diff_tree_to_tree(
+                Some(&head.peel_to_tree().unwrap()),
+                Some(&repo.repo.head().unwrap().peel_to_tree().unwrap()),
+                None,
+            )
+            .unwrap();
+        let patch = diff
+            .format_email(
+                1,
+                1,
+                &repo.repo.head().unwrap().peel_to_commit().unwrap(),
+                None,
+            )
+            .unwrap();
+
+        let mut checkout_options = CheckoutBuilder::new();
+        checkout_options.force();
+        let head_obj = head.peel(ObjectType::Tree).unwrap();
+
+        let mut tmp_branch = repo.repo.head().unwrap();
+
+        repo.repo
+            .checkout_tree(&head_obj, Some(&mut checkout_options))
+            .unwrap();
+        repo.repo.set_head(head.name().unwrap()).unwrap();
+        tmp_branch.delete().unwrap();
+
+        patch.as_str().unwrap().to_owned()
+    }
 
     #[test]
-    fn everything_works() {
-        let base = temp_dir().join("everything_works");
+    fn repo_works() {
+        const NAME: &str = "REPO_WORKS";
+        const UPSTREAM: &str = "https://github.com/realaravinth/actix-auth-middleware";
+        let tmp = env::temp_dir();
+        let base_dir = tmp.join(NAME);
+        let local = base_dir.join("local");
+        let _ = fs::remove_dir_all(&base_dir);
+        fs::create_dir_all(&local).unwrap();
+        let local_bare_repo = Repository::init_bare(&local).unwrap();
+        let local_repo = Repo::new(
+            base_dir.as_os_str().to_str().unwrap(),
+            local.as_os_str().to_str().unwrap().to_owned(),
+            UPSTREAM.into(),
+        )
+        .unwrap();
+
+        local_repo.fetch_upstream().unwrap();
+
+        let default_branch = local_repo.default_branch().unwrap();
+        local_repo.push_local(&default_branch).unwrap();
+
+        assert_eq!(
+            local_repo.repo.head().unwrap().peel_to_tree().unwrap().id(),
+            local_bare_repo
+                .head()
+                .unwrap()
+                .peel_to_tree()
+                .unwrap()
+                .as_object()
+                .id(),
+        );
+
+        let patch = make_changes(&local_repo, NAME);
+        println!("{}", patch);
+        let processed_patch = local_repo.process_patch(patch, NAME.into()).unwrap();
+        println!("{}", processed_patch);
+        assert!(!processed_patch.contains(IGNORE_FILE));
+        assert!(!processed_patch.contains("foo"));
+        assert!(!processed_patch.contains("bar"));
+        assert!(processed_patch.contains("lib.rs"));
+        assert!(processed_patch.contains("README.md"));
+
+        let patch = Patch::new(
+            NAME.into(),
+            AUTHOR.into(),
+            AUTHOR_EMAIL.into(),
+            processed_patch,
+        )
+        .unwrap();
+
+        let admin = InterfaceAdmin::new(AUTHOR_EMAIL.into(), AUTHOR.into()).unwrap();
+
+        local_repo.apply_patch(patch, &admin, NAME.into()).unwrap();
+        //  let head = local_repo.repo.head().unwrap();
+        let tmp_branch = local_repo.repo.find_reference(&get_ref(NAME)).unwrap();
+
+        let mut checkout_options = CheckoutBuilder::new();
+        checkout_options.force();
+        let branch_head_obj = tmp_branch.peel(ObjectType::Tree).unwrap();
+
+        local_repo
+            .repo
+            .checkout_tree(&branch_head_obj, Some(&mut checkout_options))
+            .unwrap();
+        local_repo.repo.set_head(&get_ref(NAME)).unwrap();
+
+        assert!(fs::read_to_string(local_repo.path.join("src/lib.rs"))
+            .unwrap()
+            .contains("change lib.rs"));
+
+        assert!(fs::read_to_string(local_repo.path.join("README.md"))
+            .unwrap()
+            .contains("change readme"));
+
+        local_repo.push_local(NAME).unwrap();
+        let tmp_branch_remote = local_bare_repo.find_reference(&get_ref(NAME)).unwrap();
+
+        assert_eq!(
+            local_repo.repo.head().unwrap().peel_to_tree().unwrap().id(),
+            tmp_branch_remote.peel_to_tree().unwrap().as_object().id(),
+        );
+    }
+
+    #[test]
+    fn get_ref_works() {
+        let branches = [
+            ("master", "refs/heads/master"),
+            ("refs/heads/master", "refs/heads/master"),
+        ];
+        for (name, ref_) in branches.iter() {
+            assert_eq!(get_ref(name), *ref_);
+        }
     }
 }
