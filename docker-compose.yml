@@ -1,0 +1,6 @@
+version: '3'
+
+services:
+  northstar:
+    image: forgedfed/northstar:latest
+    network_mode: "host"
