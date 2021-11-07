@@ -42,4 +42,4 @@ jobs:
         run: cd libgit && cargo check --all --bins --examples --tests
 
       - name: tests
-        run: cargo test --all --all-features --no-fail-fast
+        run: cd libgit && cargo test --all --all-features --no-fail-fast

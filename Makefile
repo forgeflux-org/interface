@@ -1,6 +1,12 @@
+
+
 default: ## Run app
 	cd libgit && maturin build
 	. ./venv/bin/activate && python -m interface
+
+coverage:
+	# rustup component add llvm-tools-preview is required
+	@./scripts/coverage.sh
 
 docker: ## Build Docker image from source
 	docker build -t forgedfed/interface .
