@@ -11,7 +11,7 @@ default: ## Run app
 coverage:
 	# rustup component add llvm-tools-preview is required
 	@- cd libgit && /bin/rm default.profraw  lcov.info
-	@if [[ ! -e $(GRCOV) ]]; then \
+	@if [ ! -e $(GRCOV) ]; then \
 		wget --quiet  --output-doc=$(GRCOV_TARBAL) $(GRCOV_DOWNLOAD); \
 			tar -xf $(GRCOV_TARBAL); \
 	fi
