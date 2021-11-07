@@ -20,13 +20,11 @@ import datetime
 from urllib.parse import urlparse
 import rfc3339
 
-from libgit import InterfaceAdmin, Repo, Patch
+from libgit import InterfaceAdmin, Repo, Patch, System
 
-from interface.db import get_db
+from interface.db import get_db, get_git_system
 from interface import local_settings
 
-# from interface.forges.notifications import Notification, NotificationResp, Comment
-# from interface.forges.payload import RepositoryInfo, CreatePullrequest, CreateIssue
 from interface.forges.utils import get_branch_name
 from interface.forges.base import Forge
 from interface.forges.gitea import Gitea
@@ -37,78 +35,51 @@ class Git:
         self.forge = forge
         self.admin = InterfaceAdmin(admin_email, admin_user)
 
-    def _lock_repo(self, local_url):
-        conn = get_db()
-        cur = conn.cursor()
-
-        res = cur.execute(
-            "SELECT ID, is_locked from interface_repositories WHERE html_url = ?",
-            (local_url,),
-        ).fetch_one()
-
-        now = rfc3339.rfc3339(datetime.datetime.now())
-        if len(res) == 0:
-            cur.execute(
-                "INSERT OR IGNORE INTO interface_repositories (html_url, is_locked) VALUES (?);",
-                (local_url, now),
-            )
-            conn.commit()
-            return True
-        else:
-            if res[0]["is_locked"] is None:
-                cur.execute(
-                    "UPDATE interface_repositories is_locked = ? WHERE html_url = ?;",
-                    (now, local_url),
-                )
-                conn.commit()
-                cur.execute(
-                    "UPDATE interface_repositories is_locked = ? WHERE html_url = ?;",
-                    (None, local_url),
-                )
-                conn.commit()
-                return True
-            return False
-
-    def _unlock_repo(self, local_url):
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute(
-            "UPDATE interface_repositories is_locked = ? WHERE html_url = ?;",
-            (None, local_url),
-        )
-        conn.commit()
-
     def git_clone(self, upstream_url: str, local_name: str):
-        local_url = self.forge.get_local_html_url(local_name)
         local_push_url = self.forge.get_local_push_url(local_name)
 
-        if self._lock_repo(local_url):
-            repo = Repo(local_settings.BASE_DIR, local_push_url, upstream_url)
-            default_branch = repo.default_branch()
-            repo.push_local(default_branch)
-            self._unlock_repo(local_url)
+        system = get_git_system()
+        repo = system.init_repo(local_push_url, upstream_url)
+        default_branch = repo.default_branch()
+        system.push_local(repo, default_branch)
 
-    def apply_patch(self, patch: Patch, repository_url: str, pr_url: str) -> str:
+    def apply_patch(
+        self, patch: Patch, upstream_repository_url: str, pr_url: str
+    ) -> str:
         """apply patch"""
-        (_, repo) = self.forge.get_owner_repo_from_url(repository_url)
-        local_url = self.forge.get_local_html_url(repo)
-        local_push_url = self.forge.get_local_push_url(repo)
         branch = get_branch_name(pr_url)
-        if self._lock_repo(local_url):
-            repo = Repo(local_settings.BASE_DIR, local_push_url, repository_url)
-            repo.apply_patch(patch, self.admin, branch)
-            repo.push_loca(branch)
-            self._unlock_repo(local_url)
+        system = get_git_system()
+        repo = system.with_upstream(upstream_repository_url)
+        system.apply_patch(patch, self.admin, branch)
+        system.push_loca(repo, branch)
         return branch
 
-    def process_patch(
-        self, patch: str, local_url: str, upstream_url, branch_name
-    ) -> str:
+    def process_patch(self, patch: str, local_url: str, branch_name) -> str:
         """process patch"""
-        repo = Repo(local_settings.BASE_DIR, local_url, upstream_url)
-        repo.fetch_upstream()
-        patch = repo.process_patch(patch, branch_name)
+        system = get_git_system()
+        repo = system.with_local(local_url)
+        system.fetch_upstream(repo)
+        patch = system.process_patch(repo, patch, branch_name)
         return patch
+
+    def push_local(self, local_url: str, branch_name: str):
+        system = get_git_system()
+        repo = system.with_local(local_url)
+        system.push_local(repo, branch_name)
+
+    def with_upstream(self, upstream: str) -> Repo:
+        system = get_git_system()
+        repo = system.with_upstream(upstream)
+        return repo
+
+    def with_local(self, local: str) -> Repo:
+        system = get_git_system()
+        repo = system.with_local(local)
+        return repo
+
+    def fetch_upstream(self, repo: Repo):
+        system = get_git_system()
+        system.fetch_upstream(repo)
 
 
 def get_forge():

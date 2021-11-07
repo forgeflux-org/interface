@@ -35,19 +35,9 @@ use pyo3::prelude::*;
 use url::Url;
 
 pub mod error;
+pub mod system;
 use error::*;
-
-#[pyclass(name = "Repo", module = "libgit")]
-pub struct Repo {
-    #[allow(dead_code)]
-    upstream: Url,
-    #[allow(dead_code)]
-    #[pyo3(get)]
-    local: String,
-    repo: Repository,
-    #[pyo3(get)]
-    path: PathBuf,
-}
+pub use system::System;
 
 #[pyclass(name = "Patch", module = "libgit")]
 #[derive(Debug, Clone)]
@@ -104,14 +94,27 @@ impl Patch {
     }
 }
 
-pub const UPSTREAM_REMOTE: &str = "upstream";
-pub const LOCAL_REMOTE: &str = "local";
+pub const UPSTREAM_REMOTE: &str = "forgefed_remote_upstream";
+pub const LOCAL_REMOTE: &str = "forgefed_remote_local";
 pub const IGNORE_FILE: &str = ".fignore";
+pub const CONFIG_FILE: &str = "forgefed.toml";
+
+#[pyclass(name = "Repo", module = "libgit")]
+pub struct Repo {
+    #[allow(dead_code)]
+    upstream: Url,
+    #[allow(dead_code)]
+    #[pyo3(get)]
+    local: String,
+    repo: Repository,
+    #[pyo3(get)]
+    path: PathBuf,
+}
 
 #[pymethods]
 impl Repo {
     /// Add remote to repository
-    pub fn add_remote(&self, name: &str, url: &str) -> FResult<()> {
+    pub(crate) fn add_remote(&self, name: &str, url: &str) -> FResult<()> {
         match self.repo.find_remote(name) {
             Err(_) => {
                 let mut remote = self.repo.remote(name, &url)?;
@@ -135,7 +138,7 @@ impl Repo {
     /// ```rust,no_run
     /// let repo = Repo::new("/srv/ff/",git@git.batsense.net:realaravinth/tmp.git", "https://github.com/forgefedv2/interface").unwrap();
     /// ```
-    pub fn new(base: &str, local: String, upstream: String) -> FResult<Self> {
+    pub(crate) fn new(base: &str, local: String, upstream: String) -> FResult<Self> {
         fn set_path(base: &str, upstream: &Url) -> FResult<PathBuf> {
             let domain = match upstream.domain() {
                 Some(d) => d,
@@ -173,7 +176,8 @@ impl Repo {
         Ok(obj)
     }
 
-    pub fn fetch_upstream(&self) -> FResult<()> {
+    /// `git fetch upstream <default-branch>`
+    pub(crate) fn fetch_upstream(&self) -> FResult<()> {
         let mut remote = connect_upstream(&self)?;
         let default_branch = remote.default_branch()?;
         remote.fetch(&[default_branch.as_str().unwrap()], None, None)?;
@@ -181,6 +185,7 @@ impl Repo {
         Ok(())
     }
 
+    /// get default branch of a repository from the upstream remote
     pub fn default_branch(&self) -> FResult<String> {
         let mut remote = connect_upstream(&self)?;
         let default_branch = remote.default_branch()?;
@@ -188,7 +193,8 @@ impl Repo {
         Ok(default_branch.as_str().unwrap().to_string())
     }
 
-    pub fn push_local(&self, branch: &str) -> FResult<()> {
+    /// push changes to local repository
+    pub(crate) fn push_local(&self, branch: &str) -> FResult<()> {
         let mut upstream = connect_upstream(&self)?;
         let mut local = connect_local(&self)?;
 
@@ -207,7 +213,8 @@ impl Repo {
         Ok(())
     }
 
-    pub fn apply_patch(
+    /// Apply a patch
+    pub(crate) fn apply_patch(
         &self,
         patch: Patch,
         admin: &InterfaceAdmin,
@@ -254,7 +261,8 @@ impl Repo {
         Ok(())
     }
 
-    pub fn process_patch(&self, patch: String, branch_name: String) -> FResult<String> {
+    /// process patch for federated transport
+    pub(crate) fn process_patch(&self, patch: String, branch_name: String) -> FResult<String> {
         let buf: Vec<u8> = patch.into();
         let diff = git2::Diff::from_buffer(&buf)?;
         let head = self.repo.head()?;
@@ -312,6 +320,7 @@ impl Repo {
         Ok(patch)
     }
 }
+
 fn rm_file(repo: &Repo, file: &DiffFile) -> FResult<()> {
     if let Some(path) = file.path() {
         let path = repo.path.clone().join(path);
@@ -350,6 +359,7 @@ fn connect_local(repo: &Repo) -> FResult<Remote> {
 #[pyo3(name = "libgit")]
 fn my_extension(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Repo>()?;
+    m.add_class::<System>()?;
     m.add_class::<InterfaceAdmin>()?;
     m.add_class::<Patch>()?;
     m.add("RemoteNameExists", py.get_type::<RemoteNameExists>())?;
@@ -362,4 +372,18 @@ fn my_extension(py: Python, m: &PyModule) -> PyResult<()> {
         py.get_type::<error::InvalidUpstreamUrl>(),
     )?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::env::temp_dir;
+
+    const UPSTREAM: &str = "https://github.com/forgefedv2/forgedfed-spec";
+
+    #[test]
+    fn everything_works() {
+        let base = temp_dir().join("everything_works");
+    }
 }

@@ -9,7 +9,6 @@ __depends__ = {}
 steps = [
     step("""
     CREATE TABLE IF NOT EXISTS interface_repositories(
-        is_locked VARCHAR(100) DEFAULT NULL,
         html_url VARCHAR(3000) UNIQUE NOT NULL,
         ID INTEGER PRIMARY KEY NOT NULL
     );
