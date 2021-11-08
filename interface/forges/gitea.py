@@ -100,20 +100,30 @@ class Gitea(Forge):
         _response = requests.request("PUT", url, headers=headers)
 
     def get_notifications(self, since: datetime.datetime) -> NotificationResp:
+        # Setting up a simple query object
         query = {}
         query["since"] = rfc3339(since)
+        print("Checking type : ", type(query["since"]))
+
+        # Sending a request for a JSON notifications response
+        # to the notifications section
         url = self._get_url("/notifications")
         headers = self._auth()
         response = requests.request("GET", url, params=query, headers=headers)
         notifications = response.json()
-        last_read = ""
+
+        # Setting last_read to a string
+        # to be parsed into a datetime
+        last_read = query["since"]
         val = []
+
         for n in notifications:
-            # resp notification
+            # rn: Repository Notification
             rn = Notification()
             subject = n["subject"]
             notification_type = subject["type"]
 
+            # Setting up data for the object
             last_read = n["updated_at"]
             rn.set_updated_at(last_read)
             rn.set_type(notification_type)
@@ -124,7 +134,7 @@ class Gitea(Forge):
             if notification_type == REPOSITORY:
                 print(n)
             if notification_type == PULL:
-                rn.set_pr_url(request.request("GET", subject["url"]).json()["html_url"])
+                rn.set_pr_url(requests.request("GET", subject["url"]).json()["html_url"])
                 rn.set_upstream(n["repository"]["description"])
                 print(n["repository"]["description"])
 
