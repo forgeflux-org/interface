@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
 from dateutil.parser import parse as date_parse
-from urllib.parse import urlunparse, urlencode
+from urllib.parse import urlunparse, urlparse
 import requests
 
 from rfc3339 import rfc3339
@@ -196,12 +196,12 @@ class Gitea(Forge):
         _response = requests.request("POST", url, json=payload, headers=headers)
 
     def get_local_html_url(self, repo: str) -> str:
-        path = format("/%s/%s", local_settings.GITEA_USERNAME, repo)
+        path = format("/%s/%s" % local_settings.GITEA_USERNAME, repo)
         return urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
 
     def get_local_push_url(self, repo: str) -> str:
         return format(
-            "git@%s:%s/%s.git", self.host.netloc, local_settings.GITEA_USERNAME, repo
+            "git@%s:%s/%s.git" % (self.host.netloc, local_settings.GITEA_USERNAME, repo)
         )
 
 
