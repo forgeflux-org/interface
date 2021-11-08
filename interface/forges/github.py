@@ -25,7 +25,7 @@ from interface import local_settings
 from . import utils
 from .base import CreateIssue, Forge, RepositoryInfo, CreatePullrequest
 from .notifications import Notification, Comment, NotificationResp
-from .notifications import ISSUE, REPOSITORY
+from .notifications import ISSUE, REPOSITORY, PULL
 
 
 class GitHub(Forge):
@@ -111,19 +111,30 @@ class GitHub(Forge):
 
     def get_notifications(self, since: datetime.datetime) -> NotificationResp:
         """Notifications for watched repositories"""
+        # Setting up a simple query object
         query = {}
         query["since"] = rfc3339(since)
+        print("Checking type : ", type(query["since"]))
+
+        # Sending a request for a JSON notifications response
+        # to the notifications section
         url = self._get_url("/notifications")
         headers = self._auth()
         response = requests.request("GET", url, params=query, headers=headers)
         notifications = response.json()
-        last_read = ""
+
+        # Setting last_read to a string
+        # to be parsed into a datetime
+        last_read = query["since"]
         val = []
+
         for n in notifications:
+            # rn: Repository Notification
             rn = Notification()
             subject = n["subject"]
             notification_type = subject["type"]
 
+            # Setting up data for the object
             last_read = n["updated_at"]
             rn.set_updated_at(last_read)
             rn.set_type(notification_type)
@@ -133,6 +144,11 @@ class GitHub(Forge):
 
             if notification_type == REPOSITORY:
                 print(n)
+            if notification_type == PULL:
+                rn.set_pr_url(requests.request("GET", subject["url"]).json()["html_url"])
+                rn.set_upstream(n["repository"]["description"])
+                print(n["repository"]["description"])
+
             if notification_type == ISSUE:
                 comment_url = subject["latest_comment_url"]
                 print(comment_url)
@@ -152,7 +168,6 @@ class GitHub(Forge):
                             c.set_url(comment["pull_request_url"])
                         rn.set_comment(c)
             val.append(rn)
-        print(last_read)
         return NotificationResp(val, date_parse(last_read))
 
     def create_pull_request(self, owner: str, repo: str, pr: CreatePullrequest):
@@ -177,12 +192,12 @@ if __name__ == "__main__":
     # Testing the API primitively with a simple call
 
     # Setting owner and repo
-    owner = "dat-adi"
-    repo = "tmp"
-    g = GitHub()
-    print("HOST : ", g.host)
-    print("GET URL : ", g._get_url(f"/repos/{owner}/{repo}"))
-    print("AUTH : ", g._auth())
+    # owner = "dat-adi"
+    # repo = "tmp"
+    # g = GitHub()
+    # print("HOST : ", g.host)
+    # print("GET URL : ", g._get_url(f"/repos/{owner}/{repo}"))
+    # print("AUTH : ", g._auth())
     #    print("ISSUES : ", g.get_issues(owner, repo))
     #    print("GET REPO : ", g.get_repository("dat-adi", "tmp"))
 
@@ -190,17 +205,16 @@ if __name__ == "__main__":
     #    issue.set_title("another test, to be extra sure.")
     #    print(g.create_issue(owner, repo, issue))
     #    print("SUBSCRIBE : ", g.subscribe("dat-adi", "tmp"))
-
-    print(
-        "INTO REPOSITORY : ",
-        g._into_repository(
-            {
-                "name": "G V Datta Adithya",
-                "description": "Octowhat?",
-                "owner": {"login": "userwhat?"},
-            }
-        ),
-    )
+    # print(
+    #     "INTO REPOSITORY : ",
+    #     g._into_repository(
+    #         {
+    #             "name": "G V Datta Adithya",
+    #             "description": "Octowhat?",
+    #             "owner": {"login": "userwhat?"},
+    #         }
+    #     ),
+    # )
 
     """
     notifications = g.get_notifications(since=date_parse("2021-10-10T17:06:02+05:30"))

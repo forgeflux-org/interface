@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
 from dateutil.parser import parse as date_parse
-from urllib.parse import urlunparse, urlencode
+from urllib.parse import urlunparse, urlparse
 import requests
 
 from rfc3339 import rfc3339
@@ -100,20 +100,30 @@ class Gitea(Forge):
         _response = requests.request("PUT", url, headers=headers)
 
     def get_notifications(self, since: datetime.datetime) -> NotificationResp:
+        # Setting up a simple query object
         query = {}
         query["since"] = rfc3339(since)
+        print("Checking type : ", type(query["since"]))
+
+        # Sending a request for a JSON notifications response
+        # to the notifications section
         url = self._get_url("/notifications")
         headers = self._auth()
         response = requests.request("GET", url, params=query, headers=headers)
         notifications = response.json()
-        last_read = ""
+
+        # Setting last_read to a string
+        # to be parsed into a datetime
+        last_read = query["since"]
         val = []
+
         for n in notifications:
-            # resp notification
+            # rn: Repository Notification
             rn = Notification()
             subject = n["subject"]
             notification_type = subject["type"]
 
+            # Setting up data for the object
             last_read = n["updated_at"]
             rn.set_updated_at(last_read)
             rn.set_type(notification_type)
@@ -124,7 +134,7 @@ class Gitea(Forge):
             if notification_type == REPOSITORY:
                 print(n)
             if notification_type == PULL:
-                rn.set_pr_url(request.request("GET", subject["url"]).json()["html_url"])
+                rn.set_pr_url(requests.request("GET", subject["url"]).json()["html_url"])
                 rn.set_upstream(n["repository"]["description"])
                 print(n["repository"]["description"])
 
@@ -196,12 +206,12 @@ class Gitea(Forge):
         _response = requests.request("POST", url, json=payload, headers=headers)
 
     def get_local_html_url(self, repo: str) -> str:
-        path = format("/%s/%s", local_settings.GITEA_USERNAME, repo)
+        path = format("/%s/%s" % local_settings.GITEA_USERNAME, repo)
         return urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
 
     def get_local_push_url(self, repo: str) -> str:
         return format(
-            "git@%s:%s/%s.git", self.host.netloc, local_settings.GITEA_USERNAME, repo
+            "git@%s:%s/%s.git" % (self.host.netloc, local_settings.GITEA_USERNAME, repo)
         )
 
 
