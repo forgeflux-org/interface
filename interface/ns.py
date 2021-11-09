@@ -18,8 +18,9 @@ Name service: find interfaces that can work with forges
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import requests
 from urllib.parse import urlunparse, urlparse
+from os import getenv
+from dotenv import load_dotenv
 
-from interface import local_settings
 from interface.utils import clean_url
 
 
@@ -52,7 +53,7 @@ class NSCache:
 
 class NameService:
     def __init__(self, forge_url: str):
-        self.ns = urlparse(clean_url(local_settings.DEFAULT_NORTHSTAR))
+        self.ns = urlparse(clean_url(getenv("DEFAULT_NORTHSTAR")))
         self.forge_url = clean_url(forge_url)
         self._register()
         self.cache = NSCache()
@@ -70,7 +71,7 @@ class NameService:
         url = "interface/register"
         url = self._get_url(url)
         payload = {
-            "interface_url": local_settings.INTERFACE_URL,
+            "interface_url": getenv("INTERFACE_URL"),
             "forge_url": self.forge_url,
         }
         _resp = requests.post(url, json=payload)

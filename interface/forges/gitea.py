@@ -16,10 +16,11 @@
 import datetime
 from dateutil.parser import parse as date_parse
 from urllib.parse import urlunparse, urlparse
+from dotenv import load_dotenv
 import requests
+from os import getenv
 
 from rfc3339 import rfc3339
-from interface import local_settings
 
 from .base import Forge
 from .payload import CreateIssue, RepositoryInfo, CreatePullrequest
@@ -29,10 +30,10 @@ from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
 
 class Gitea(Forge):
     def __init__(self):  # self, base_url: str, admin_user: str, admin_email):
-        super().__init__(local_settings.GITEA_HOST)
+        super().__init__(getenv("GITEA_HOST"))
 
     def _auth(self):
-        return {"Authorization": format("token %s" % (local_settings.GITEA_API_KEY))}
+        return {"Authorization": format("token %s" % (getenv("GITEA_API_KEY")))}
 
     def _get_url(self, path: str) -> str:
         prefix = "/api/v1/"
@@ -134,7 +135,9 @@ class Gitea(Forge):
             if notification_type == REPOSITORY:
                 print(n)
             if notification_type == PULL:
-                rn.set_pr_url(requests.request("GET", subject["url"]).json()["html_url"])
+                rn.set_pr_url(
+                    requests.request("GET", subject["url"]).json()["html_url"]
+                )
                 rn.set_upstream(n["repository"]["description"])
                 print(n["repository"]["description"])
 
@@ -206,12 +209,12 @@ class Gitea(Forge):
         _response = requests.request("POST", url, json=payload, headers=headers)
 
     def get_local_html_url(self, repo: str) -> str:
-        path = format("/%s/%s" % local_settings.GITEA_USERNAME, repo)
+        path = format("/%s/%s" % getenv("GITEA_USERNAME"), repo)
         return urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
 
     def get_local_push_url(self, repo: str) -> str:
         return format(
-            "git@%s:%s/%s.git" % (self.host.netloc, local_settings.GITEA_USERNAME, repo)
+            "git@%s:%s/%s.git" % (self.host.netloc, getenv("GITEA_USERNAME"), repo)
         )
 
 

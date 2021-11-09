@@ -18,12 +18,13 @@ Helper class to interact with git repositories
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
 from urllib.parse import urlparse
+from dotenv import load_dotenv
+from os import getenv
 import rfc3339
 
 from libgit import InterfaceAdmin, Repo, Patch, System
 
 from interface.db import get_db, get_git_system
-from interface import local_settings
 
 from interface.forges.utils import get_branch_name
 from interface.forges.base import Forge
@@ -84,5 +85,5 @@ class Git:
 
 def get_forge():
     forge = Gitea()
-    git = Git(forge, local_settings.GITEA_USERNAME, local_settings.ADMIN_EMAIL)
+    git = Git(forge, getenv("GITEA_USERNAME"), getenv("ADMIN_EMAIL"))
     return git

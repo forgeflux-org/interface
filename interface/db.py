@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import sqlite3
 import os
+from dotenv import load_dotenv
 
 import click
 from flask import current_app, g
@@ -21,8 +22,6 @@ from flask.cli import with_appcontext
 from yoyo import read_migrations
 from yoyo import get_backend
 from libgit import System
-
-from interface import local_settings
 
 
 def get_db() -> sqlite3.Connection:
@@ -38,7 +37,7 @@ def get_db() -> sqlite3.Connection:
 def get_git_system() -> System:
     """Get git system"""
     if "git_system" not in g:
-        g.git_system = System(local_settings.BASE_DIR)
+        g.git_system = System(os.getenv("BASE_DIR"))
     return g.git_system
 
 
