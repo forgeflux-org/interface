@@ -94,7 +94,7 @@ class Notification(Payload):
 class NotificationResp:
     """Notification response helper type"""
 
-    def __init__(self, notifications: [Notification], last_read: datetime.datetime):
+    def __init__(self, notifications: list[Notification], last_read: datetime.datetime):
         self.notifications = notifications
         self.last_read = last_read
 
