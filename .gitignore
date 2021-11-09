@@ -154,3 +154,6 @@ grcov.tar.bz2
 lcov.info
 libgit/*.profraw
 libgit/lcov.info
+
+# Ignore dynaconf secret files
+.secrets.*

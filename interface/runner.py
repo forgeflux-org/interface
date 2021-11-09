@@ -21,14 +21,13 @@ import sched
 import threading
 import time
 import datetime
-from os import getenv
-from dotenv import load_dotenv
 
 from interface.git import get_forge
 from interface.forges.notifications import PULL, ISSUE
 from interface.forges.utils import get_patch, get_branch_name
 from interface.db import get_db
 from interface.forges.gitea import date_parse
+from config import settings
 
 RUNNING = False
 
@@ -50,7 +49,7 @@ class Runner:
                 INSERT OR IGNORE INTO interface_jobs_run
                     (this_interface_url, last_run) VALUES (?, ?);
                 """,
-                (getenv("INTERFACE_URL"), str(last_run)),
+                (settings.INTERFACE_URL, str(last_run)),
             )
             conn.commit()
 
@@ -60,7 +59,7 @@ class Runner:
             cur = conn.cursor()
             cur.execute(
                 "UPDATE interface_jobs_run set last_run = ? WHERE this_interface_url = ?;",
-                (str(last_run), getenv("INTERFACE_URL")),
+                (str(last_run), settings.INTERFACE_URL),
             )
             conn.commit()
 
@@ -70,7 +69,7 @@ class Runner:
             cur = conn.cursor()
             res = cur.execute(
                 "SELECT last_run FROM interface_jobs_run WHERE this_interface_url = ?;",
-                (getenv("INTERFACE_URL"),),
+                (settings.INTERFACE_URL,),
             ).fetchone()
             return res[0]
 
@@ -78,9 +77,7 @@ class Runner:
         with self.app.app_context():
             global RUNNING
             if RUNNING:
-                self.scheduler.enter(
-                    getenv("JOB_RUNNER_DELAY"), 8, self._background_job
-                )
+                self.scheduler.enter(settings.JOB_RUNNER_DELAY, 8, self._background_job)
                 return
             else:
                 RUNNING = True
@@ -94,7 +91,7 @@ class Runner:
             #                    print(notifications)
             for n in notifications:
                 (owner, _repo) = self.git.forge.get_owner_repo_from_url(n["repo_url"])
-                if all([n["type"] == PULL, owner == getenv("ADMIN_USER")]):
+                if all([n["type"] == PULL, owner == settings.ADMIN_USER]):
                     patch = get_patch(n["pr_url"])
                     local = n["repo_url"]
                     upstream = n["upstream"]
@@ -105,12 +102,12 @@ class Runner:
 
             #                        if n["type"] ==
             RUNNING = False
-            self.scheduler.enter(getenv("JOB_RUNNER_DELAY"), 8, self._background_job)
+            self.scheduler.enter(settings.JOB_RUNNER_DELAY, 8, self._background_job)
             # argument=(app,))
 
     def run(self):
         """Start job runner"""
         self.scheduler.enter(
-            getenv("JOB_RUNNER_DELAY"), 8, self._background_job
+            settings.JOB_RUNNER_DELAY, 8, self._background_job
         )  # argument=(self,))
         threading.Thread(target=self.scheduler.run).start()
