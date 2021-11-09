@@ -38,8 +38,8 @@ jobs:
           profile: minimal
           override: true
 
-      - name: check build
-        run: cd libgit && cargo check --all --bins --examples --tests
+      - name: Install dependencies
+        run: make env
 
-      - name: tests
-        run: cd libgit && cargo test --all --all-features --no-fail-fast
+      - name: Run tests
+        run: make test

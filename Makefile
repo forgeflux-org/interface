@@ -32,7 +32,7 @@ i: ## Launch app.py in an interactive python shell
 
 lint: ## Run linter
 	@./venv/bin/black ./interface/*
-	#@./venv/bin/black ./tests/*
+	@./venv/bin/black ./tests/*
 
 migrate: ## Run migrations
 	@- mkdir instance

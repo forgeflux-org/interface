@@ -38,11 +38,13 @@ jobs:
           components: llvm-tools-preview 
           override: true
 
+      - name: Install dependencies
+        run: make env
+
       - name: generate coverage
         run: make coverage
 
-
       - name: Upload to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v2
         with:
-          files: ./libgit/target/lcov.info
+          files: ./libgit/target/lcov.info,coverage.xml
