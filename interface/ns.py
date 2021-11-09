@@ -21,6 +21,7 @@ from urllib.parse import urlunparse, urlparse
 
 from interface import local_settings
 from interface.utils import clean_url
+from interface.error import Error
 
 
 class NSCache:
@@ -70,22 +71,31 @@ class NameService:
         url = "interface/register"
         url = self._get_url(url)
         payload = {
-            "interface_url": local_settings.INTERFACE_URL,
-            "forge_url": self.forge_url,
+            "interface_url": f"http://{local_settings.INTERFACE_URL}:{local_settings.PORT}",
+            "forge_url": [self.forge_url],
         }
-        _resp = requests.post(url, json=payload)
+        print(payload)
+        resp = requests.post(url, json=payload)
+        if resp.status_code == 200:
+            print("registered interface")
 
     def query(self, forge_url: str) -> [str]:
         """Get interfaces that service a forge"""
         url = "forge/interfaces"
         url = self._get_url(url)
-        forge_url = clean_url(forge_url)
 
         cached = self.cache.search(forge_url)
         if cached is None:
             payload = {"forge_url": forge_url}
-            resp = requests.post(url, data=payload)
-            interfaces = resp.json()["interfaces"]
+            # print("quering ns")
+            # print(type(payload))
+            # print(payload)
+            resp = requests.post(url, json=payload)
+            print(f"resp {resp}")
+            print(f"status {resp.status_code}")
+            print(f"text {resp.text}")
+            interfaces = resp.json()
+            print(interfaces)
             self.cache.add(forge_url, interfaces)
             return interfaces
         return cached
