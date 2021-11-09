@@ -21,6 +21,9 @@ import sched
 import threading
 import time
 import datetime
+import sys
+
+from flask import g
 
 
 from interface import local_settings
@@ -40,11 +43,13 @@ class Runner:
         self.logger = logging.getLogger("jobs")
         self.scheduler = sched.scheduler(time.time, time.sleep)
         self.git = get_forge()
+        self.shutdown_flag = threading.Event()
+        self.current_run = None
 
         with self.app.app_context():
             conn = get_db()
             cur = conn.cursor()
-            last_run = date_parse("2021-10-10T17:06:02+05:30")
+            last_run = date_parse("2021-11-10T17:06:02+05:30")
             cur.execute(
                 """
                 INSERT OR IGNORE INTO interface_jobs_run
@@ -53,6 +58,21 @@ class Runner:
                 (local_settings.INTERFACE_URL, str(last_run)),
             )
             conn.commit()
+        self.thread = threading.Thread(target=self._background_job)
+        self.thread.start()
+        return
+
+    def get_switch(self):
+        return self.shutdown_flag
+
+    def kill(self):
+        if self.current_run is not None:
+            self.scheduler.cancel(self.current_run)
+        self.shutdown_flag.set()
+        self.shutdown_flag.wait()
+        print("set")
+        self.thread.join()
+        print("exit")
 
     def _update_time(self, last_run: datetime.datetime):
         with self.app.app_context():
@@ -75,44 +95,48 @@ class Runner:
             return res[0]
 
     def _background_job(self):
-        with self.app.app_context():
-            global RUNNING
-            if RUNNING:
-                self.scheduler.enter(
-                    local_settings.JOB_RUNNER_DELAY, 8, self._background_job
-                )
-                return
-            else:
-                RUNNING = True
+        print("running")
+        while True:
+            if self.shutdown_flag.is_set():
+                print("exiting eorker")
+                break
+            print(f"from runner, stop is set: {self.shutdown_flag.is_set()}")
 
-            last_run = self.get_last_run()
-            print(last_run)
-
-            notifications = self.git.forge.get_notifications(
-                since=date_parse(last_run)
-            ).get_payload()
-            #                    print(notifications)
-            for n in notifications:
-                (owner, _repo) = self.git.forge.get_owner_repo_from_url(n["repo_url"])
-                if all([n["type"] == PULL, owner == local_settings.ADMIN_USER]):
-                    patch = get_patch(n["pr_url"])
-                    local = n["repo_url"]
-                    upstream = n["upstream"]
-                    patch = self.git.process_patch(
-                        patch, local, upstream, get_branch_name(n["pr_url"])
-                    )
-                    print(patch)
-
-            #                        if n["type"] ==
-            RUNNING = False
-            self.scheduler.enter(
+            self.current_run = self.scheduler.enter(
                 local_settings.JOB_RUNNER_DELAY, 8, self._background_job
             )
-            # argument=(app,))
+            with self.app.app_context():
+                global RUNNING
+                if RUNNING:
+                    self.scheduler.enter(
+                        local_settings.JOB_RUNNER_DELAY, 8, self._background_job
+                    )
+                    return
+                else:
+                    RUNNING = True
 
-    def run(self):
-        """Start job runner"""
-        self.scheduler.enter(
-            local_settings.JOB_RUNNER_DELAY, 8, self._background_job
-        )  # argument=(self,))
-        threading.Thread(target=self.scheduler.run).start()
+                last_run = self.get_last_run()
+                print(last_run)
+
+                notifications = self.git.forge.get_notifications(
+                    since=date_parse(last_run)
+                ).get_payload()
+                #                    print(notifications)
+                for n in notifications:
+                    (owner, _repo) = self.git.forge.get_owner_repo_from_url(
+                        n["repo_url"]
+                    )
+                    if all([n["type"] == PULL, owner == local_settings.ADMIN_USER]):
+                        patch = get_patch(n["pr_url"])
+                        local = n["repo_url"]
+                        upstream = n["upstream"]
+                        patch = self.git.process_patch(
+                            patch, local, get_branch_name(n["pr_url"])
+                        )
+                        print(patch)
+            time.sleep(local_settings.JOB_RUNNER_DELAY)
+
+
+def init_app(app):
+    runner = Runner(app)
+    return runner

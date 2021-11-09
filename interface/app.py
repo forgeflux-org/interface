@@ -21,8 +21,9 @@ import os
 from flask import Flask
 
 from interface import db
+from interface import runner
 from interface.api.v1 import bp
-from interface.runner import Runner
+from interface.meta import bp as meta_bp
 
 
 def create_app(test_config=None):
@@ -32,8 +33,6 @@ def create_app(test_config=None):
     app.config.from_mapping(
         DATABASE=os.path.join(app.instance_path, "interface.db"),
     )
-
-    db.init_app(app)
 
     if test_config is None:
         app.config.from_pyfile("config.py", silent=True)
@@ -45,12 +44,16 @@ def create_app(test_config=None):
     except OSError:
         pass
 
+    db.init_app(app)
+
     @app.after_request
     def flock_google(response):
         response.headers["Permissions-Policy"] = "interest-cohort=()"
         return response
 
-    Runner(app).run()
-
+    app.register_blueprint(meta_bp)
     app.register_blueprint(bp)
     return app
+
+
+app = create_app()
