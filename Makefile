@@ -1,5 +1,5 @@
 default: ## Run app
-	cd libgit && maturin build
+	. ./venv/bin/activate && cd libgit && maturin build
 	. ./venv/bin/activate && python -m interface
 
 coverage: test
@@ -13,8 +13,8 @@ docker: ## Build Docker image from source
 
 env: ## Install all dependencies
 	@-virtualenv venv
-	pip install maturin
-	cd libgit && maturin develop
+	. ./venv/bin/activate && pip install maturin
+	. ./venv/bin/activate && cd libgit && maturin develop
 	. ./venv/bin/activate && pip install -r requirements.txt
 #	. ./venv/bin/activate && pip install -e .
 	#. ./venv/bin/activate && pip install '.[test]'

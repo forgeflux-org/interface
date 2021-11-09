@@ -31,6 +31,9 @@ jobs:
             libgit/target
           key: ${{ runner.os }}-cargo-${{ matrix.version }}
 
+      - name: Install virtualenv
+        run: pip install virtualenv
+
       - name: Install ${{ matrix.version }}
         uses: actions-rs/toolchain@v1
         with:

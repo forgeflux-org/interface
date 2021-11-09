@@ -35,8 +35,11 @@ jobs:
         with:
           toolchain: ${{ matrix.version }}-x86_64-unknown-linux-gnu
           profile: minimal
-          components: llvm-tools-preview 
+          components: llvm-tools-preview
           override: true
+
+      - name: Install virtualenv
+        run: pip install virtualenv
 
       - name: Install dependencies
         run: make env
