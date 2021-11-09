@@ -20,6 +20,7 @@ Errors
 from flask import jsonify
 import requests
 
+
 class Error:
     """Helper class for presenting errors in the format specified by the specification"""
 
@@ -49,5 +50,7 @@ class Error:
         if resp.status_code != 200:
             data = resp.json()
             print(data)
-            return Error(status=resp.status_code, error=data["error"], errcode=data["errcode"])
+            return Error(
+                status=resp.status_code, error=data["error"], errcode=data["errcode"]
+            )
         return None
