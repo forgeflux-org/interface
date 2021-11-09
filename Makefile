@@ -1,12 +1,12 @@
-
-
 default: ## Run app
 	cd libgit && maturin build
 	. ./venv/bin/activate && python -m interface
 
-coverage:
+coverage: test
 	# rustup component add llvm-tools-preview is required
 	@./scripts/coverage.sh
+	@ . ./venv/bin/activate  && coverage html
+	@ . ./venv/bin/activate  && coverage xml
 
 docker: ## Build Docker image from source
 	docker build -t forgedfed/interface .
@@ -35,11 +35,18 @@ lint: ## Run linter
 	#@./venv/bin/black ./tests/*
 
 migrate: ## Run migrations
-	@. ./venv/bin/activate && FLASK_APP=interface/__init__.py FLASK_ENV=development flask migrate
+	@- mkdir instance
+	@ venv/bin/yoyo-migrate apply --all --batch
 
-#test: ## Run tests
-#	@cd ./docs/openapi/  && yarn install 
-#	@cd ./docs/openapi/  && yarn test 
-#	@pip install -e .
-#	@pip install '.[test]'
-#	@./venv/bin/pytest
+test: migrate ## Run tests
+	@docker-compose up -d
+	@cd libgit && cargo test --all --all-features --no-fail-fast
+	@. ./venv/bin/activate && pip install -e .
+	@. ./venv/bin/activate && pip install '.[test]'
+	@ ./interface/__main__.py &
+	@pip install -e .
+	@pip install '.[test]'
+	@ . ./venv/bin/activate && coverage run -m pytest
+	@- kill -9 $(pgrep  -f interface)
+	@pip uninstall -y interface
+	@docker-compose down
