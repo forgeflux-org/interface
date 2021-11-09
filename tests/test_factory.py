@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from interface.app import create_app
 
+
 def test_config():
     """Test if factory tests app to testing mode"""
     assert not create_app().testing

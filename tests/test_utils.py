@@ -19,6 +19,7 @@ from interface.app import create_app
 from interface.utils import clean_url
 from interface.db import get_db
 
+
 def test_clean_url(client):
     """Test clean_url works"""
     urls = [

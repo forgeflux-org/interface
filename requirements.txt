@@ -12,7 +12,6 @@ greenlet==1.1.2
 gunicorn==20.1.0
 idna==3.3
 iniconfig==1.1.1
-interface @ file:///home/aravinth/code/forgedfed/interface
 isort==5.9.3
 itsdangerous==2.0.1
 jedi==0.18.0

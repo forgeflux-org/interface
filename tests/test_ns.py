@@ -22,7 +22,7 @@ from interface.local_settings import INTERFACE_URL, PORT
 def test_ns(app):
     """Test ns"""
     forge = get_forge().forge.get_forge_url()
-    
+
     print(forge)
     ns = NameService(forge)
     interface_url = ns.query(forge)
