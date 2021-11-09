@@ -57,6 +57,7 @@ def init_db():
     with backend.lock():
         backend.apply_migrations(backend.to_apply(migrations))
         backend.commit()
+        print("migrations applied")
 
 
 @click.command("migrate")
@@ -68,5 +69,7 @@ def migrate_db_command():
 
 
 def init_app(app):
+    with app.app_context():
+        init_db()
     app.teardown_appcontext(close_db)
     app.cli.add_command(migrate_db_command)
