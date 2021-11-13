@@ -40,23 +40,24 @@ class RunNoification:
         """get mandatory fields"""
         raise NotImplementedError
 
-    def check_mandatory(self, event: RunNoification) -> bool:
+    def check_mandatory(self, event: Notification) -> bool:
         """check for mandatory fields' presence"""
         for f in event.get_mandatory():
             if f not in self.notification.payload:
                 raise Exception("%s can't be empty" % f)
         return True
 
-    @staticmethod
-    def resolve(n: Notification) -> RunNoification:
-        git = get_forge()
-        (owner, _repo) = git.forge.get_owner_repo_from_url(n.get_repo_url())
-        if all([n.get_type() == PULL, owner == local_settings.ADMIN_USER]):
-            if n.check_mandatory(PrEvent):
-                return PrEvent(n)
-        elif n.get_type() == ISSUE:
-            if n.check_mandatory(IssueEvent):
-                return PrEvent(n)
+
+def resolve_notification(n: Notification) -> RunNoification:
+    """Convert Notification into runnable unit of work"""
+    git = get_forge()
+    (owner, _repo) = git.forge.get_owner_repo_from_url(n.get_repo_url())
+    if all([n.get_type() == PULL, owner == local_settings.ADMIN_USER]):
+        if n.check_mandatory(PrEvent):
+            return PrEvent(n)
+    elif n.get_type() == ISSUE:
+        if n.check_mandatory(IssueEvent):
+            return PrEvent(n)
 
 
 class PrEvent(RunNoification):

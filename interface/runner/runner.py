@@ -25,13 +25,13 @@ import sys
 
 from flask import g
 
-
 from interface import local_settings
 from interface.git import get_forge
 from interface.forges.notifications import PULL, ISSUE
 from interface.forges.utils import get_patch, get_branch_name
 from interface.db import get_db
 from interface.forges.gitea import date_parse
+from interface.runner.events import resolve_notification
 
 RUNNING = False
 
@@ -121,17 +121,8 @@ class Runner:
                 ).get_payload()
                 #                    print(notifications)
                 for n in notifications:
-                    (owner, _repo) = self.git.forge.get_owner_repo_from_url(
-                        n["repo_url"]
-                    )
-                    if all([n["type"] == PULL, owner == local_settings.ADMIN_USER]):
-                        patch = get_patch(n["pr_url"])
-                        local = n["repo_url"]
-                        upstream = n["upstream"]
-                        patch = self.git.process_patch(
-                            patch, local, get_branch_name(n["pr_url"])
-                        )
-                        print(patch)
+                    resolve_notification(n).run()
+
             time.sleep(local_settings.JOB_RUNNER_DELAY)
 
 

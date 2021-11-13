@@ -19,7 +19,7 @@ from interface import db
 from interface.error import F_D_INVALID_PAYLOAD
 from interface.git import get_forge
 from interface.client import SUBSCRIBE, EVENTS
-from interface.runner.events import RunNoification
+from interface.runner.events import resolve_notification
 from interface.forges.notifications import Notification
 
 
@@ -105,8 +105,5 @@ def events():
         return F_D_INVALID_PAYLOAD.get_error_resp()
     n = Notification()
     n.payload = data
-    runable = RunNoification.resolve(n)
-    # TODO send to worker
-    runable.run()
-
+    resolve_notification(n).run()
     return jsonify({})
