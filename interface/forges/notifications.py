@@ -54,8 +54,48 @@ class Notification(Payload):
     """Data structure that represents a notification"""
 
     def __init__(self):
-        mandatory = ["type", "state", "updated_at", "title"]
+        mandatory = ["type", "id", "state", "updated_at", "title"]
         super().__init__(mandatory)
+
+    def get_id(self) -> str:
+        """get notification id"""
+        return self.payload["id"]
+
+    def get_updated_at(self) -> str:
+        """get notification update time"""
+        return self.payload["updated_at"]
+
+    def get_upstream(self) -> str:
+        """get upstream repository URL"""
+        return self.payload["upstream"]
+
+    def get_pr_url(self) -> str:
+        """get pr url"""
+        return self.payload["pr_url"]
+
+    def get_type(self) -> str:
+        """get notification type"""
+        return self.payload["type"]
+
+    def get_state(self) -> str:
+        """get notification state"""
+        return self.payload["state"]
+
+    def get_comment(self) -> str:
+        """get comment"""
+        return self.payload["status"]
+
+    def get_repo_url(self) -> str:
+        """get repository URL update time"""
+        return self.payload["repo_url"]
+
+    def get_title(self) -> str:
+        """get issue title"""
+        return self.payload["title"]
+
+    def set_id(self, id_: str) -> str:
+        """set notification ID"""
+        self.payload["id"] = id_
 
     def set_updated_at(self, date):
         """set notification update time"""
