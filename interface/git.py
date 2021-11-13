@@ -19,6 +19,7 @@ Helper class to interact with git repositories
 import datetime
 from urllib.parse import urlparse
 import rfc3339
+from flask import g
 
 from libgit import InterfaceAdmin, Repo, Patch, System
 
@@ -84,5 +85,9 @@ class Git:
 
 def get_forge():
     forge = Gitea()
-    git = Git(forge, local_settings.GITEA_USERNAME, local_settings.ADMIN_EMAIL)
-    return git
+    #    git = Git(forge, local_settings.GITEA_USERNAME, local_settings.ADMIN_EMAIL)
+    #    return git
+    if "git" not in g:
+        forge = Gitea()
+        g.git = Git(forge, local_settings.GITEA_USERNAME, local_settings.ADMIN_EMAIL)
+    return g.git
