@@ -16,8 +16,12 @@
 from flask import Blueprint, jsonify, request
 
 from interface import db
+from interface.error import F_D_INVALID_PAYLOAD
 from interface.git import get_forge
-from interface.client import SUBSCRIBE
+from interface.client import SUBSCRIBE, EVENTS
+from interface.runner.events import RunNoification
+from interface.forges.notifications import Notification
+
 
 bp = Blueprint("API_V1_NOTIFICATIONS", __name__, url_prefix="/notifications")
 
@@ -59,9 +63,50 @@ def subscribe():
         INSERT OR IGNORE INTO interface_event_subscriptsions (repository_id, interface_id)
         VALUES (
             (SELECT interface_interfaces WHERE url = ?),
-            (SELECT interface_repositories WHERE html_url = ?)
+            (SELECT interface_local_repositories WHERE html_url = ?)
         );
         """,
         (interface_url, repository_url),
     )
+    return jsonify({})
+
+
+@bp.route(EVENTS, methods=["POST"])
+def events():
+    """
+    receive events
+
+    ## Request
+    {
+        "id": string
+        "type": string
+        "state": string
+        "updated_at": string
+        "title": string
+
+        "repo_url": string?
+        "upstream": string?
+        "comment": string?
+        "pr_url": string?
+    }
+
+    ## Response
+    { } # empty json
+    """
+    data = request.json()
+    if any(
+        [
+            "type" not in data,
+            "status" not in data,
+            "updated_at" not in data,
+            "title" not in data,
+        ]
+    ):
+        return F_D_INVALID_PAYLOAD.get_error_resp()
+    n = Notification()
+    n.payload = data
+    runable = RunNoification.resolve(n)
+    # TODO send to worker
+    runable.run()
+
     return jsonify({})
