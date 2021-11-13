@@ -20,6 +20,7 @@ from urllib.parse import urlparse, urlunparse
 from flask import g
 
 from interface.forges.base import Forge
+from interface.forges.notifications import Notification
 from interface.db import get_db
 
 GET_REPOSITORY = "/fetch"
@@ -27,6 +28,7 @@ GET_REPOSITORY_INFO = "/info"
 FORK_LOCAL = "/fork/local"
 FORK_FOREIGN = "/fork/foreign"
 SUBSCRIBE = "/subscribe"
+EVENTS = "/events"
 COMMENT_ON_ISSUE = "/issues/comment"
 CREATE_ISSUE = "/issue/create"
 CREATE_PULL_REQUEST = "/pull/create"
@@ -86,6 +88,15 @@ class ForgeClient:
         response = requests.request("POST", interface_api_url, json=payload)
         data = response.json()
         return data
+
+    def send_notification(self, notification: Notification, interface_url: str):
+        """send notification to subscribed interface"""
+        interface_api_url = self._construct_url(
+            interface_url=interface_url, path=EVENTS
+        )
+        _response = requests.request(
+            "POST", interface_api_url, json=notification.get_payload()
+        )
 
 
 #    def send_contributions(self, patch, upstream, pr_url, message):

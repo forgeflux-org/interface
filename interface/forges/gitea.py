@@ -129,6 +129,7 @@ class Gitea(Forge):
             rn.set_type(notification_type)
             rn.set_title(subject["title"])
             rn.set_state(subject["state"])
+            rn.set_id(n["id"])
             rn.set_repo_url(n["repository"]["html_url"])
 
             if notification_type == REPOSITORY:
