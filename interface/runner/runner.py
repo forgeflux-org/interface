@@ -42,11 +42,11 @@ class Runner:
         logging.getLogger("jobs").setLevel(logging.WARNING)
         self.logger = logging.getLogger("jobs")
         self.scheduler = sched.scheduler(time.time, time.sleep)
-        self.git = get_forge()
         self.shutdown_flag = threading.Event()
         self.current_run = None
 
         with self.app.app_context():
+            self.git = get_forge()
             conn = get_db()
             cur = conn.cursor()
             last_run = date_parse("2021-11-10T17:06:02+05:30")
@@ -98,10 +98,8 @@ class Runner:
         print("running")
         while True:
             if self.shutdown_flag.is_set():
-                print("exiting eorker")
+                print("exiting worker")
                 break
-            print(f"from runner, stop is set: {self.shutdown_flag.is_set()}")
-
             self.current_run = self.scheduler.enter(
                 local_settings.JOB_RUNNER_DELAY, 8, self._background_job
             )

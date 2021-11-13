@@ -17,10 +17,8 @@ Run ForgeFed Interface flask application
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from flask import g
-
 from interface.app import create_app
-from interface import runner
+from interface.runner import runner
 
 if __name__ == "__main__":
     app = create_app()
