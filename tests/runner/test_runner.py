@@ -1,7 +1,4 @@
-"""
-Meta related routes
-"""
-# Bridges software forges to create a distributed software development environment
+# North Star ---  A lookup service for forged fed ecosystem
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -13,20 +10,28 @@ Meta related routes
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-#
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from flask import Blueprint, jsonify, request
+from datetime import datetime
 
-bp = Blueprint("META", __name__, url_prefix="/_ff/interface/")
+from dateutil.parser import parse as date_parse
 
-VERSIONS = ["1"]
-payload = {"versions": VERSIONS}
+from interface.app import create_app
+from interface.meta import VERSIONS
+from interface.runner import runner
 
 
-@bp.route("versions", methods=["GET"])
-def versions():
-    """
-    get supported interface protocol versions
-    """
-    return jsonify(payload)
+def test_supported_version(app, client):
+    """Test version meta route"""
+
+    worker = runner.init_app(app)
+    assert worker.thread.is_alive() is True
+    assert worker.get_switch().is_set() is False
+    worker.kill()
+    assert worker.thread.is_alive() is False
+    assert worker.get_switch().is_set() is True
+
+    last_run = worker.get_last_run()
+    now = datetime.now()
+    worker._update_time(now)
+    assert date_parse(worker.get_last_run()) == now
