@@ -33,7 +33,7 @@ class RunNoification:
     notification: Notification
 
     def __post_init__(self):
-        if not self._check_mandatory():
+        if self._check_mandatory():
             raise Exception("mandatory fields not present")
 
     def _check_mandatory(self) -> bool:
@@ -45,21 +45,22 @@ def resolve_notification(n: Notification) -> RunNoification:
     """Convert Notification into runnable unit of work"""
     git = get_forge()
     (owner, _repo) = git.forge.get_owner_repo_from_url(n.repo_url)
-    if all([n.type == PULL, owner == local_settings.ADMIN_USER]):
-        return PrEvent(n)
+    if n.type == PULL:
+        if owner == local_settings.ADMIN_USER:
+            return PrEvent(n)
+        raise Exception("Unknown PULL notification")
     elif n.type == ISSUE:
-        return PrEvent(n)
+        return IssueEvent(n)
 
 
 class PrEvent(RunNoification):
     """PR type Notification"""
 
-    def check_mandatory(self) -> bool:
-        return all(
+    def _check_mandatory(self) -> bool:
+        return any(
             [
-                self.notification.pr_url is not None,
-                self.notification.upstream is not None,
-                self.notification.repo_url is not None,
+                self.notification.pr_url is None,
+                self.notification.upstream is None,
             ]
         )
 
@@ -79,11 +80,11 @@ class PrEvent(RunNoification):
 class IssueEvent(RunNoification):
     """Issue type notificatin"""
 
-    def check_mandatory(self) -> bool:
-        return all(
+    def _check_mandatory(self) -> bool:
+        return any(
             [
-                self.notification.pr_url is not None,
-                self.notification.repo_url is not None,
+                self.notification.comment is None,
+                self.notification.pr_url is None,
             ]
         )
 

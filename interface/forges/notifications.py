@@ -46,9 +46,9 @@ class Notification:
     state: str
     updated_at: str
     title: str
+    repo_url: str
     upstream: str = None
     pr_url: str = None
-    repo_url: str = None
     comment: Comment = None
 
 
