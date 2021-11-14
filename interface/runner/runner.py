@@ -118,9 +118,8 @@ class Runner:
 
                 notifications = self.git.forge.get_notifications(
                     since=date_parse(last_run)
-                ).get_payload()
-                #                    print(notifications)
-                for n in notifications:
+                )
+                for n in notifications.notifications:
                     resolve_notification(n).run()
 
             time.sleep(local_settings.JOB_RUNNER_DELAY)

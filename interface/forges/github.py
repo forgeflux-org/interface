@@ -14,11 +14,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from dateutil.parser import parse as date_parse
 import datetime
 from urllib.parse import urlparse, urlunparse
-import requests
+from dateutil.parser import parse as date_parse
+from dataclasses import asdict
 
+import requests
 from rfc3339 import rfc3339
 
 from interface import local_settings
@@ -80,10 +81,11 @@ class GitHub(Forge):
     def _into_repository(self, data) -> RepositoryInfo:
         """Getting and setting data"""
 
-        info = RepositoryInfo()
-        info.set_description(data["description"])
-        info.set_name(data["name"])
-        info.set_owner_name(data["owner"]["login"])
+        info = RepositoryInfo(
+            description=data["description"],
+            name=data["name"],
+            owner=data["owner"]["login"],
+        )
         return info
 
     def get_repository(self, owner: str, repo: str) -> RepositoryInfo:
@@ -93,7 +95,7 @@ class GitHub(Forge):
         response = requests.request("GET", url)
         data = response.json()
         info = self._into_repository(data)
-        print("Payload deets", info.get_payload())
+        print("Payload deets", asdict(info))
         return info
 
     def create_repository(self, repo: str, description: str):
@@ -108,6 +110,53 @@ class GitHub(Forge):
         url = self._get_url(format("/repos/%s/%s/subscription" % (owner, repo)))
         headers = self._auth()
         _response = requests.request("PUT", url, headers=headers)
+
+    def _into_notification(self, n) -> Notification:
+        # rn: Repository Notification
+        subject = n["subject"]
+        notification_type = subject["type"]
+
+        # Setting up data for the object
+        last_read = n["updated_at"]
+        rn = Notification(
+            updated_at=last_read,
+            type=notification_type,
+            title=subject["title"],
+            state=subject["state"],
+            id=n["id"],
+            repo_url=n["repository"]["html_url"],
+        )
+
+        if notification_type == REPOSITORY:
+            print(n)
+        elif notification_type == PULL:
+            rn.pr_url = requests.request("GET", subject["url"]).json()["html_url"]
+
+            rn.upstream = n["repository"]["description"]
+            print(n["repository"]["description"])
+        elif notification_type == ISSUE:
+            comment_url = subject["latest_comment_url"]
+            print(comment_url)
+            if len(comment_url) != 0:
+                resp = requests.request("GET", comment_url)
+                comment = resp.json()
+
+                pr_url = comment["pull_request_url"]
+                url = ""
+                if len(pr_url) > 0:
+                    url = comment["issue_url"]
+                else:
+                    url = pr_url
+
+                c = Comment(
+                    url=url,
+                    updated_at=comment["updated_at"],
+                    author=comment["user"]["login"],
+                    id=comment["id"],
+                    body=comment["body"],
+                )
+                rn.comment = c
+        return rn
 
     def get_notifications(self, since: datetime.datetime) -> NotificationResp:
         """Notifications for watched repositories"""
@@ -129,46 +178,8 @@ class GitHub(Forge):
         val = []
 
         for n in notifications:
-            # rn: Repository Notification
-            rn = Notification()
-            subject = n["subject"]
-            notification_type = subject["type"]
-
-            # Setting up data for the object
-            last_read = n["updated_at"]
-            rn.set_updated_at(last_read)
-            rn.set_type(notification_type)
-            rn.set_title(subject["title"])
-            rn.set_state(subject["state"])
-            rn.set_repo_url(n["repository"]["html_url"])
-
-            if notification_type == REPOSITORY:
-                print(n)
-            if notification_type == PULL:
-                rn.set_pr_url(
-                    requests.request("GET", subject["url"]).json()["html_url"]
-                )
-                rn.set_upstream(n["repository"]["description"])
-                print(n["repository"]["description"])
-
-            if notification_type == ISSUE:
-                comment_url = subject["latest_comment_url"]
-                print(comment_url)
-                if len(comment_url) != 0:
-                    resp = requests.request("GET", comment_url)
-                    comment = resp.json()
-                    if date_parse(comment["updated_at"]) > since:
-                        c = Comment()
-                        c.set_updated_at(comment["updated_at"])
-                        c.set_author(comment["user"]["login"])
-                        c.set_body(comment["body"])
-                        pr_url = comment["pull_request_url"]
-                        if len(comment["pull_request_url"]) == 0:
-                            c.set_url(comment["issue_url"])
-                        else:
-                            url = pr_url
-                            c.set_url(comment["pull_request_url"])
-                        rn.set_comment(c)
+            rn = self._into_notification(n)
+            last_read = rn.updated_at
             val.append(rn)
         return NotificationResp(val, date_parse(last_read))
 
