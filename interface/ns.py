@@ -74,7 +74,6 @@ class NameService:
             "interface_url": f"http://{local_settings.INTERFACE_URL}:{local_settings.PORT}",
             "forge_url": [self.forge_url],
         }
-        print(payload)
         resp = requests.post(url, json=payload)
         if resp.status_code == 200:
             print("registered interface")
@@ -87,15 +86,8 @@ class NameService:
         cached = self.cache.search(forge_url)
         if cached is None:
             payload = {"forge_url": forge_url}
-            # print("quering ns")
-            # print(type(payload))
-            # print(payload)
             resp = requests.post(url, json=payload)
-            print(f"resp {resp}")
-            print(f"status {resp.status_code}")
-            print(f"text {resp.text}")
             interfaces = resp.json()
-            print(interfaces)
             self.cache.add(forge_url, interfaces)
             return interfaces
         return cached
