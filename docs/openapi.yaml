@@ -1,0 +1,27 @@
+openapi: "3.0.0"
+info:
+  version: 0.1.0
+  title: ForgeFed Interface Service
+  description: >-
+    This service is used to bridge software forges to create a distributed software
+    development environment.
+    More information about this can be found on
+    [GitHub](https://github.com/forgefedv2/interface)
+  license:
+    name: AGPL3
+    url: https://www.gnu.org/licenses/agpl-3.0-standalone.html
+  contact:
+    name: ForgeFed Developers
+    email: forgefed@gmail.com
+servers:
+  - url: http://example.com # TODO CHANGE THIS
+tags:
+  - name: interface
+    description: >-
+      A bridge component that talks the bridge protocol and is able to affect
+      changes to the forge that it manages.
+    externalDocs: 
+      description: Find out more about interfaces 
+      url: https://github.com/forgefedv2/spec/blob/master/rfc/1-ecosystem-architecture/1-ecosystem-architecture.md
+paths:
+  $ref: "./api/v1/spec.yaml"
