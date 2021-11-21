@@ -23,7 +23,7 @@ import time
 import datetime
 
 
-from interface import local_settings
+from interface.settings import CONFIG
 from interface.git import get_forge
 from interface.forges.notifications import PULL, ISSUE
 from interface.forges.utils import get_patch, get_branch_name
@@ -50,7 +50,7 @@ class Runner:
                 INSERT OR IGNORE INTO interface_jobs_run
                     (this_interface_url, last_run) VALUES (?, ?);
                 """,
-                (local_settings.INTERFACE_URL, str(last_run)),
+                (CONFIG.SERVER.domain, str(last_run)),
             )
             conn.commit()
 
@@ -60,7 +60,7 @@ class Runner:
             cur = conn.cursor()
             cur.execute(
                 "UPDATE interface_jobs_run set last_run = ? WHERE this_interface_url = ?;",
-                (str(last_run), local_settings.INTERFACE_URL),
+                (str(last_run), CONFIG.SERVER.domain),
             )
             conn.commit()
 
@@ -70,7 +70,7 @@ class Runner:
             cur = conn.cursor()
             res = cur.execute(
                 "SELECT last_run FROM interface_jobs_run WHERE this_interface_url = ?;",
-                (local_settings.INTERFACE_URL,),
+                (CONFIG.SERVER.domain,),
             ).fetchone()
             return res[0]
 
@@ -79,7 +79,7 @@ class Runner:
             global RUNNING
             if RUNNING:
                 self.scheduler.enter(
-                    local_settings.JOB_RUNNER_DELAY, 8, self._background_job
+                    CONFIG.SYSTEM.job_runner_delay, 8, self._background_job
                 )
                 return
             else:
@@ -94,25 +94,25 @@ class Runner:
             #                    print(notifications)
             for n in notifications:
                 (owner, _repo) = self.git.forge.get_owner_repo_from_url(n["repo_url"])
-                if all([n["type"] == PULL, owner == local_settings.ADMIN_USER]):
+                if all([n["type"] == PULL, owner == CONFIG.GITEA.username]):
                     patch = get_patch(n["pr_url"])
                     local = n["repo_url"]
                     upstream = n["upstream"]
                     patch = self.git.process_patch(
-                        patch, local, upstream, get_branch_name(n["pr_url"])
+                        patch, local, get_branch_name(n["pr_url"])
                     )
                     print(patch)
 
             #                        if n["type"] ==
             RUNNING = False
             self.scheduler.enter(
-                local_settings.JOB_RUNNER_DELAY, 8, self._background_job
+                CONFIG.SYSTEM.job_runner_delay, 8, self._background_job
             )
             # argument=(app,))
 
     def run(self):
         """Start job runner"""
         self.scheduler.enter(
-            local_settings.JOB_RUNNER_DELAY, 8, self._background_job
+            CONFIG.SYSTEM.job_runner_delay, 8, self._background_job
         )  # argument=(self,))
         threading.Thread(target=self.scheduler.run).start()

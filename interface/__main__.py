@@ -16,9 +16,11 @@ Run ForgeFed Interface flask application
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from dynaconf import settings
 
+import interface.settings
 from interface.app import create_app
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(threaded=True, port=7000)
+    app.run(threaded=True, port=settings.SERVER.port)
