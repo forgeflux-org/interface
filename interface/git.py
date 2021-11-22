@@ -23,7 +23,7 @@ import rfc3339
 from libgit import InterfaceAdmin, Repo, Patch, System
 
 from interface.db import get_db, get_git_system
-from interface import local_settings
+from interface.settings import CONFIG
 
 from interface.forges.utils import get_branch_name
 from interface.forges.base import Forge
@@ -84,5 +84,6 @@ class Git:
 
 def get_forge():
     forge = Gitea()
-    git = Git(forge, local_settings.GITEA_USERNAME, local_settings.ADMIN_EMAIL)
+    # TODO get username from Forge obj
+    git = Git(forge, CONFIG.GITEA.username, CONFIG.SYSTEM.admin_email)
     return git
