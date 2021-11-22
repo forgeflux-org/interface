@@ -61,7 +61,7 @@
         content:
           application/json:
             schema:
-              $ref: "./components/responses/repo_link.yaml"
+              $ref: "./components/schema/repo_link.yaml"
       "404":
         description: Could not find repository.
 
@@ -76,7 +76,7 @@
       content:
         application/json:
           schema:
-            $ref: "./components/responses/repo_link.yaml"
+            $ref: "./components/schema/repo_link.yaml"
     responses:
       "200":
         description: Repository information has been fetched

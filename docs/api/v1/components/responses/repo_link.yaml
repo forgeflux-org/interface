@@ -1,4 +1,0 @@
-type: object
-properties:
-  repository_url:
-    type: string
