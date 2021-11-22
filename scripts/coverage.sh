@@ -5,6 +5,8 @@ readonly PROJECT_ROOT=$(pwd)/libgit
 readonly GRCOV_TARBAL="$TMP_DIR/grcov.tar.bz2"
 readonly GRCOV="$TMP_DIR/grcov"
 
+export DYNACONF_SYSTEM__NORTHSTAR="http://$(hostname):3000"
+export DYNACONF_SERVER__DOMAIN="http://$(hostname):7000"
 
 clean_up() {
 	cd $PROJECT_ROOT
@@ -45,8 +47,42 @@ build_and_test() {
 		--ignore "../*" -o target/lcov.info
 }
 
-cd $PROJECT_ROOT
-mkdir $TMP_DIR || true
-clean_up
-download
-build_and_test
+coverage() {
+	cd $PROJECT_ROOT
+	mkdir $TMP_DIR || true
+	clean_up
+	download
+	build_and_test
+	source ./venv/bin/activate  && coverage html
+	source ./venv/bin/activate  && coverage xml
+}
+
+run_tests() {
+	docker-compose up -d
+	cd libgit && cargo test --all --all-features --no-fail-fast > /dev/null
+	source ./venv/bin/activate && pip install -e . > /dev/null
+	source ./venv/bin/activate && pip install '.[test]' > /dev/null
+	python -m interface& > /dev/null
+	coverage run -m pytest
+	kill $(pgrep -a -f "python -m interface") || true
+	pip uninstall -y interface > /dev/null
+	docker-compose down
+}
+
+while [[ $# -gt 0 ]]; do
+  key="$1"
+
+  case $key in
+    -c|--coverage)
+	  echo "[*] Generating coverage report"
+	  run_tests
+	  coverage
+	  break
+      ;;
+    -t|--test)
+	  echo "[*] Running tests"
+	  run_tests
+	  break
+      ;;
+  esac
+done

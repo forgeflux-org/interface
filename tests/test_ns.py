@@ -12,19 +12,19 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from dynaconf import settings
 from interface.app import create_app
 from interface.ns import NameService
 from interface.git import get_forge
 from interface.utils import clean_url
-from interface.local_settings import INTERFACE_URL, PORT
 
 
 def test_ns(app):
     """Test ns"""
     forge = get_forge().forge.get_forge_url()
+    config_interface_url = settings.SERVER.domain
 
     print(forge)
     ns = NameService(forge)
     interface_url = ns.query(forge)
-    assert clean_url(f"http://{INTERFACE_URL}:{PORT}") in interface_url
-    assert clean_url(f"http://{INTERFACE_URL}:{PORT}") in interface_url
+    assert clean_url(config_interface_url) in interface_url
