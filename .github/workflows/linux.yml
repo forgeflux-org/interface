@@ -41,6 +41,9 @@ jobs:
           profile: minimal
           override: true
 
+      - name: Install virtualenv
+        run: virtualenv venv 
+
       - name: Install dependencies
         run: make env
 
