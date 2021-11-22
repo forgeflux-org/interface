@@ -1,5 +1,6 @@
 /api/v1/notifications/subscribe:
   post:
+    description: "Sends a POST request allowing for a user to subscribe to a repository"
     tags:
       - notifications
     summary: Provides notifications for subscribed repositories.
@@ -18,6 +19,7 @@
 
 /api/v1/issues/issue/create:
   post:
+    description: "Sends a POST request allowing for an issue to be created in the repository"
     tags:
       - issues
     summary: Creates an issue on the repository's Issue tracker page.
@@ -43,6 +45,7 @@
   
 /api/v1/repository/fetch:
   post:
+    description: "Fetches the repository's base URL by cleaning a user provided URL"
     tags:
       - repos
     summary: Gets repository URL.
@@ -52,7 +55,7 @@
         application/json:
           schema:
             type: object
-            properites:
+            properties:
               url:
                 type: string
     responses:
@@ -68,6 +71,7 @@
 
 /api/v1/repository/info:
   post:
+    description: "Retrieves information about a repository"
     tags:
       - repos
     summary: Get information about a repository.
@@ -89,6 +93,7 @@
 
 /api/v1/repository/fork/local:
   post:
+    description: "Functionality present to fork a local repository"
     tags:
       - repos
     summary: Fork a local repository
@@ -106,10 +111,11 @@
 
 /api/v1/repository/fork/foreign:
   post:
+    description: "Functionality present to fork a foreign repository"
     tags:
       - repos
     summary: Fork a foreign repository
-    operationId: fork foreign repository
+    operationId: fork_foreign_repository
     requestBody:
       content:
         application/json:
@@ -123,6 +129,7 @@
 
 /api/v1/repository/pull/create:
   post:
+    description: "Sends a request to create a Pull Request to a branch of the repository"
     tags:
       - repos
     summary: Create a Pull Request

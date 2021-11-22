@@ -23,5 +23,18 @@ tags:
     externalDocs: 
       description: Find out more about interfaces 
       url: https://github.com/forgefedv2/spec/blob/master/rfc/1-ecosystem-architecture/1-ecosystem-architecture.md
+  - name: notifications
+    description: >-
+      A system that works with the notification system present in the user's
+      account, allowing for the forge patches to be scheduled upon trigger.
+  - name: issues
+    description: >-
+      A system that tracks the issues present in a repository, and can be
+      used to subsequently clone the issues present for a particular repo.
+  - name: repos
+    description: >-
+      A section that comprises of the features and functionality present 
+      in a repository.
+
 paths:
   $ref: "./api/v1/spec.yaml"
