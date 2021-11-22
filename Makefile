@@ -6,6 +6,12 @@ coverage: migrate
 	# rustup component add llvm-tools-preview is required
 	./scripts/coverage.sh --coverage
 
+doc: ## Generates documentation
+	@-rm -rf dist
+	@-mkdir -p dist/openapi/
+	@cd ./docs/openapi/ && yarn install && yarn html
+	@cp -r ./docs/openapi/dist/* dist/openapi/
+
 docker: ## Build Docker image from source
 	docker build -t forgedfed/interface .
 
@@ -37,4 +43,6 @@ migrate: ## Run migrations
 	@ venv/bin/yoyo-migrate apply --all --batch
 
 test: migrate ## Run tests
+	@cd ./docs/openapi/  && yarn install 
+	@cd ./docs/openapi/  && yarn test 
 	@./scripts/coverage.sh -t
