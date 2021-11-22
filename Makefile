@@ -2,9 +2,9 @@ default: ## Run app
 	. ./venv/bin/activate && cd libgit && maturin build
 	. ./venv/bin/activate && python -m interface
 
-coverage: migrate
+coverage: test
 	# rustup component add llvm-tools-preview is required
-	./scripts/coverage.sh --coverage
+	@. ./venv/bin/activate && ./scripts/coverage.sh --coverage
 
 doc: ## Generates documentation
 	@-rm -rf dist
@@ -45,4 +45,7 @@ migrate: ## Run migrations
 test: migrate ## Run tests
 	@cd ./docs/openapi/  && yarn install 
 	@cd ./docs/openapi/  && yarn test 
-	@./scripts/coverage.sh -t
+	#@cd libgit && cargo test --all --all-features --no-fail-fast
+	@ . ./venv/bin/activate && pip install -e .
+	@ . ./venv/bin/activate && pip install '.[test]'
+	@ . ./venv/bin/activate && ./scripts/coverage.sh --test

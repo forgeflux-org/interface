@@ -16,6 +16,24 @@ clean_up() {
 	cargo clean
 }
 
+check_arg(){
+    if [ -z $1 ]
+    then
+        help
+        exit 1
+    fi
+}
+
+match_arg() {
+    if [ $1 == $2 ] || [ $1 == $3 ]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
 download() {
 	if [ ! -e $GRCOV ]; 
 	then 
@@ -47,42 +65,35 @@ build_and_test() {
 		--ignore "../*" -o target/lcov.info
 }
 
-coverage() {
+run_coverage() {
 	cd $PROJECT_ROOT
 	mkdir $TMP_DIR || true
 	clean_up
 	download
 	build_and_test
-	source ./venv/bin/activate  && coverage html
-	source ./venv/bin/activate  && coverage xml
+	coverage html
+	coverage xml
 }
 
 run_tests() {
 	docker-compose up -d
-	cd libgit && cargo test --all --all-features --no-fail-fast > /dev/null
-	source ./venv/bin/activate && pip install -e . > /dev/null
-	source ./venv/bin/activate && pip install '.[test]' > /dev/null
-	python -m interface& > /dev/null
+	interface/__main__.py&
+	sleep 2
 	coverage run -m pytest
 	kill $(pgrep -a -f "python -m interface") || true
 	pip uninstall -y interface > /dev/null
 	docker-compose down
 }
 
-while [[ $# -gt 0 ]]; do
-  key="$1"
+check_arg $1
 
-  case $key in
-    -c|--coverage)
-	  echo "[*] Generating coverage report"
-	  run_tests
-	  coverage
-	  break
-      ;;
-    -t|--test)
-	  echo "[*] Running tests"
-	  run_tests
-	  break
-      ;;
-  esac
-done
+if match_arg $1 'c' '--coverage'
+then
+	run_coverage
+elif match_arg $1 '-t' '--test'
+then	
+	run_tests
+else
+	echo "undefined option"
+	exit 1
+fi
