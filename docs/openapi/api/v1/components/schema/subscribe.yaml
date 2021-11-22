@@ -1,0 +1,8 @@
+type: object
+properties:
+  repository_url:
+    description: The URL of the repository that is to be cloned
+    type: string
+  interface_url:
+    description: The publicly accessible URL of the bridge interface
+    type: string
