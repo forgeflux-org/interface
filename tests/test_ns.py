@@ -18,9 +18,12 @@ from interface.ns import NameService
 from interface.git import get_forge
 from interface.utils import clean_url
 
+from tests.test_utils import register_ns
 
-def test_ns(app):
+
+def test_ns(app, requests_mock):
     """Test ns"""
+    register_ns(requests_mock)
     forge = get_forge().forge.get_forge_url()
     config_interface_url = settings.SERVER.domain
 

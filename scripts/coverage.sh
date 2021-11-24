@@ -5,9 +5,6 @@ readonly PROJECT_ROOT=$(pwd)/libgit
 readonly GRCOV_TARBAL="$TMP_DIR/grcov.tar.bz2"
 readonly GRCOV="$TMP_DIR/grcov"
 
-export DYNACONF_SYSTEM__NORTHSTAR="http://$(hostname):3000"
-export DYNACONF_SERVER__DOMAIN="http://$(hostname):7000"
-
 clean_up() {
 	cd $PROJECT_ROOT
 	/bin/rm default.profraw  lcov.info *.profraw || true
@@ -75,24 +72,11 @@ run_coverage() {
 	coverage xml
 }
 
-run_tests() {
-	docker-compose up -d
-	interface/__main__.py&
-	sleep 2
-	coverage run -m pytest
-	kill $(pgrep -a -f "python -m interface") || true
-	pip uninstall -y interface > /dev/null
-	docker-compose down
-}
-
 check_arg $1
 
 if match_arg $1 'c' '--coverage'
 then
 	run_coverage
-elif match_arg $1 '-t' '--test'
-then	
-	run_tests
 else
 	echo "undefined option"
 	exit 1
