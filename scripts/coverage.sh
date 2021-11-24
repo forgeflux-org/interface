@@ -68,8 +68,6 @@ run_coverage() {
 	clean_up
 	download
 	build_and_test
-	coverage html
-	coverage xml
 }
 
 check_arg $1
