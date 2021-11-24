@@ -45,6 +45,7 @@ migrate: ## Run migrations
 test: migrate ## Run tests
 	@cd ./docs/openapi/  && yarn install 
 	@cd ./docs/openapi/  && yarn test 
+	cd libgit && cargo test --all --all-features --no-fail-fast
 	@ . ./venv/bin/activate && pip install -e .
 	@ . ./venv/bin/activate && pip install '.[test]'
 	@ . ./venv/bin/activate && \

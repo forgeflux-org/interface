@@ -50,7 +50,7 @@ jobs:
       - name: generate coverage
         run: make coverage
         env:
-          DYNACONF_GITEA__HOST : ${{ secrets.DYNACONF_GITEA__HOST }}
+          DYNACONF_GITEA__HOST : "https://git.batsense.net"
           DYNACONF_GITEA__API_KEY : ${{ secrets.DYNACONF_GITEA__API_KEY }}
           DYNACONF_GITEA__USERNAME : ${{ secrets.DYNACONF_GITEA__USERNAME }}
 
