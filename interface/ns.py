@@ -19,7 +19,7 @@ Name service: find interfaces that can work with forges
 import requests
 from urllib.parse import urlunparse, urlparse
 
-from interface import local_settings
+from dynaconf import settings
 from interface.utils import clean_url
 from interface.error import Error
 
@@ -53,7 +53,7 @@ class NSCache:
 
 class NameService:
     def __init__(self, forge_url: str):
-        self.ns = urlparse(clean_url(local_settings.DEFAULT_NORTHSTAR))
+        self.ns = urlparse(clean_url(settings.SYSTEM.northstar))
         self.forge_url = clean_url(forge_url)
         self._register()
         self.cache = NSCache()
@@ -71,7 +71,7 @@ class NameService:
         url = "interface/register"
         url = self._get_url(url)
         payload = {
-            "interface_url": f"http://{local_settings.INTERFACE_URL}:{local_settings.PORT}",
+            "interface_url": settings.SERVER.domain,
             "forge_url": [self.forge_url],
         }
         print(payload)

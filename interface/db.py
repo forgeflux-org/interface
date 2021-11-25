@@ -22,7 +22,7 @@ from yoyo import read_migrations
 from yoyo import get_backend
 from libgit import System
 
-from interface import local_settings
+from dynaconf import settings
 
 
 def get_db() -> sqlite3.Connection:
@@ -38,7 +38,7 @@ def get_db() -> sqlite3.Connection:
 def get_git_system() -> System:
     """Get git system"""
     if "git_system" not in g:
-        g.git_system = System(local_settings.BASE_DIR)
+        g.git_system = System(settings.SYSTEM.base_dir)
     return g.git_system
 
 

@@ -25,7 +25,7 @@ import sys
 
 from flask import g
 
-from interface import local_settings
+from dynaconf import settings
 from interface.git import get_forge
 from interface.forges.notifications import PULL, ISSUE
 from interface.forges.utils import get_patch, get_branch_name
@@ -55,7 +55,7 @@ class Runner:
                 INSERT OR IGNORE INTO interface_jobs_run
                     (this_interface_url, last_run) VALUES (?, ?);
                 """,
-                (local_settings.INTERFACE_URL, str(last_run)),
+                (settings.SERVER.domain, str(last_run)),
             )
             conn.commit()
         self.thread = threading.Thread(target=self._background_job)
@@ -80,7 +80,7 @@ class Runner:
             cur = conn.cursor()
             cur.execute(
                 "UPDATE interface_jobs_run set last_run = ? WHERE this_interface_url = ?;",
-                (str(last_run), local_settings.INTERFACE_URL),
+                (str(last_run), settings.SERVER.domain),
             )
             conn.commit()
 
@@ -90,7 +90,7 @@ class Runner:
             cur = conn.cursor()
             res = cur.execute(
                 "SELECT last_run FROM interface_jobs_run WHERE this_interface_url = ?;",
-                (local_settings.INTERFACE_URL,),
+                (settings.SERVER.domain,),
             ).fetchone()
             return res[0]
 
@@ -100,19 +100,15 @@ class Runner:
             if self.shutdown_flag.is_set():
                 print("exiting worker")
                 break
-            self.current_run = self.scheduler.enter(
-                local_settings.JOB_RUNNER_DELAY, 8, self._background_job
-            )
             with self.app.app_context():
                 global RUNNING
                 if RUNNING:
                     self.scheduler.enter(
-                        local_settings.JOB_RUNNER_DELAY, 8, self._background_job
+                        settings.SYSTEM.job_runner_delay, 8, self._background_job
                     )
                     return
                 else:
                     RUNNING = True
-
                 last_run = self.get_last_run()
                 print(last_run)
 
@@ -123,7 +119,7 @@ class Runner:
                 for n in notifications:
                     resolve_notification(n).run()
 
-            time.sleep(local_settings.JOB_RUNNER_DELAY)
+            time.sleep(settings.SYSTEM.job_runner_delay)
 
 
 def init_app(app):

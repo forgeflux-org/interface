@@ -20,6 +20,7 @@ import os
 
 from flask import Flask
 
+import interface.settings
 from interface import db
 from interface import runner
 from interface.api.v1 import bp

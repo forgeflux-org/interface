@@ -1,0 +1,146 @@
+/api/v1/notifications/subscribe:
+  post:
+    description: "Sends a POST request allowing for a user to subscribe to a repository"
+    tags:
+      - notifications
+    summary: Provides notifications for subscribed repositories.
+    operationId: subscribe
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: "./components/schema/subscribe.yaml"
+    responses:
+      "200":
+        description: Successfully subscribed
+      "400":
+        description: Unsuccessful subscription to the repository
+
+
+/api/v1/issues/issue/create:
+  post:
+    description: "Sends a POST request allowing for an issue to be created in the repository"
+    tags:
+      - issues
+    summary: Creates an issue on the repository's Issue tracker page.
+    operationId: create_issue
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: "./components/schema/issue.yaml"
+    responses:
+      "201":
+        description: Successfully created an issue
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                html_url:
+                  type: string
+      "400":
+        description: Failed creating an issue.
+
+  
+/api/v1/repository/fetch:
+  post:
+    description: "Fetches the repository's base URL by cleaning a user provided URL"
+    tags:
+      - repos
+    summary: Gets repository URL.
+    operationId: get_repository
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              url:
+                type: string
+    responses:
+      "200":
+        description: Successfully retrieved a repository's information
+        content:
+          application/json:
+            schema:
+              $ref: "./components/schema/repo_link.yaml"
+      "404":
+        description: Could not find repository.
+
+
+/api/v1/repository/info:
+  post:
+    description: "Retrieves information about a repository"
+    tags:
+      - repos
+    summary: Get information about a repository.
+    operationId: get_repository_info
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: "./components/schema/repo_link.yaml"
+    responses:
+      "200":
+        description: Repository information has been fetched
+        content:
+          application/json:
+            schema:
+              $ref: "./components/responses/repo_info.yaml"
+      "404":
+        description: Could not find the repository
+
+/api/v1/repository/fork/local:
+  post:
+    description: "Functionality present to fork a local repository"
+    tags:
+      - repos
+    summary: Fork a local repository
+    operationId: fork_local_repository
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: "./components/schema/repo_link.yaml"
+    responses:
+      "200":
+        description: Successful Fork
+      "400":
+        description: Could not fork the repository
+
+/api/v1/repository/fork/foreign:
+  post:
+    description: "Functionality present to fork a foreign repository"
+    tags:
+      - repos
+    summary: Fork a foreign repository
+    operationId: fork_foreign_repository
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: "./components/schema/repo_link.yaml"
+    responses:
+      "200":
+        description: Successful fork
+      "400":
+        description: Could not fork the repository
+
+/api/v1/repository/pull/create:
+  post:
+    description: "Sends a request to create a Pull Request to a branch of the repository"
+    tags:
+      - repos
+    summary: Create a Pull Request
+    operationId: create_pull_request
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: "./components/schema/pull_request.yaml"
+    responses:
+      "200":
+        description: Successful creation of a Pull Request
+      "400":
+        description: Unable to create a Pull Request

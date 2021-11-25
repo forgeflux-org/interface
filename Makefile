@@ -1,12 +1,45 @@
+define run_migrations ## run migrations
+	@- mkdir instance
+	@ venv/bin/yoyo-migrate apply --all --batch
+endef
+
+define test_libgit ## Test libgit library
+	echo "[*] testing libgit"
+	cd libgit && cargo test --all --all-features --no-fail-fast
+endef
+
+define test_api_spec ## Test openapi specsheet
+	echo foo
+	@cd ./docs/openapi/  && yarn install 
+	@cd ./docs/openapi/  && yarn test 
+endef
+
+define test_interface ## Run interface tests
+	$(call run_migrations)
+	@ . ./venv/bin/activate && pip install -e .
+	@ . ./venv/bin/activate && pip install '.[test]'
+	@ . ./venv/bin/activate && \
+		DYNACONF_SERVER__DOMAIN="http://interface.example.com"\
+		coverage run -m pytest
+	@ . ./venv/bin/activate && pip uninstall -y interface > /dev/null
+endef
+
 default: ## Run app
 	. ./venv/bin/activate && cd libgit && maturin build
 	. ./venv/bin/activate && python -m interface
 
-coverage: test
+coverage:
 	# rustup component add llvm-tools-preview is required
-	@./scripts/coverage.sh
-	@ . ./venv/bin/activate  && coverage html
-	@ . ./venv/bin/activate  && coverage xml
+	$(call test_interface)
+	@. ./venv/bin/activate && ./scripts/coverage.sh --coverage
+	@. ./venv/bin/activate && coverage xml && coverage html
+	@. ./venv/bin/activate && ./scripts/coverage.sh --coverage
+
+doc: ## Generates documentation
+	@-rm -rf dist
+	@-mkdir -p dist/openapi/
+	@cd ./docs/openapi/ && yarn install && yarn html
+	@cp -r ./docs/openapi/dist/* dist/openapi/
 
 docker: ## Build Docker image from source
 	docker build -t forgedfed/interface .
@@ -35,18 +68,9 @@ lint: ## Run linter
 	@./venv/bin/black ./tests/*
 
 migrate: ## Run migrations
-	@- mkdir instance
-	@ venv/bin/yoyo-migrate apply --all --batch
+	$(call run_migrations)
 
-test: migrate ## Run tests
-	@docker-compose up -d
-	@cd libgit && cargo test --all --all-features --no-fail-fast
-	@. ./venv/bin/activate && pip install -e .
-	@. ./venv/bin/activate && pip install '.[test]'
-	@ ./interface/__main__.py &
-	@pip install -e .
-	@pip install '.[test]'
-	@ . ./venv/bin/activate && coverage run -m pytest
-	@- kill -9 $(pgrep  -f interface)
-	@pip uninstall -y interface
-	@docker-compose down
+test: ## Run tests
+	$(call	test_api_spec)
+	$(call	test_libgit)
+	$(call	test_interface)

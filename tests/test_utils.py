@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from urllib.parse import urlparse, urlunparse
+from dynaconf import settings
 
 from interface.app import create_app
 from interface.utils import clean_url
@@ -33,3 +34,13 @@ def test_clean_url(client):
         assert cleaned.netloc == "example.com"
         assert cleaned.path == ""
         assert cleaned.query == ""
+
+
+def register_ns(requests_mock):
+    ns = clean_url(settings.SYSTEM.northstar)
+    query = f"{ns}/api/v1/forge/interfaces"
+    register = f"{ns}/api/v1/interface/register"
+    interface_url = clean_url(settings.SERVER.domain)
+
+    requests_mock.post(register, json={})
+    requests_mock.post(query, json=[interface_url])

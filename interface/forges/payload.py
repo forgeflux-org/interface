@@ -21,7 +21,7 @@ Payload data structures
 class Payload:
     """Payload base class. self.mandatory should be defined"""
 
-    def __init__(self, mandatory: list[str]):
+    def __init__(self, mandatory: [str]):
         self.payload = {}
         self.mandatory = []
 

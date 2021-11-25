@@ -41,11 +41,18 @@ jobs:
       - name: Install virtualenv
         run: pip install virtualenv
 
+      - name: Create virtualenv
+        run: virtualenv venv 
+
       - name: Install dependencies
         run: make env
 
       - name: generate coverage
         run: make coverage
+        env:
+          DYNACONF_GITEA__HOST : "https://git.batsense.net"
+          DYNACONF_GITEA__API_KEY : ${{ secrets.DYNACONF_GITEA__API_KEY }}
+          DYNACONF_GITEA__USERNAME : ${{ secrets.DYNACONF_GITEA__USERNAME }}
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v2

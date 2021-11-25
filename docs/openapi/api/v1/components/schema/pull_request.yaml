@@ -1,0 +1,20 @@
+type: object
+properties:
+  repository_url:
+    type: string
+  pr_url:
+    type: string
+  message:
+    type: string
+  head:
+    type: string
+  base:
+    type: string
+  title:
+    type: string
+  patch:
+    type: string
+  author_name:
+    type: string
+  author_email:
+    type: string

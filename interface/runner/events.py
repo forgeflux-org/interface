@@ -17,8 +17,8 @@ A job runner that receives events(notifications) and runs revelant jobs on them
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import requests
+from dynaconf import settings
 
-from interface import local_settings
 from interface.git import get_forge
 from interface.db import get_db
 from interface.forges.utils import get_patch, get_branch_name
@@ -52,7 +52,7 @@ def resolve_notification(n: Notification) -> RunNoification:
     """Convert Notification into runnable unit of work"""
     git = get_forge()
     (owner, _repo) = git.forge.get_owner_repo_from_url(n.get_repo_url())
-    if all([n.get_type() == PULL, owner == local_settings.ADMIN_USER]):
+    if all([n.get_type() == PULL, owner == settings.GITEA.username]):
         if n.check_mandatory(PrEvent):
             return PrEvent(n)
     elif n.get_type() == ISSUE:
@@ -73,7 +73,7 @@ class PrEvent(RunNoification):
             self.notification.get_repo_url()
         )
         if all(
-            [self.notification.get_type() == PULL, owner == local_settings.ADMIN_USER]
+            [self.notification.get_type() == PULL, owner == settings.GITEA.username]
         ):
             patch = get_patch(self.notification.get_pr_url())
             local = self.notification.notification.get_repo_url()
