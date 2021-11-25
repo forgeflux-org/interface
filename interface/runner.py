@@ -21,9 +21,12 @@ import sched
 import threading
 import time
 import datetime
+import sys
+
+from flask import g
 
 
-from interface.settings import CONFIG
+from dynaconf import settings
 from interface.git import get_forge
 from interface.forges.notifications import PULL, ISSUE
 from interface.forges.utils import get_patch, get_branch_name
@@ -40,19 +43,36 @@ class Runner:
         self.logger = logging.getLogger("jobs")
         self.scheduler = sched.scheduler(time.time, time.sleep)
         self.git = get_forge()
+        self.shutdown_flag = threading.Event()
+        self.current_run = None
 
         with self.app.app_context():
             conn = get_db()
             cur = conn.cursor()
-            last_run = date_parse("2021-10-10T17:06:02+05:30")
+            last_run = date_parse("2021-11-10T17:06:02+05:30")
             cur.execute(
                 """
                 INSERT OR IGNORE INTO interface_jobs_run
                     (this_interface_url, last_run) VALUES (?, ?);
                 """,
-                (CONFIG.SERVER.domain, str(last_run)),
+                (settings.SERVER.domain, str(last_run)),
             )
             conn.commit()
+        self.thread = threading.Thread(target=self._background_job)
+        self.thread.start()
+        return
+
+    def get_switch(self):
+        return self.shutdown_flag
+
+    def kill(self):
+        if self.current_run is not None:
+            self.scheduler.cancel(self.current_run)
+        self.shutdown_flag.set()
+        self.shutdown_flag.wait()
+        print("set")
+        self.thread.join()
+        print("exit")
 
     def _update_time(self, last_run: datetime.datetime):
         with self.app.app_context():
@@ -60,7 +80,7 @@ class Runner:
             cur = conn.cursor()
             cur.execute(
                 "UPDATE interface_jobs_run set last_run = ? WHERE this_interface_url = ?;",
-                (str(last_run), CONFIG.SERVER.domain),
+                (str(last_run), settings.SERVER.domain),
             )
             conn.commit()
 
@@ -70,49 +90,48 @@ class Runner:
             cur = conn.cursor()
             res = cur.execute(
                 "SELECT last_run FROM interface_jobs_run WHERE this_interface_url = ?;",
-                (CONFIG.SERVER.domain,),
+                (settings.SERVER.domain,),
             ).fetchone()
             return res[0]
 
     def _background_job(self):
-        with self.app.app_context():
-            global RUNNING
-            if RUNNING:
-                self.scheduler.enter(
-                    CONFIG.SYSTEM.job_runner_delay, 8, self._background_job
-                )
-                return
-            else:
-                RUNNING = True
-
-            last_run = self.get_last_run()
-            print(last_run)
-
-            notifications = self.git.forge.get_notifications(
-                since=date_parse(last_run)
-            ).get_payload()
-            #                    print(notifications)
-            for n in notifications:
-                (owner, _repo) = self.git.forge.get_owner_repo_from_url(n["repo_url"])
-                if all([n["type"] == PULL, owner == CONFIG.GITEA.username]):
-                    patch = get_patch(n["pr_url"])
-                    local = n["repo_url"]
-                    upstream = n["upstream"]
-                    patch = self.git.process_patch(
-                        patch, local, get_branch_name(n["pr_url"])
+        print("running")
+        while True:
+            if self.shutdown_flag.is_set():
+                print("exiting worker")
+                break
+            print(f"from runner, stop is set: {self.shutdown_flag.is_set()}")
+            with self.app.app_context():
+                global RUNNING
+                if RUNNING:
+                    self.scheduler.enter(
+                        settings.SYSTEM.job_runner_delay, 8, self._background_job
                     )
-                    print(patch)
+                    return
+                else:
+                    RUNNING = True
+                last_run = self.get_last_run()
+                print(last_run)
 
-            #                        if n["type"] ==
-            RUNNING = False
-            self.scheduler.enter(
-                CONFIG.SYSTEM.job_runner_delay, 8, self._background_job
-            )
-            # argument=(app,))
+                notifications = self.git.forge.get_notifications(
+                    since=date_parse(last_run)
+                ).get_payload()
+                #                    print(notifications)
+                for n in notifications:
+                    (owner, _repo) = self.git.forge.get_owner_repo_from_url(
+                        n["repo_url"]
+                    )
+                    if all([n["type"] == PULL, owner == settings.GITEA.username]):
+                        patch = get_patch(n["pr_url"])
+                        local = n["repo_url"]
+                        upstream = n["upstream"]
+                        patch = self.git.process_patch(
+                            patch, local, get_branch_name(n["pr_url"])
+                        )
+                        print(patch)
+            time.sleep(settings.SYSTEM.job_runner_delay)
 
-    def run(self):
-        """Start job runner"""
-        self.scheduler.enter(
-            CONFIG.SYSTEM.job_runner_delay, 8, self._background_job
-        )  # argument=(self,))
-        threading.Thread(target=self.scheduler.run).start()
+
+def init_app(app):
+    runner = Runner(app)
+    return runner

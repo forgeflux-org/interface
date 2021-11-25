@@ -1,3 +1,5 @@
+import socket
+
 from dynaconf import settings
 
-CONFIG = settings
+settings = settings

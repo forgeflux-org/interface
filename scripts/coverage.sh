@@ -5,7 +5,6 @@ readonly PROJECT_ROOT=$(pwd)/libgit
 readonly GRCOV_TARBAL="$TMP_DIR/grcov.tar.bz2"
 readonly GRCOV="$TMP_DIR/grcov"
 
-
 clean_up() {
 	cd $PROJECT_ROOT
 	/bin/rm default.profraw  lcov.info *.profraw || true
@@ -13,6 +12,24 @@ clean_up() {
 	/bin/rm default.profraw  lcov.info *.profraw || true
 	cargo clean
 }
+
+check_arg(){
+    if [ -z $1 ]
+    then
+        help
+        exit 1
+    fi
+}
+
+match_arg() {
+    if [ $1 == $2 ] || [ $1 == $3 ]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
 
 download() {
 	if [ ! -e $GRCOV ]; 
@@ -45,8 +62,20 @@ build_and_test() {
 		--ignore "../*" -o target/lcov.info
 }
 
-cd $PROJECT_ROOT
-mkdir $TMP_DIR || true
-clean_up
-download
-build_and_test
+run_coverage() {
+	cd $PROJECT_ROOT
+	mkdir $TMP_DIR || true
+	clean_up
+	download
+	build_and_test
+}
+
+check_arg $1
+
+if match_arg $1 'c' '--coverage'
+then
+	run_coverage
+else
+	echo "undefined option"
+	exit 1
+fi

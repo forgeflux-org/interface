@@ -31,6 +31,9 @@ jobs:
             libgit/target
           key: ${{ runner.os }}-cargo-${{ matrix.version }}
 
+      - name: Install virtualenv
+        run: pip install virtualenv
+
       - name: Install ${{ matrix.version }}
         uses: actions-rs/toolchain@v1
         with:
@@ -38,8 +41,15 @@ jobs:
           profile: minimal
           override: true
 
-      - name: check build
-        run: cd libgit && cargo check --all --bins --examples --tests
+      - name: Create virtualenv
+        run: virtualenv venv 
 
-      - name: tests
-        run: cd libgit && cargo test --all --all-features --no-fail-fast
+      - name: Install dependencies
+        run: make env
+
+      - name: Run tests
+        run: make test
+        env:
+          DYNACONF_GITEA__HOST : "https://git.batsense.net"
+          DYNACONF_GITEA__API_KEY : ${{ secrets.DYNACONF_GITEA__API_KEY }}
+          DYNACONF_GITEA__USERNAME : ${{ secrets.DYNACONF_GITEA__USERNAME }}

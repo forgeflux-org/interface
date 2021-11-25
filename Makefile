@@ -1,20 +1,53 @@
+define run_migrations ## run migrations
+	@- mkdir instance
+	@ venv/bin/yoyo-migrate apply --all --batch
+endef
 
+define test_libgit ## Test libgit library
+	echo "[*] testing libgit"
+	cd libgit && cargo test --all --all-features --no-fail-fast
+endef
+
+define test_api_spec ## Test openapi specsheet
+	echo foo
+	@cd ./docs/openapi/  && yarn install 
+	@cd ./docs/openapi/  && yarn test 
+endef
+
+define test_interface ## Run interface tests
+	$(call run_migrations)
+	@ . ./venv/bin/activate && pip install -e .
+	@ . ./venv/bin/activate && pip install '.[test]'
+	@ . ./venv/bin/activate && \
+		DYNACONF_SERVER__DOMAIN="http://interface.example.com"\
+		coverage run -m pytest
+	pip uninstall -y interface > /dev/null
+endef
 
 default: ## Run app
-	cd libgit && maturin build
+	. ./venv/bin/activate && cd libgit && maturin build
 	. ./venv/bin/activate && python -m interface
 
 coverage:
 	# rustup component add llvm-tools-preview is required
-	@./scripts/coverage.sh
+	$(call test_interface)
+	@. ./venv/bin/activate && ./scripts/coverage.sh --coverage
+	@. ./venv/bin/activate && coverage xml && coverage html
+	@. ./venv/bin/activate && ./scripts/coverage.sh --coverage
+
+doc: ## Generates documentation
+	@-rm -rf dist
+	@-mkdir -p dist/openapi/
+	@cd ./docs/openapi/ && yarn install && yarn html
+	@cp -r ./docs/openapi/dist/* dist/openapi/
 
 docker: ## Build Docker image from source
 	docker build -t forgedfed/interface .
 
 env: ## Install all dependencies
 	@-virtualenv venv
-	pip install maturin
-	cd libgit && maturin develop
+	. ./venv/bin/activate && pip install maturin
+	. ./venv/bin/activate && cd libgit && maturin develop
 	. ./venv/bin/activate && pip install -r requirements.txt
 #	. ./venv/bin/activate && pip install -e .
 	#. ./venv/bin/activate && pip install '.[test]'
@@ -32,20 +65,12 @@ i: ## Launch app.py in an interactive python shell
 
 lint: ## Run linter
 	@./venv/bin/black ./interface/*
-	#@./venv/bin/black ./tests/*
+	@./venv/bin/black ./tests/*
 
 migrate: ## Run migrations
-	@. ./venv/bin/activate && FLASK_APP=interface/__init__.py FLASK_ENV=development flask migrate
+	$(call run_migrations)
 
 test: ## Run tests
-	@cd ./docs/openapi/  && yarn install 
-	@cd ./docs/openapi/  && yarn test 
-#	@pip install -e .
-#	@pip install '.[test]'
-#	@./venv/bin/pytest
-
-doc: ## Generates documentation
-	@-rm -rf dist
-	@-mkdir -p dist/openapi/
-	@cd ./docs/openapi/ && yarn install && yarn html
-	@cp -r ./docs/openapi/dist/* dist/openapi/
+	$(call	test_api_spec)
+	$(call	test_libgit)
+	$(call	test_interface)

@@ -22,7 +22,7 @@ from yoyo import read_migrations
 from yoyo import get_backend
 from libgit import System
 
-from interface.settings import CONFIG
+from dynaconf import settings
 
 
 def get_db() -> sqlite3.Connection:
@@ -38,7 +38,7 @@ def get_db() -> sqlite3.Connection:
 def get_git_system() -> System:
     """Get git system"""
     if "git_system" not in g:
-        g.git_system = System(CONFIG.SYSTEM.base_dir)
+        g.git_system = System(settings.SYSTEM.base_dir)
     return g.git_system
 
 
@@ -57,6 +57,7 @@ def init_db():
     with backend.lock():
         backend.apply_migrations(backend.to_apply(migrations))
         backend.commit()
+        print("migrations applied")
 
 
 @click.command("migrate")
@@ -68,5 +69,7 @@ def migrate_db_command():
 
 
 def init_app(app):
+    with app.app_context():
+        init_db()
     app.teardown_appcontext(close_db)
     app.cli.add_command(migrate_db_command)

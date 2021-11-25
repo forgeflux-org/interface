@@ -1,6 +1,5 @@
-#!venv/bin/python
 """
-Run ForgeFed Interface flask application
+Meta related routes
 """
 # Bridges software forges to create a distributed software development environment
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
@@ -17,13 +16,18 @@ Run ForgeFed Interface flask application
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from flask import Blueprint, jsonify, request
 
-from dynaconf import settings
-from interface.app import create_app
-from interface import runner
+bp = Blueprint("META", __name__, url_prefix="/_ff/interface/")
 
-if __name__ == "__main__":
-    app = create_app()
-    worker = runner.init_app(app)
-    app.run(threaded=True, host=settings.SERVER.ip, port=settings.SERVER.port)
-    worker.kill()
+
+VERSIONS = ["1"]
+payload = {"versions": VERSIONS}
+
+
+@bp.route("versions", methods=["GET"])
+def versions():
+    """
+    get supported interface protocol versions
+    """
+    return jsonify(payload)
