@@ -98,7 +98,7 @@ class Runner:
         print("running")
         while True:
             if self.shutdown_flag.is_set():
-                print("exiting eorker")
+                print("exiting worker")
                 break
             print(f"from runner, stop is set: {self.shutdown_flag.is_set()}")
             with self.app.app_context():
