@@ -16,12 +16,12 @@ Software](https://www.gnu.org/philosophy/free-sw.en.html) is about
 liberating users and giving them total control over how the programs
 they run should work. It's only fair that developers of such software
 enjoy the same levels of liberty. ForgeFed is an attempt to enable
-federation of major software forges(GitLab, GitHub, Gitea, Source Hut,
+federation for major software forges(GitLab, GitHub, Gitea, Source Hut,
 etc.) entirely in API-space. Prior to this, [there was an attempt to do
-the same](https://forgefed.peers.community/) but it a very involved
+the same](https://forgefed.peers.community/) but it was a very involved
 protocol and required participation from the forge developers. We
 believe our API-space implementation will allow for more organic growth
-as it will require any involvement from the forge developers.
+as it will not require any involvement from the forge developers.
 
 ## Live instance
 
