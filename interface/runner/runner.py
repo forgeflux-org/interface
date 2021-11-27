@@ -1,5 +1,5 @@
 """
-A job runner that receives events(notifications) and runs revelant jobs on them
+A job runner that receives events(notifications) and runs relevant jobs on them
 """
 # Bridges software forges to create a distributed software development environment
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
