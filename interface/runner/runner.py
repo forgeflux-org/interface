@@ -1,5 +1,5 @@
 """
-A job runner that receives events(notifications) and runs revelant jobs on them
+A job runner that receives events(notifications) and runs relevant jobs on them
 """
 # Bridges software forges to create a distributed software development environment
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
@@ -114,9 +114,8 @@ class Runner:
 
                 notifications = self.git.forge.get_notifications(
                     since=date_parse(last_run)
-                ).get_payload()
-                #                    print(notifications)
-                for n in notifications:
+                )
+                for n in notifications.notifications:
                     resolve_notification(n).run()
 
             time.sleep(settings.SYSTEM.job_runner_delay)

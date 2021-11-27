@@ -74,10 +74,11 @@ class Gitea(Forge):
         return data["html_url"]
 
     def _into_repository(self, data) -> RepositoryInfo:
-        info = RepositoryInfo()
-        info.set_description(data["description"])
-        info.set_name(data["name"])
-        info.set_owner_name(data["owner"]["login"])
+        info = RepositoryInfo(
+            description=data["description"],
+            name=data["name"],
+            owner=data["owner"]["login"],
+        )
         return info
 
     def get_repository(self, owner: str, repo: str) -> RepositoryInfo:
@@ -99,6 +100,54 @@ class Gitea(Forge):
         headers = self._auth()
         _response = requests.request("PUT", url, headers=headers)
 
+    def _into_notification(self, n) -> Notification:
+        subject = n["subject"]
+        notification_type = subject["type"]
+
+        last_read = n["updated_at"]
+        rn = Notification(
+            updated_at=last_read,
+            type=notification_type,
+            title=subject["title"],
+            state=subject["state"],
+            id=n["id"],
+            repo_url=n["repository"]["html_url"],
+        )
+
+        if notification_type == REPOSITORY:
+            print(n)
+
+        elif notification_type == PULL:
+            rn.pr_url = requests.request("GET", subject["url"]).json()["html_url"]
+
+            rn.upstream = n["repository"]["description"]
+            print(n["repository"]["description"])
+
+        elif notification_type == ISSUE:
+            comment_url = subject["latest_comment_url"]
+            print(comment_url)
+            if len(comment_url) != 0:
+                resp = requests.request("GET", comment_url)
+                comment = resp.json()
+
+                url = ""
+                pr_url = comment["pull_request_url"]
+                if len(comment["pull_request_url"]) == 0:
+                    url = comment["issue_url"]
+                else:
+                    url = pr_url
+
+                c = Comment(
+                    updated_at=comment["updated_at"],
+                    author=comment["user"]["login"],
+                    id=comment["id"],
+                    body=comment["body"],
+                    url=url,
+                )
+
+                rn.comment = c
+        return rn
+
     def get_notifications(self, since: datetime.datetime) -> NotificationResp:
         # Setting up a simple query object
         query = {}
@@ -115,52 +164,14 @@ class Gitea(Forge):
         # Setting last_read to a string
         # to be parsed into a datetime
         last_read = query["since"]
-        val = []
+        resp = []
 
         for n in notifications:
             # rn: Repository Notification
-            rn = Notification()
-            subject = n["subject"]
-            notification_type = subject["type"]
-
-            # Setting up data for the object
-            last_read = n["updated_at"]
-            rn.set_updated_at(last_read)
-            rn.set_type(notification_type)
-            rn.set_title(subject["title"])
-            rn.set_state(subject["state"])
-            rn.set_id(n["id"])
-            rn.set_repo_url(n["repository"]["html_url"])
-
-            if notification_type == REPOSITORY:
-                print(n)
-            if notification_type == PULL:
-                rn.set_pr_url(
-                    requests.request("GET", subject["url"]).json()["html_url"]
-                )
-                rn.set_upstream(n["repository"]["description"])
-                print(n["repository"]["description"])
-
-            if notification_type == ISSUE:
-                comment_url = subject["latest_comment_url"]
-                print(comment_url)
-                if len(comment_url) != 0:
-                    resp = requests.request("GET", comment_url)
-                    comment = resp.json()
-                    if date_parse(comment["updated_at"]) > since:
-                        c = Comment()
-                        c.set_updated_at(comment["updated_at"])
-                        c.set_author(comment["user"]["login"])
-                        c.set_body(comment["body"])
-                        pr_url = comment["pull_request_url"]
-                        if len(comment["pull_request_url"]) == 0:
-                            c.set_url(comment["issue_url"])
-                        else:
-                            url = pr_url
-                            c.set_url(comment["pull_request_url"])
-                        rn.set_comment(c)
-            val.append(rn)
-        return NotificationResp(val, date_parse(last_read))
+            rn = self._into_notification(n)
+            last_read = rn.updated_at
+            resp.append(rn)
+        return NotificationResp(notifications=resp, last_read=date_parse(last_read))
 
     def create_pull_request(self, owner: str, repo: str, pr: CreatePullrequest):
         url = self._get_url(format("/repos/%s/%s/pulls" % (owner, repo)))

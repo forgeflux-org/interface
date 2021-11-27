@@ -16,9 +16,8 @@ Notifications payload
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import datetime
-
-from .payload import Payload
+from datetime import datetime
+from dataclasses import dataclass
 
 ISSUE = "Issue"
 PULL = "Pull"
@@ -26,115 +25,38 @@ COMMIT = "commit"
 REPOSITORY = "repository"
 
 
-class Comment(Payload):
+@dataclass
+class Comment:
     """Data structure that represents a comment"""
 
-    def __init__(self):
-        mandatory = ["body", "author", "updated_at", "url"]
-        super().__init__(mandatory)
-
-    def set_updated_at(self, date):
-        """set comment last update time"""
-        self.payload["updated_at"] = date
-
-    def set_body(self, body):
-        """set comment body"""
-        self.payload["body"] = body
-
-    def set_author(self, author):
-        """set comment author"""
-        self.payload["author"] = author
-
-    def set_url(self, url):
-        """set url of comment"""
-        self.payload["url"] = url
+    body: str
+    updated_at: str
+    author: str
+    id: str
+    url: str
 
 
-class Notification(Payload):
+@dataclass
+# pylint: disable=too-many-instance-attributes
+class Notification:
     """Data structure that represents a notification"""
 
-    def __init__(self):
-        mandatory = ["type", "id", "state", "updated_at", "title"]
-        super().__init__(mandatory)
-
-    def get_id(self) -> str:
-        """get notification id"""
-        return self.payload["id"]
-
-    def get_updated_at(self) -> str:
-        """get notification update time"""
-        return self.payload["updated_at"]
-
-    def get_upstream(self) -> str:
-        """get upstream repository URL"""
-        return self.payload["upstream"]
-
-    def get_pr_url(self) -> str:
-        """get pr url"""
-        return self.payload["pr_url"]
-
-    def get_type(self) -> str:
-        """get notification type"""
-        return self.payload["type"]
-
-    def get_state(self) -> str:
-        """get notification state"""
-        return self.payload["state"]
-
-    def get_comment(self) -> str:
-        """get comment"""
-        return self.payload["status"]
-
-    def get_repo_url(self) -> str:
-        """get repository URL update time"""
-        return self.payload["repo_url"]
-
-    def get_title(self) -> str:
-        """get issue title"""
-        return self.payload["title"]
-
-    def set_id(self, id_: str) -> str:
-        """set notification ID"""
-        self.payload["id"] = id_
-
-    def set_updated_at(self, date):
-        """set notification update time"""
-        self.payload["updated_at"] = date
-
-    def set_upstream(self, upstream):
-        """set upstream repository URL"""
-        print("settings upstream", upstream)
-        self.payload["upstream"] = upstream
-
-    def set_pr_url(self, url):
-        """set pr url"""
-        self.payload["pr_url"] = url
-
-    def set_type(self, notification_type):
-        """set notification type"""
-        self.payload["type"] = notification_type
-
-    def set_state(self, state):
-        """set notification state"""
-        self.payload["state"] = state
-
-    def set_comment(self, comment: Comment):
-        """set comment"""
-        self.payload["status"] = comment.get_payload()
-
-    def set_repo_url(self, repo_url: str):
-        """set repository URL update time"""
-        self.payload["repo_url"] = repo_url
-
-    def set_title(self, title):
-        """set issue title"""
-        self.payload["title"] = title
+    type: str
+    id: str
+    state: str
+    updated_at: str
+    title: str
+    repo_url: str
+    upstream: str = None
+    pr_url: str = None
+    comment: Comment = None
 
 
+@dataclass
 class NotificationResp:
     """Notification response helper type"""
 
-    def __init__(self, notifications: [Notification], last_read: datetime.datetime):
+    def __init__(self, notifications: [Notification], last_read: datetime):
         self.notifications = notifications
         self.last_read = last_read
 
