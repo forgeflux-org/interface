@@ -22,10 +22,9 @@ import rfc3339
 from flask import g
 
 from libgit import InterfaceAdmin, Repo, Patch, System
+from dynaconf import settings
 
 from interface.db import get_db, get_git_system
-from interface import local_settings
-
 from interface.forges.utils import get_branch_name
 from interface.forges.base import Forge
 from interface.forges.gitea import Gitea
@@ -84,10 +83,7 @@ class Git:
 
 
 def get_forge():
-    forge = Gitea()
-    #    git = Git(forge, local_settings.GITEA_USERNAME, local_settings.ADMIN_EMAIL)
-    #    return git
     if "git" not in g:
         forge = Gitea()
-        g.git = Git(forge, local_settings.GITEA_USERNAME, local_settings.ADMIN_EMAIL)
+        g.git = Git(forge, settings.GITEA.username, settings.SYSTEM.admin_email)
     return g.git

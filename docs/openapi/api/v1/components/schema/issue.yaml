@@ -1,0 +1,12 @@
+type: object
+properties:
+  repository_url:
+    type: string
+  title:
+    type: string
+  body:
+    type: string
+  due_date:
+    type: string
+  closed:
+    type: boolean

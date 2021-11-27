@@ -22,7 +22,7 @@ from dataclasses import asdict
 import requests
 from rfc3339 import rfc3339
 
-from interface import local_settings
+from dynaconf import settings
 from . import utils
 from .base import CreateIssue, Forge, RepositoryInfo, CreatePullrequest
 from .notifications import Notification, Comment, NotificationResp
@@ -32,7 +32,7 @@ from .notifications import ISSUE, REPOSITORY, PULL
 class GitHub(Forge):
     def __init__(self):
         """Initializes the class variables"""
-        self.host = urlparse(utils.clean_url(local_settings.GITHUB_HOST))
+        self.host = urlparse(utils.clean_url(settings.GITHUB.host))
 
     def _get_url(self, path: str) -> str:
         """Retrieves the forge url"""
@@ -44,7 +44,7 @@ class GitHub(Forge):
 
     def _auth(self):
         """Authorizes the request with a token"""
-        return {"Authorization": format("token %s" % (local_settings.GITHUB_API_KEY))}
+        return {"Authorization": format("token %s" % (settings.GITHUB.api_key))}
 
     def get_forge_url(self) -> str:
         return urlunparse((self.host.scheme, self.host.netloc, "", "", "", ""))
@@ -193,7 +193,7 @@ class GitHub(Forge):
             del payload[key]
 
         payload["assignees"] = []
-        payload["lables"] = [0]
+        payload["labels"] = [0]
         payload["milestones"] = 0
 
         response = requests.request("POST", url, json=payload, headers=headers)

@@ -56,5 +56,14 @@ class Notification:
 class NotificationResp:
     """Notification response helper type"""
 
-    last_read: datetime
-    notifications: list[Notification]
+    def __init__(self, notifications: [Notification], last_read: datetime):
+        self.notifications = notifications
+        self.last_read = last_read
+
+    def get_payload(self):
+        """get flattened data"""
+        notifications = []
+        for n in self.notifications:
+            notifications.append(n.get_payload())
+
+        return notifications

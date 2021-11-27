@@ -15,10 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from datetime import datetime
 
-from rfc3339 import rfc3339
 import pytest
+from rfc3339 import rfc3339
+from dynaconf import settings
 
-from interface import local_settings
 from interface.app import create_app
 from interface.forges.notifications import ISSUE, PULL, Notification, Comment
 from interface.runner.events import resolve_notification, PrEvent, IssueEvent
@@ -53,7 +53,7 @@ def test_notifications_resolve(client):
     with pytest.raises(Exception) as _:
         resolve_notification(notification)
 
-    notification.repo_url = f"https://git.batsense.net/{local_settings.ADMIN_USER}/foo"
+    notification.repo_url = f"https://git.batsense.net/{settings.GITEA.username}/foo"
     with pytest.raises(Exception) as _:
         resolve_notification(notification)
 
@@ -76,7 +76,7 @@ def test_notifications_resolve(client):
     with pytest.raises(Exception) as _:
         resolve_notification(notification)
 
-    notification.repo_url = f"https://git.batsense.net/{local_settings.ADMIN_USER}/foo"
+    notification.repo_url = f"https://git.batsense.net/{settings.GITEA.username}/foo"
     print(notification.repo_url)
     with pytest.raises(Exception) as _:
         resolve_notification(notification)
