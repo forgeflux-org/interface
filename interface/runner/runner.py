@@ -25,13 +25,13 @@ import sys
 
 from flask import g
 
-
 from dynaconf import settings
 from interface.git import get_forge
 from interface.forges.notifications import PULL, ISSUE
 from interface.forges.utils import get_patch, get_branch_name
 from interface.db import get_db
 from interface.forges.gitea import date_parse
+from interface.runner.events import resolve_notification
 
 RUNNING = False
 
@@ -42,11 +42,11 @@ class Runner:
         logging.getLogger("jobs").setLevel(logging.WARNING)
         self.logger = logging.getLogger("jobs")
         self.scheduler = sched.scheduler(time.time, time.sleep)
-        self.git = get_forge()
         self.shutdown_flag = threading.Event()
         self.current_run = None
 
         with self.app.app_context():
+            self.git = get_forge()
             conn = get_db()
             cur = conn.cursor()
             last_run = date_parse("2021-11-10T17:06:02+05:30")
@@ -100,7 +100,6 @@ class Runner:
             if self.shutdown_flag.is_set():
                 print("exiting worker")
                 break
-            print(f"from runner, stop is set: {self.shutdown_flag.is_set()}")
             with self.app.app_context():
                 global RUNNING
                 if RUNNING:
@@ -118,17 +117,8 @@ class Runner:
                 ).get_payload()
                 #                    print(notifications)
                 for n in notifications:
-                    (owner, _repo) = self.git.forge.get_owner_repo_from_url(
-                        n["repo_url"]
-                    )
-                    if all([n["type"] == PULL, owner == settings.GITEA.username]):
-                        patch = get_patch(n["pr_url"])
-                        local = n["repo_url"]
-                        upstream = n["upstream"]
-                        patch = self.git.process_patch(
-                            patch, local, get_branch_name(n["pr_url"])
-                        )
-                        print(patch)
+                    resolve_notification(n).run()
+
             time.sleep(settings.SYSTEM.job_runner_delay)
 
 

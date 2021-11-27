@@ -19,12 +19,12 @@ Helper class to interact with git repositories
 import datetime
 from urllib.parse import urlparse
 import rfc3339
+from flask import g
 
 from libgit import InterfaceAdmin, Repo, Patch, System
-
-from interface.db import get_db, get_git_system
 from dynaconf import settings
 
+from interface.db import get_db, get_git_system
 from interface.forges.utils import get_branch_name
 from interface.forges.base import Forge
 from interface.forges.gitea import Gitea
@@ -83,7 +83,7 @@ class Git:
 
 
 def get_forge():
-    forge = Gitea()
-    # TODO get username from Forge obj
-    git = Git(forge, settings.GITEA.username, settings.SYSTEM.admin_email)
-    return git
+    if "git" not in g:
+        forge = Gitea()
+        g.git = Git(forge, settings.GITEA.username, settings.SYSTEM.admin_email)
+    return g.git

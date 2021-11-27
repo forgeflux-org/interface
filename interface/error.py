@@ -16,7 +16,6 @@ Errors
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 from flask import jsonify
 import requests
 
@@ -54,3 +53,16 @@ class Error:
                 status=resp.status_code, error=data["error"], errcode=data["errcode"]
             )
         return None
+
+
+F_D_INTERFACE_UNREACHABLE = Error(
+    errcode="F_D_INTERFACE_UNREACHABLE",
+    error="Interface unreachable",
+    status=503,
+)
+
+F_D_INVALID_PAYLOAD = Error(
+    errcode="F_D_INVALID_PAYLOAD",
+    error="Please submit valid payload",
+    status=400,
+)

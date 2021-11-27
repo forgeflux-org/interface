@@ -21,7 +21,7 @@ define test_interface ## Run interface tests
 	@ . ./venv/bin/activate && \
 		DYNACONF_SERVER__DOMAIN="http://interface.example.com"\
 		coverage run -m pytest
-	pip uninstall -y interface > /dev/null
+	@ . ./venv/bin/activate && pip uninstall -y interface > /dev/null
 endef
 
 default: ## Run app

@@ -20,9 +20,9 @@ Forge behavior base class
 import datetime
 from urllib.parse import urlparse, urlunparse
 
-from .notifications import NotificationResp
-from .payload import RepositoryInfo, CreatePullrequest, CreateIssue
-from .utils import clean_url
+from interface.forges.notifications import NotificationResp, Notification
+from interface.forges.payload import RepositoryInfo, CreatePullrequest, CreateIssue
+from interface.forges.utils import clean_url
 from interface.ns import NameService
 
 
@@ -103,6 +103,10 @@ class Forge:
 
     def close_pr(self, owner: str, repo: str):
         """Fork a repository"""
+        raise NotImplementedError
+
+    def get_notification(id_: str) -> Notification:
+        """Get notification by Id"""
         raise NotImplementedError
 
     def comment_on_issue(self, owner: str, repo: str, issue_url: str, body: str):

@@ -87,7 +87,7 @@ class NameService:
         cached = self.cache.search(forge_url)
         if cached is None:
             payload = {"forge_url": forge_url}
-            # print("quering ns")
+            # print("querying ns")
             # print(type(payload))
             # print(payload)
             resp = requests.post(url, json=payload)
