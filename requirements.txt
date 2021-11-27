@@ -5,6 +5,7 @@ black==21.9b0
 certifi==2021.10.8
 charset-normalizer==2.0.7
 click==8.0.3
+codespell==2.1.0
 configobj==5.0.6
 coverage==6.1.1
 Deprecated==1.2.13
