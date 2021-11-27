@@ -25,7 +25,7 @@ from interface.forges.utils import get_patch, get_branch_name
 from interface.forges.notifications import Notification, PULL, ISSUE
 
 
-class RunNoification:
+class RunNotification:
     """Process notification"""
 
     def __init__(self, n: Notification):
@@ -48,7 +48,7 @@ class RunNoification:
         return True
 
 
-def resolve_notification(n: Notification) -> RunNoification:
+def resolve_notification(n: Notification) -> RunNotification:
     """Convert Notification into runnable unit of work"""
     git = get_forge()
     (owner, _repo) = git.forge.get_owner_repo_from_url(n.get_repo_url())
@@ -60,7 +60,7 @@ def resolve_notification(n: Notification) -> RunNoification:
             return PrEvent(n)
 
 
-class PrEvent(RunNoification):
+class PrEvent(RunNotification):
     """PR type Notification"""
 
     @staticmethod
@@ -84,7 +84,7 @@ class PrEvent(RunNoification):
             print(patch)
 
 
-class IssueEvent(RunNoification):
+class IssueEvent(RunNotification):
     """Issue type notificatin"""
 
     @staticmethod

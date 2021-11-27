@@ -171,7 +171,7 @@ class Gitea(Forge):
             del payload[key]
 
         payload["assignees"] = []
-        payload["lables"] = [0]
+        payload["labels"] = [0]
         payload["milestones"] = 0
 
         response = requests.request("POST", url, json=payload, headers=headers)
