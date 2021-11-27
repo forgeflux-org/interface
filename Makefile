@@ -9,7 +9,6 @@ define test_libgit ## Test libgit library
 endef
 
 define test_api_spec ## Test openapi specsheet
-	echo foo
 	@cd ./docs/openapi/  && yarn install 
 	@cd ./docs/openapi/  && yarn test 
 endef
@@ -66,11 +65,13 @@ i: ## Launch app.py in an interactive python shell
 lint: ## Run linter
 	@./venv/bin/black ./interface/*
 	@./venv/bin/black ./tests/*
+	. ./venv/bin/activate && ./scripts/spellcheck.sh --write
 
 migrate: ## Run migrations
 	$(call run_migrations)
 
 test: ## Run tests
+	@. ./venv/bin/activate && ./scripts/spellcheck.sh --check
 	$(call	test_api_spec)
 	$(call	test_libgit)
 	$(call	test_interface)

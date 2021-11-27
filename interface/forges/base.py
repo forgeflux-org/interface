@@ -38,7 +38,7 @@ class Forge:
         """Get fetch remote for possible forge URL"""
         parsed = urlparse(url)
         if all([parsed.scheme != "http", parsed.scheme != "https"]):
-            raise Exception("scheme should be wither http or https")
+            raise Exception("scheme should be either http or https")
         if parsed.netloc != self.host.netloc:
             raise Exception("Unsupported forge")
         repo = parsed.path.split("/")[1:3]
