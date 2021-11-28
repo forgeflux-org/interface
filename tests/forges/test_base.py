@@ -1,5 +1,5 @@
 """ Test interface handlers"""
-# North Star ---  A lookup service for forged fed ecosystem
+# Interface ---  API-space federation for software forges
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -17,15 +17,15 @@ from datetime import datetime
 from urllib.parse import urlparse, urlunparse
 
 import pytest
+from dynaconf import settings
 
 from interface.forges.base import Forge
-from interface import local_settings
 from interface.forges.payload import CreateIssue, CreatePullrequest
 
 
 class BasicForge(Forge):
     def __init__(self):
-        super().__init__(local_settings.GITEA_HOST)
+        super().__init__(settings.GITEA.host)
 
     def get_forge_url(self) -> str:
         return urlunparse((self.host.scheme, self.host.netloc, "", "", "", ""))
