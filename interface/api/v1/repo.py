@@ -22,8 +22,14 @@ from libgit import Patch
 from interface.git import get_forge
 from interface.forges.payload import CreatePullrequest
 from interface.forges.utils import get_local_repository_from_foreign_repo
-from interface.client import (GET_REPOSITORY, GET_REPOSITORY_INFO, FORK_FOREIGN,
-FORK_LOCAL, CREATE_PULL_REQUEST, get_client)
+from interface.client import (
+    GET_REPOSITORY,
+    GET_REPOSITORY_INFO,
+    FORK_FOREIGN,
+    FORK_LOCAL,
+    CREATE_PULL_REQUEST,
+    get_client,
+)
 
 bp = Blueprint("API_V1_REPO", __name__, url_prefix="/repository")
 
