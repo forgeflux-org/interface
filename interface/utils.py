@@ -22,3 +22,9 @@ def clean_url(url: str):
     parsed = urlparse(url)
     cleaned = urlunparse((parsed.scheme, parsed.netloc, "", "", "", ""))
     return cleaned
+
+
+def trim_url(url: str) -> str:
+    if url.endswith("/"):
+        url = url[0:-1]
+    return url

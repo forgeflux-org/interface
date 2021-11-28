@@ -19,15 +19,12 @@ Utility functions to work with forges
 from urllib.parse import urlparse
 import requests
 
-from interface.utils import clean_url
+from interface.utils import clean_url, trim_url
 
 
 def get_patch(url: str) -> str:
     """Get patch from pull request"""
-    if url.endswith("/"):
-        url = url[0:-1] + ".patch"
-    else:
-        url += ".patch"
+    url = f"{trim_url(url)}.patch"
     resp = requests.get(url)
     if resp.status_code == 200:
         return resp.text
@@ -36,8 +33,15 @@ def get_patch(url: str) -> str:
 def get_branch_name(pull_request_url: str) -> str:
     """Get branch name from pull request URL"""
     parsed = urlparse(pull_request_url)
-    return format("%s%s" % (parsed.netloc, parsed.path.replace("/", "-")))
+
+    path = trim_url(parsed.path)
+    if path.startswith("/"):
+        path = path[1:]
+
+    return format("%s-%s" % (parsed.netloc, path.replace("/", "-")))
 
 
 def get_local_repository_from_foreign_repo(repo_url: str) -> str:
+    if repo_url.endswith("/"):
+        repo_url = repo_url[0:-1]
     return get_branch_name(repo_url)

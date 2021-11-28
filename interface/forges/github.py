@@ -46,6 +46,14 @@ class GitHub(Forge):
         """Authorizes the request with a token"""
         return {"Authorization": format("token %s" % (settings.GITHUB.api_key))}
 
+    def get_owner_repo_from_url(self, url: str) -> (str, str):
+        """Get (owner, repo) from repository URL"""
+        url = self.get_fetch_remote(url)
+        parsed = urlparse(url)
+        details = parsed.path.split("/")[1:3]
+        (owner, repo) = (details[0], details[1])
+        return (owner, repo)
+
     def get_forge_url(self) -> str:
         return urlunparse((self.host.scheme, self.host.netloc, "", "", "", ""))
 

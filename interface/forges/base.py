@@ -47,11 +47,7 @@ class Forge:
 
     def get_owner_repo_from_url(self, url: str) -> (str, str):
         """Get (owner, repo) from repository URL"""
-        url = self.get_fetch_remote(url)
-        parsed = urlparse(url)
-        details = parsed.path.split("/")[1:3]
-        (owner, repo) = (details[0], details[1])
-        return (owner, repo)
+        raise NotImplementedError
 
     def get_forge_url(self) -> str:
         """get URL of software for that this interface is servicing"""
@@ -105,7 +101,7 @@ class Forge:
         """Fork a repository"""
         raise NotImplementedError
 
-    def get_notification(id_: str) -> Notification:
+    def get_notification(self, id_: str) -> Notification:
         """Get notification by Id"""
         raise NotImplementedError
 

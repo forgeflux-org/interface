@@ -17,7 +17,7 @@ from urllib.parse import urlparse, urlunparse
 from dynaconf import settings
 
 from interface.app import create_app
-from interface.utils import clean_url
+from interface.utils import clean_url, trim_url
 from interface.db import get_db
 
 
@@ -34,6 +34,18 @@ def test_clean_url(client):
         assert cleaned.netloc == "example.com"
         assert cleaned.path == ""
         assert cleaned.query == ""
+
+
+def test_trim_url():
+    """Test trim_url"""
+
+    url = "https://example.com"
+    assert trim_url(url) == url
+    assert trim_url(f"{url}/") == url
+
+    path = "/foo/bar"
+    assert trim_url(path) == path
+    assert trim_url(f"{path}/") == path
 
 
 def register_ns(requests_mock):
