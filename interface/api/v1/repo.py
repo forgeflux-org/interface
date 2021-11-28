@@ -16,6 +16,8 @@ Repository related routes
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from dataclasses import asdict
+
 from flask import Blueprint, jsonify, request
 from libgit import Patch
 
@@ -74,8 +76,8 @@ def get_repository_info():
     data = request.get_json()
     git = get_forge()
     (owner, repo) = git.forge.get_owner_repo_from_url(data["repository_url"])
-    resp = git.forge.get_repository(owner, repo).get_payload()
-    return jsonify(resp)
+    resp = git.forge.get_repository(owner, repo)
+    return jsonify(asdict(resp))
 
 
 @bp.route(FORK_LOCAL, methods=["POST"])

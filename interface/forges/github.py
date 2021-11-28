@@ -13,7 +13,6 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 import datetime
 from urllib.parse import urlparse, urlunparse
 from dateutil.parser import parse as date_parse
@@ -78,7 +77,7 @@ class GitHub(Forge):
 
         # Defining authorization headers and a payload
         headers = self._auth()
-        payload = issue.get_payload()
+        payload = asdict(issue)
 
         # Sending in a POST request
         response = requests.request("POST", url, json=payload, headers=headers)
@@ -196,7 +195,7 @@ class GitHub(Forge):
         url = self._get_url(format("/repos/%s/%s/pulls" % (owner, repo)))
         headers = self._auth()
 
-        payload = pr.get_payload()
+        payload = asdict(pr)
         for key in ["repo", "owner"]:
             del payload[key]
 

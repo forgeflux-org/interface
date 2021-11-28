@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
+from dataclasses import asdict
 from dateutil.parser import parse as date_parse
 from urllib.parse import urlunparse, urlparse
 import requests
@@ -76,7 +77,7 @@ class Gitea(Forge):
         url = self._get_url(format("/repos/%s/%s/issues" % (owner, repo)))
 
         headers = self._auth()
-        payload = issue.get_payload()
+        payload = asdict(issue)
         response = requests.request("POST", url, json=payload, headers=headers)
         data = response.json()
         return data["html_url"]
@@ -185,7 +186,7 @@ class Gitea(Forge):
         url = self._get_url(format("/repos/%s/%s/pulls" % (owner, repo)))
         headers = self._auth()
 
-        payload = pr.get_payload()
+        payload = asdict(pr)
         for key in ["repo", "owner"]:
             del payload[key]
 
