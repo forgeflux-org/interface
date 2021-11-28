@@ -359,6 +359,7 @@ fn connect_local(repo: &Repo) -> FResult<Remote> {
     Ok(local)
 }
 
+#[cfg(not(tarpaulin_include))]
 #[pymodule]
 #[pyo3(name = "libgit")]
 fn my_extension(py: Python, m: &PyModule) -> PyResult<()> {
