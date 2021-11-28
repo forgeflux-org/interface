@@ -22,8 +22,8 @@ from libgit import Patch
 from interface.git import get_forge
 from interface.forges.payload import CreatePullrequest
 from interface.forges.utils import get_local_repository_from_foreign_repo
-from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO, FORK_FOREIGN
-from interface.client import FORK_LOCAL, CREATE_PULL_REQUEST, get_client
+from interface.client import (GET_REPOSITORY, GET_REPOSITORY_INFO, FORK_FOREIGN,
+FORK_LOCAL, CREATE_PULL_REQUEST, get_client)
 
 bp = Blueprint("API_V1_REPO", __name__, url_prefix="/repository")
 
@@ -43,7 +43,7 @@ def get_repository():
         "repository_url": string
     }
     """
-    data = request.json()
+    data = request.get_json()
     payload = {"repository_url": get_forge().forge.get_fetch_remote(data["url"])}
     return jsonify(payload)
 
@@ -65,9 +65,9 @@ def get_repository_info():
         "description": string
     }
     """
-    data = request.json()
+    data = request.get_json()
     git = get_forge()
-    (owner, repo) = forge.get_owner_repo_from_url(data["repository_url"])
+    (owner, repo) = git.forge.get_owner_repo_from_url(data["repository_url"])
     resp = git.forge.get_repository(owner, repo).get_payload()
     return jsonify(resp)
 
@@ -85,7 +85,7 @@ def fork_local_repository():
     ## Response
     { } # empty json
     """
-    data = request.json()
+    data = request.get_json()
     git = get_forge()
     (owner, repo) = git.forge.get_owner_repo_from_url(data["repository_url"])
     git.forge.fork(owner, repo)
@@ -105,7 +105,7 @@ def fork_foreign_repository():
     ## Response
     { } # empty json
     """
-    data = request.json()
+    data = request.get_json()
     git = get_forge()
     repository_url = data["repository_url"]
     client = get_client()
@@ -138,7 +138,7 @@ def create_pull_request():
     ## Response
      { }
     """
-    data = request.json()
+    data = request.get_json()
     git = get_forge()
     repository_url = data["repository_url"]
     (owner, repo) = git.forge.get_owner_repo_from_url(repository_url)

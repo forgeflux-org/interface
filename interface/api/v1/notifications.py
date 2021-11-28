@@ -40,7 +40,7 @@ def subscribe():
     ## Response
     { } # empty json
     """
-    data = request.json()
+    data = request.get_json()
     git = get_forge()
     repository_url = git.forge.get_fetch_remote(data["repository_url"])
     interface_url = git.forge.get_fetch_remote(data["interface_url"])
@@ -93,7 +93,7 @@ def events():
     ## Response
     { } # empty json
     """
-    data = request.json()
+    data = request.get_json()
     if any(
         [
             "type" not in data,
