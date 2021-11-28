@@ -16,11 +16,12 @@
 from flask import Blueprint, jsonify, request
 
 from interface import db
-from interface.error import F_D_INVALID_PAYLOAD
+from interface.error import F_D_INVALID_PAYLOAD, F_D_INTERFACE_UNREACHABLE
 from interface.git import get_forge
 from interface.client import SUBSCRIBE, EVENTS
 from interface.runner.events import resolve_notification
 from interface.forges.notifications import Notification
+from interface.utils import clean_url, verify_interface_online
 
 
 bp = Blueprint("API_V1_NOTIFICATIONS", __name__, url_prefix="/notifications")
@@ -41,16 +42,21 @@ def subscribe():
     { } # empty json
     """
     data = request.get_json()
+    interface_url = clean_url(data["interface_url"])
+
+    if not verify_interface_online(interface_url):
+        return F_D_INTERFACE_UNREACHABLE.get_error_resp()
+
     git = get_forge()
     repository_url = git.forge.get_fetch_remote(data["repository_url"])
-    interface_url = git.forge.get_fetch_remote(data["interface_url"])
+
     (owner, repo) = git.forge.get_owner_repo_from_url(repository_url)
     git.forge.subscribe(owner, repo)
 
     conn = db.get_db()
     cur = conn.cursor()
     cur.execute(
-        "INSERT OR IGNORE INTO interface_repositories (html_url) VALUES (?);",
+        "INSERT OR IGNORE INTO interface_local_repositories (html_url) VALUES (?);",
         (repository_url,),
     )
     cur.execute(
@@ -62,8 +68,8 @@ def subscribe():
         """
         INSERT OR IGNORE INTO interface_event_subscriptsions (repository_id, interface_id)
         VALUES (
-            (SELECT interface_interfaces WHERE url = ?),
-            (SELECT interface_local_repositories WHERE html_url = ?)
+            (SELECT ID from interface_interfaces WHERE url = ?),
+            (SELECT ID from interface_local_repositories WHERE html_url = ?)
         );
         """,
         (interface_url, repository_url),
