@@ -44,7 +44,7 @@ def create_issue():
         "html_url": string // of the newly created issue
      }
     """
-    data = request.json()
+    data = request.get_json()
     git = get_forge()
     (owner, repo) = git.forge.get_owner_repo_from_url(data["repository_url"])
 
@@ -72,7 +72,7 @@ def comment_on_issue():
     ## Response
      { }
     """
-    data = request.json()
+    data = request.get_json()
     git = get_forge()
     (owner, repo) = git.forge.get_owner_repo_from_url(data["repository_url"])
     git.forge.comment_on_issue(

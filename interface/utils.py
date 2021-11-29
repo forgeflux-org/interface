@@ -16,6 +16,8 @@
 from urllib.parse import urlparse, urlunparse
 import requests
 
+from interface.meta import VERSIONS
+
 
 def clean_url(url: str):
     """Remove paths and tracking elements from URL"""
@@ -28,3 +30,20 @@ def trim_url(url: str) -> str:
     if url.endswith("/"):
         url = url[0:-1]
     return url
+
+
+def verify_interface_online(url: str, version: str = None):
+    """Verify if interface instance is reachable"""
+    parsed = urlparse(url)
+    path = "/_ff/interface/versions"
+    url = urlunparse((parsed.scheme, parsed.netloc, path, "", "", ""))
+    try:
+        resp = requests.get(url)
+        if resp.status_code == 200:
+            data = resp.json()
+            if version:
+                return version in data["versions"]
+            return "versions" in data and len(data["versions"]) != 0
+        return False
+    except Exception as _:
+        return False

@@ -1,3 +1,4 @@
+""" Test interface handlers"""
 # Interface ---  API-space federation for software forges
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
 #
@@ -12,45 +13,18 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import os
-import tempfile
 
-import pytest
-import requests_mock
+from dynaconf import settings
 
-from interface.app import create_app
-from interface.db import get_db, init_db
+from interface.git import Git, get_forge
+
+UPSTREAM = "https://github.com/realaravinth/actix-auth-middleware"
 
 
-@pytest.fixture
-def app():
-    """App instance with test configuration"""
-    db_fd, db_path = tempfile.mkstemp()
-    # db_path = os.path.join(db_path, "northstar.db")
+def test_git(app, client):
+    """Test git module"""
 
-    app = create_app(
-        {
-            "TESTING": True,
-            "DATABASE": db_path,
-        }
-    )
-
-    with app.app_context():
-        init_db()
-
-    yield app
-
-    os.close(db_fd)
-    os.unlink(db_path)
+    git = get_forge()
 
 
-@pytest.fixture
-def client(app):
-    """Test client for the app"""
-    return app.test_client()
-
-
-@pytest.fixture
-def runner(app):
-    """Test runner for the app's CLI commands"""
-    return app.test_cli_runner()
+#    git.git_clone(UPSTREAM)

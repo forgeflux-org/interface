@@ -12,45 +12,26 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import os
-import tempfile
+from datetime import datetime
 
-import pytest
-import requests_mock
+from dateutil.parser import parse as date_parse
 
 from interface.app import create_app
-from interface.db import get_db, init_db
+from interface.meta import VERSIONS
+from interface.runner import runner
 
 
-@pytest.fixture
-def app():
-    """App instance with test configuration"""
-    db_fd, db_path = tempfile.mkstemp()
-    # db_path = os.path.join(db_path, "northstar.db")
+def test_supported_version(app, client):
+    """Test version meta route"""
 
-    app = create_app(
-        {
-            "TESTING": True,
-            "DATABASE": db_path,
-        }
-    )
+    worker = runner.init_app(app)
+    assert worker.thread.is_alive() is True
+    assert worker.get_switch().is_set() is False
+    worker.kill()
+    assert worker.thread.is_alive() is False
+    assert worker.get_switch().is_set() is True
 
-    with app.app_context():
-        init_db()
-
-    yield app
-
-    os.close(db_fd)
-    os.unlink(db_path)
-
-
-@pytest.fixture
-def client(app):
-    """Test client for the app"""
-    return app.test_client()
-
-
-@pytest.fixture
-def runner(app):
-    """Test runner for the app's CLI commands"""
-    return app.test_cli_runner()
+    last_run = worker.get_last_run()
+    now = datetime.now()
+    worker._update_time(now)
+    assert date_parse(worker.get_last_run()) == now

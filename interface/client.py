@@ -14,10 +14,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from urllib.parse import urlparse, urlunparse
-import requests
 from urllib.parse import urlparse, urlunparse
+from dataclasses import asdict
 
 from flask import g
+import requests
 
 from interface.forges.base import Forge
 from interface.forges.notifications import Notification
@@ -95,7 +96,7 @@ class ForgeClient:
             interface_url=interface_url, path=EVENTS
         )
         _response = requests.request(
-            "POST", interface_api_url, json=notification.get_payload()
+            "POST", interface_api_url, json=asdict(notification)
         )
 
 

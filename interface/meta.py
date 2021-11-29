@@ -20,7 +20,6 @@ from flask import Blueprint, jsonify, request
 
 bp = Blueprint("META", __name__, url_prefix="/_ff/interface/")
 
-
 VERSIONS = ["1"]
 payload = {"versions": VERSIONS}
 

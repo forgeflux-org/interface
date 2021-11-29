@@ -1,5 +1,5 @@
 """ Test errors helper class"""
-# North Star ---  A lookup service for forged fed ecosystem
+# Interface ---  API-space federation for software forges
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -18,10 +18,23 @@ from interface.app import create_app
 from interface.error import F_D_INVALID_PAYLOAD, F_D_INTERFACE_UNREACHABLE, Error
 
 
+def expect_error(response, err: Error) -> bool:
+    """Test responses"""
+    data = response.json
+    return all(
+        [
+            str(err.status()) in response.status,
+            err.get_error()["error"] == data["error"],
+            err.get_error()["errcode"] == data["errcode"],
+        ]
+    )
+
+
 def test_errors(client):
     """Test interface registration handler"""
 
     def verify_status(e: Error, status: int):
+        """Utility function to verify status"""
         assert e.status() == status
         resp = e.get_error_resp()
         assert resp.status.find(str(status)) is not -1

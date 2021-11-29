@@ -12,45 +12,13 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import os
-import tempfile
-
-import pytest
-import requests_mock
-
 from interface.app import create_app
-from interface.db import get_db, init_db
+from interface.meta import VERSIONS
 
 
-@pytest.fixture
-def app():
-    """App instance with test configuration"""
-    db_fd, db_path = tempfile.mkstemp()
-    # db_path = os.path.join(db_path, "northstar.db")
+def test_supported_version(client):
+    """Test version meta route"""
 
-    app = create_app(
-        {
-            "TESTING": True,
-            "DATABASE": db_path,
-        }
-    )
-
-    with app.app_context():
-        init_db()
-
-    yield app
-
-    os.close(db_fd)
-    os.unlink(db_path)
-
-
-@pytest.fixture
-def client(app):
-    """Test client for the app"""
-    return app.test_client()
-
-
-@pytest.fixture
-def runner(app):
-    """Test runner for the app's CLI commands"""
-    return app.test_cli_runner()
+    resp = client.get("/_ff/interface/versions")
+    data = resp.json
+    assert data["versions"] == VERSIONS

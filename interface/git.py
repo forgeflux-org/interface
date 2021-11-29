@@ -82,7 +82,7 @@ class Git:
         system.fetch_upstream(repo)
 
 
-def get_forge():
+def get_forge() -> Git:
     if "git" not in g:
         forge = Gitea()
         g.git = Git(forge, settings.GITEA.username, settings.SYSTEM.admin_email)
