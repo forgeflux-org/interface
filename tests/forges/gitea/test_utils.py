@@ -16,7 +16,7 @@
 import json
 from pathlib import Path
 
-from requests_mock import request
+from requests import Request
 from dynaconf import settings
 
 from interface.client import GET_REPOSITORY_INFO
@@ -30,6 +30,15 @@ REPOSITORY_OWNER = ""
 REPOSITORY_DESCRIPTION = ""
 data = {}
 
+NON_EXISTENT = {
+    "owner": "nonexistent",
+    "repo": "nonexistent",
+}
+
+NON_EXISTENT[
+    "repo_url"
+] = f"{GITEA_HOST}/{NON_EXISTENT['owner']}/{NON_EXISTENT['repo']}"
+
 path = Path(__file__).parent / "get_repository.json"
 with path.open() as f:
     data = json.load(f)
@@ -40,11 +49,20 @@ with path.open() as f:
 
 
 def register_get_repository(requests_mock):
-    path = f"{GITEA_HOST}/api/v1/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}"
+    def _get_path(owner: str, repo: str) -> str:
+        return f"{GITEA_HOST}/api/v1/repos/{owner}/{repo}"
+
     requests_mock.get(
-        path,
+        _get_path(REPOSITORY_OWNER, REPOSITORY_NAME),
         json=data,
     )
+
+    requests_mock.get(
+        _get_path(NON_EXISTENT["owner"], NON_EXISTENT["repo"]),
+        json={},
+        status_code=400,
+    )
+
     print(f"registered get repository: {path}")
 
 

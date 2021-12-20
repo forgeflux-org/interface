@@ -23,7 +23,9 @@ from libgit import Patch
 
 from interface.git import get_forge
 from interface.forges.payload import CreatePullrequest
+from interface.forges.base import F_D_REPOSITORY_NOT_FOUND
 from interface.forges.utils import get_local_repository_from_foreign_repo
+from interface.error import Error
 from interface.client import (
     GET_REPOSITORY,
     GET_REPOSITORY_INFO,
@@ -75,9 +77,13 @@ def get_repository_info():
     """
     data = request.get_json()
     git = get_forge()
-    (owner, repo) = git.forge.get_owner_repo_from_url(data["repository_url"])
-    resp = git.forge.get_repository(owner, repo)
-    return jsonify(asdict(resp))
+
+    try:
+        (owner, repo) = git.forge.get_owner_repo_from_url(data["repository_url"])
+        resp = git.forge.get_repository(owner, repo)
+        return jsonify(asdict(resp))
+    except Error as e:
+        return e.get_error_resp()
 
 
 @bp.route(FORK_LOCAL, methods=["POST"])

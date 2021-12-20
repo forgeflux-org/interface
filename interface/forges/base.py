@@ -24,6 +24,7 @@ from interface.forges.notifications import NotificationResp, Notification
 from interface.forges.payload import RepositoryInfo, CreatePullrequest, CreateIssue
 from interface.forges.utils import clean_url
 from interface.ns import NameService
+from interface.error import Error
 
 
 class Forge:
@@ -108,3 +109,10 @@ class Forge:
     def comment_on_issue(self, owner: str, repo: str, issue_url: str, body: str):
         """Add comment on an existing issue"""
         raise NotImplementedError
+
+
+F_D_REPOSITORY_NOT_FOUND = Error(
+    errcode="F_D_REPOSITORY_NOT_FOUND",
+    error="Repository not found",
+    status=404,
+)

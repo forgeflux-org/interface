@@ -22,7 +22,7 @@ import requests
 from rfc3339 import rfc3339
 from dynaconf import settings
 
-from .base import Forge
+from .base import Forge, F_D_REPOSITORY_NOT_FOUND
 from .payload import CreateIssue, RepositoryInfo, CreatePullrequest
 from .notifications import Notification, NotificationResp, Comment
 from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
@@ -94,9 +94,12 @@ class Gitea(Forge):
         """Get repository details"""
         url = self._get_url(format("/repos/%s/%s" % (owner, repo)))
         response = requests.request("GET", url)
-        data = response.json()
-        info = self._into_repository(data)
-        return info
+        if response.status_code == 200:
+            data = response.json()
+            info = self._into_repository(data)
+            return info
+        else:
+            raise F_D_REPOSITORY_NOT_FOUND
 
     def create_repository(self, repo: str, description: str):
         url = self._get_url("/user/repos/")
