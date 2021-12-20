@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from dynaconf import settings
+from dateutil.parser import parse
 import pytest
 
 from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO
@@ -31,6 +32,7 @@ from tests.forges.gitea.test_utils import (
     REPOSITORY_OWNER,
     NON_EXISTENT,
     FORGE_ERROR,
+    register_get_issues_since,
 )
 
 
@@ -72,6 +74,29 @@ def test_get_repository_info(client, requests_mock):
     (owner, repo) = g.get_owner_repo_from_url(FORGE_ERROR["repo_url"])
     try:
         g.get_repository(owner, repo)
+        assert True is False
+    except Error as e:
+        e.status = F_D_UNKNOWN_FORGE_ERROR.status
+
+
+def test_get_issues(requests_mock):
+    register_ns(requests_mock)
+    register_gitea(requests_mock)
+    g = Gitea()
+
+    data = g.get_issues(REPOSITORY_OWNER, REPOSITORY_NAME)
+    assert len(data) == 2
+    assert data[0]["id"] == 5
+    assert data[1]["id"] == 4
+
+    try:
+        g.get_issues(NON_EXISTENT["owner"], NON_EXISTENT["repo"])
+        assert True is False
+    except Error as e:
+        e.status = F_D_UNKNOWN_FORGE_ERROR.status
+
+    try:
+        g.get_issues(FORGE_ERROR["owner"], FORGE_ERROR["repo"])
         assert True is False
     except Error as e:
         e.status = F_D_UNKNOWN_FORGE_ERROR.status

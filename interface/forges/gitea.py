@@ -45,12 +45,13 @@ class Gitea(Forge):
         url = urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
         return url
 
-    def get_issues(self, owner: str, repo: str, *args, **kwargs):
+    def get_issues(
+        self, owner: str, repo: str, since: datetime.datetime = None, *args, **kwargs
+    ):
         """Get issues on a repository. Supports pagination via 'page' optional param"""
         query = {}
-        since = kwargs.get("since")
         if since is not None:
-            query["since"] = since
+            query["since"] = rfc3339(since)
 
         page = kwargs.get("page")
         if page is not None:
@@ -60,7 +61,12 @@ class Gitea(Forge):
 
         headers = self._auth()
         response = requests.request("GET", url, params=query, headers=headers)
-        return response.json()
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            raise F_D_REPOSITORY_NOT_FOUND
+        else:
+            raise F_D_UNKNOWN_FORGE_ERROR
 
     def get_owner_repo_from_url(self, url: str) -> (str, str):
         """Get (owner, repo) from repository URL"""
@@ -99,7 +105,7 @@ class Gitea(Forge):
             data = response.json()
             info = self._into_repository(data)
             return info
-        elif response.status_code == 400:
+        elif response.status_code == 404:
             raise F_D_REPOSITORY_NOT_FOUND
         else:
             raise F_D_UNKNOWN_FORGE_ERROR
