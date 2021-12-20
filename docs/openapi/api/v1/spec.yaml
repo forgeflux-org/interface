@@ -91,6 +91,12 @@
           application/json:
             schema:
               $ref: "./components/responses/error-repo-not-found.yaml"
+      "502":
+        description: Something went wrong on the Software Forge side
+        content:
+          application/json:
+            schema:
+              $ref: "./components/responses/error-unknown-forge-error.yaml"
 
 /api/v1/repository/fork/local:
   post:

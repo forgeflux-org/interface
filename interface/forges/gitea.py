@@ -26,6 +26,7 @@ from .base import Forge, F_D_REPOSITORY_NOT_FOUND
 from .payload import CreateIssue, RepositoryInfo, CreatePullrequest
 from .notifications import Notification, NotificationResp, Comment
 from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
+from interface.error import F_D_UNKNOWN_FORGE_ERROR
 
 
 class Gitea(Forge):
@@ -98,8 +99,10 @@ class Gitea(Forge):
             data = response.json()
             info = self._into_repository(data)
             return info
-        else:
+        elif response.status_code == 400:
             raise F_D_REPOSITORY_NOT_FOUND
+        else:
+            raise F_D_UNKNOWN_FORGE_ERROR
 
     def create_repository(self, repo: str, description: str):
         url = self._get_url("/user/repos/")

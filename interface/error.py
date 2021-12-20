@@ -68,3 +68,9 @@ F_D_INVALID_PAYLOAD = Error(
     error="Please submit valid payload",
     status=400,
 )
+
+F_D_UNKNOWN_FORGE_ERROR = Error(
+    errcode="F_D_UNKNOWN_FORGE_ERROR",
+    error="Something went wrong on the Software Forge side",
+    status=502,
+)

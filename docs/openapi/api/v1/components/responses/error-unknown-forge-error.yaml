@@ -1,0 +1,11 @@
+type: object
+properties:
+  errcode:
+    description: The F_D_UNKNOWN_FORGE_ERROR error code
+    type: string
+    example: F_D_UNKNOWN_FORGE_ERROR
+  error:
+    description: A human-readable error message
+    type: string
+    example: >-
+      Something went wrong on the Software Forge side

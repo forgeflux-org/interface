@@ -17,6 +17,7 @@ from dynaconf import settings
 from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO
 from interface.forges.payload import RepositoryInfo
 from interface.forges.base import F_D_REPOSITORY_NOT_FOUND
+from interface.error import F_D_UNKNOWN_FORGE_ERROR
 
 from tests.test_utils import register_ns
 from tests.test_errors import expect_error
@@ -27,6 +28,7 @@ from tests.forges.gitea.test_utils import (
     REPOSITORY_DESCRIPTION,
     REPOSITORY_OWNER,
     NON_EXISTENT,
+    FORGE_ERROR,
 )
 
 
@@ -67,8 +69,9 @@ def test_get_repository_info(client, requests_mock):
     assert data.name == REPOSITORY_NAME
 
     payload = {"repository_url": NON_EXISTENT["repo_url"]}
-    print(f"non existent repo url : {payload['repository_url']}")
     resp = client.post(f"/api/v1/repository{GET_REPOSITORY_INFO}", json=payload)
-    #    status = 400 in resp.status
-    #    assert status is True
     expect_error(resp, F_D_REPOSITORY_NOT_FOUND)
+
+    payload = {"repository_url": FORGE_ERROR["repo_url"]}
+    resp = client.post(f"/api/v1/repository{GET_REPOSITORY_INFO}", json=payload)
+    expect_error(resp, F_D_UNKNOWN_FORGE_ERROR)

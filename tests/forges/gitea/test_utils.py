@@ -39,6 +39,14 @@ NON_EXISTENT[
     "repo_url"
 ] = f"{GITEA_HOST}/{NON_EXISTENT['owner']}/{NON_EXISTENT['repo']}"
 
+FORGE_ERROR = {
+    "owner": "nonexistent",
+    "repo": "forgeerror",
+}
+
+FORGE_ERROR["repo_url"] = f"{GITEA_HOST}/{FORGE_ERROR['owner']}/{FORGE_ERROR['repo']}"
+
+
 path = Path(__file__).parent / "get_repository.json"
 with path.open() as f:
     data = json.load(f)
@@ -59,6 +67,12 @@ def register_get_repository(requests_mock):
 
     requests_mock.get(
         _get_path(NON_EXISTENT["owner"], NON_EXISTENT["repo"]),
+        json={},
+        status_code=400,
+    )
+
+    requests_mock.get(
+        _get_path(FORGE_ERROR["owner"], FORGE_ERROR["repo"]),
         json={},
         status_code=400,
     )
