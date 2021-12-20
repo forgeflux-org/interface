@@ -69,8 +69,8 @@ F_D_INVALID_PAYLOAD = Error(
     status=400,
 )
 
-F_D_UNKNOWN_FORGE_ERROR = Error(
-    errcode="F_D_UNKNOWN_FORGE_ERROR",
+F_D_FORGE_UNKNOWN_ERROR = Error(
+    errcode="F_D_FORGE_UNKNOWN_ERROR",
     error="Something went wrong on the Software Forge side",
     status=502,
 )

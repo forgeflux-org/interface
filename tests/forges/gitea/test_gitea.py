@@ -22,7 +22,7 @@ from interface.forges.base import (
     F_D_REPOSITORY_NOT_FOUND,
     F_D_FORGE_FORBIDDEN_OPERATION,
 )
-from interface.error import F_D_UNKNOWN_FORGE_ERROR, Error
+from interface.error import F_D_FORGE_UNKNOWN_ERROR, Error
 from interface.forges.gitea import Gitea
 
 from tests.test_utils import register_ns
@@ -77,14 +77,14 @@ def test_get_repository_info(client, requests_mock):
         g.get_repository(owner, repo)
         assert True is False
     except Error as e:
-        e.status = F_D_UNKNOWN_FORGE_ERROR.status
+        e.status = F_D_FORGE_UNKNOWN_ERROR.status
 
     (owner, repo) = g.get_owner_repo_from_url(FORGE_ERROR["repo_url"])
     try:
         g.get_repository(owner, repo)
         assert True is False
     except Error as e:
-        e.status = F_D_UNKNOWN_FORGE_ERROR.status
+        e.status = F_D_FORGE_UNKNOWN_ERROR.status
 
 
 def test_get_issues(requests_mock):
@@ -101,13 +101,13 @@ def test_get_issues(requests_mock):
         g.get_issues(NON_EXISTENT["owner"], NON_EXISTENT["repo"])
         assert True is False
     except Error as e:
-        e.status = F_D_UNKNOWN_FORGE_ERROR.status
+        e.status = F_D_FORGE_UNKNOWN_ERROR.status
 
     try:
         g.get_issues(FORGE_ERROR["owner"], FORGE_ERROR["repo"])
         assert True is False
     except Error as e:
-        e.status = F_D_UNKNOWN_FORGE_ERROR.status
+        e.status = F_D_FORGE_UNKNOWN_ERROR.status
 
 
 def test_create_issues(requests_mock):
@@ -123,13 +123,13 @@ def test_create_issues(requests_mock):
         g.create_issue(NON_EXISTENT["owner"], NON_EXISTENT["repo"], payload)
         assert True is False
     except Error as e:
-        e.status = F_D_UNKNOWN_FORGE_ERROR.status
+        e.status = F_D_FORGE_UNKNOWN_ERROR.status
 
     try:
         g.create_issue(FORGE_ERROR["owner"], FORGE_ERROR["repo"], payload)
         assert True is False
     except Error as e:
-        e.status = F_D_UNKNOWN_FORGE_ERROR.status
+        e.status = F_D_FORGE_UNKNOWN_ERROR.status
 
     try:
         g.create_issue(

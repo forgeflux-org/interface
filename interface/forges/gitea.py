@@ -26,7 +26,7 @@ from .base import Forge, F_D_REPOSITORY_NOT_FOUND, F_D_FORGE_FORBIDDEN_OPERATION
 from .payload import CreateIssue, RepositoryInfo, CreatePullrequest
 from .notifications import Notification, NotificationResp, Comment
 from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
-from interface.error import F_D_UNKNOWN_FORGE_ERROR
+from interface.error import F_D_FORGE_UNKNOWN_ERROR
 
 
 class Gitea(Forge):
@@ -66,7 +66,7 @@ class Gitea(Forge):
         elif response.status_code == 404:
             raise F_D_REPOSITORY_NOT_FOUND
         else:
-            raise F_D_UNKNOWN_FORGE_ERROR
+            raise F_D_FORGE_UNKNOWN_ERROR
 
     def get_owner_repo_from_url(self, url: str) -> (str, str):
         """Get (owner, repo) from repository URL"""
@@ -96,7 +96,7 @@ class Gitea(Forge):
         elif response.status_code == 404:
             raise F_D_REPOSITORY_NOT_FOUND
         else:
-            raise F_D_UNKNOWN_FORGE_ERROR
+            raise F_D_FORGE_UNKNOWN_ERROR
 
     def _into_repository(self, data) -> RepositoryInfo:
         info = RepositoryInfo(
@@ -117,7 +117,7 @@ class Gitea(Forge):
         elif response.status_code == 404:
             raise F_D_REPOSITORY_NOT_FOUND
         else:
-            raise F_D_UNKNOWN_FORGE_ERROR
+            raise F_D_FORGE_UNKNOWN_ERROR
 
     def create_repository(self, repo: str, description: str):
         url = self._get_url("/user/repos/")
