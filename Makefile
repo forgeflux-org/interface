@@ -74,6 +74,7 @@ test: ## Run tests
 	@. ./venv/bin/activate && ./scripts/spellcheck.sh --check
 	$(call	test_api_spec)
 	$(call	test_libgit)
+	$(call	test_interface)
 
 test-interface: ## Run interface tests
 	$(call	test_interface)
