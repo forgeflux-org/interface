@@ -35,7 +35,7 @@ class CreateIssue:
     title: str
     body: str
     due_date: str = None
-    closed: str = None
+    closed: bool = False
 
 
 @dataclass
