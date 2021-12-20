@@ -116,3 +116,9 @@ F_D_REPOSITORY_NOT_FOUND = Error(
     error="Repository not found",
     status=404,
 )
+
+F_D_FORGE_FORBIDDEN_OPERATION = Error(
+    errcode="F_D_FORGE_FORBIDDEN_OPERATION",
+    error="Forge reports operation is forbidden",
+    status=403,
+)
