@@ -63,7 +63,9 @@ class Forge:
 
     """ Forge characteristics. All interfaces must implement this class"""
 
-    def get_issues(self, owner: str, repo: str, *args, **kwargs):
+    def get_issues(
+        self, owner: str, repo: str, since: datetime.datetime = None, *args, **kwargs
+    ):
         """Get issues on a repository. Supports pagination via 'page' optional param"""
         raise NotImplementedError
 
