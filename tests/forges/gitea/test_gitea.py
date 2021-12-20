@@ -17,8 +17,11 @@ from dateutil.parser import parse
 import pytest
 
 from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO
-from interface.forges.payload import RepositoryInfo
-from interface.forges.base import F_D_REPOSITORY_NOT_FOUND
+from interface.forges.payload import RepositoryInfo, CreateIssue
+from interface.forges.base import (
+    F_D_REPOSITORY_NOT_FOUND,
+    F_D_FORGE_FORBIDDEN_OPERATION,
+)
 from interface.error import F_D_UNKNOWN_FORGE_ERROR, Error
 from interface.forges.gitea import Gitea
 
@@ -33,6 +36,11 @@ from tests.forges.gitea.test_utils import (
     NON_EXISTENT,
     FORGE_ERROR,
     register_get_issues_since,
+    CREATE_ISSUE,
+    CREATE_ISSUE_BODY,
+    CREATE_ISSUE_HTML_URL,
+    CREATE_ISSUE_TITLE,
+    FORGE_FORBIDDEN_ERROR,
 )
 
 
@@ -100,3 +108,33 @@ def test_get_issues(requests_mock):
         assert True is False
     except Error as e:
         e.status = F_D_UNKNOWN_FORGE_ERROR.status
+
+
+def test_create_issues(requests_mock):
+    register_ns(requests_mock)
+    register_gitea(requests_mock)
+    g = Gitea()
+
+    payload = CreateIssue(title=CREATE_ISSUE_TITLE, body=CREATE_ISSUE_BODY)
+    html_url = g.create_issue(REPOSITORY_OWNER, REPOSITORY_NAME, payload)
+    assert html_url == CREATE_ISSUE_HTML_URL
+
+    try:
+        g.create_issue(NON_EXISTENT["owner"], NON_EXISTENT["repo"], payload)
+        assert True is False
+    except Error as e:
+        e.status = F_D_UNKNOWN_FORGE_ERROR.status
+
+    try:
+        g.create_issue(FORGE_ERROR["owner"], FORGE_ERROR["repo"], payload)
+        assert True is False
+    except Error as e:
+        e.status = F_D_UNKNOWN_FORGE_ERROR.status
+
+    try:
+        g.create_issue(
+            FORGE_FORBIDDEN_ERROR["owner"], FORGE_FORBIDDEN_ERROR["repo"], payload
+        )
+        assert True is False
+    except Error as e:
+        e.status = F_D_FORGE_FORBIDDEN_OPERATION.status

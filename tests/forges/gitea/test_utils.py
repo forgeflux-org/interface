@@ -21,6 +21,7 @@ from dynaconf import settings
 
 from interface.client import GET_REPOSITORY_INFO
 from interface.utils import trim_url
+from interface.forges.payload import CreateIssue
 
 GITEA_HOST = settings.GITEA.host
 
@@ -28,7 +29,7 @@ REPOSITORY_URL = ""
 REPOSITORY_NAME = ""
 REPOSITORY_OWNER = ""
 REPOSITORY_DESCRIPTION = ""
-data = {}
+REPOSITORY_INFO = {}
 
 NON_EXISTENT = {
     "owner": "nonexistent",
@@ -46,14 +47,22 @@ FORGE_ERROR = {
 
 FORGE_ERROR["repo_url"] = f"{GITEA_HOST}/{FORGE_ERROR['owner']}/{FORGE_ERROR['repo']}"
 
+FORGE_FORBIDDEN_ERROR = {
+    "owner": "nonexistent",
+    "repo": "forbiddenerror",
+}
+
+FORGE_FORBIDDEN_ERROR[
+    "repo_url"
+] = f"{GITEA_HOST}/{FORGE_ERROR['owner']}/{FORGE_ERROR['repo']}"
 
 path = Path(__file__).parent / "get_repository.json"
 with path.open() as f:
-    data = json.load(f)
-    REPOSITORY_URL = trim_url(data["html_url"])
-    REPOSITORY_NAME = data["name"]
-    REPOSITORY_OWNER = data["owner"]["login"]
-    REPOSITORY_DESCRIPTION = data["description"]
+    REPOSITORY_INFO = json.load(f)
+    REPOSITORY_URL = trim_url(REPOSITORY_INFO["html_url"])
+    REPOSITORY_NAME = REPOSITORY_INFO["name"]
+    REPOSITORY_OWNER = REPOSITORY_INFO["owner"]["login"]
+    REPOSITORY_DESCRIPTION = REPOSITORY_INFO["description"]
 
 
 def register_get_repository(requests_mock):
@@ -62,7 +71,7 @@ def register_get_repository(requests_mock):
 
     requests_mock.get(
         _get_path(REPOSITORY_OWNER, REPOSITORY_NAME),
-        json=data,
+        json=REPOSITORY_INFO,
     )
 
     requests_mock.get(
@@ -131,7 +140,66 @@ def register_get_issues(requests_mock):
     print("Registered get issues")
 
 
+CREATE_ISSUE_TITLE = ""
+CREATE_ISSUE_BODY = ""
+CREATE_ISSUE = {}
+CREATE_ISSUE_HTML_URL = ""
+
+file = Path(__file__).parent / "create-issue.json"
+with file.open() as f:
+    create_issue = json.load(f)
+    CREATE_ISSUE_TITLE = create_issue["title"]
+    CREATE_ISSUE_BODY = create_issue["body"]
+    CREATE_ISSUE_HTML_URL = create_issue["html_url"]
+    CREATE_ISSUE = create_issue
+
+
+def register_create_issues(requests_mock):
+    def _get_path(owner: str, repo: str) -> str:
+        return f"{GITEA_HOST}/api/v1/repos/{owner}/{repo}/issues"
+
+    def cb(r: Request, ctx):
+        print("Request json payload: \n\n\n\n\n")
+        print(r.json())
+        payload = CreateIssue(**r.json())
+        if all(
+            [payload.title == CREATE_ISSUE_TITLE, payload.body == CREATE_ISSUE_BODY]
+        ):
+            ctx.status_code = 201
+            return CREATE_ISSUE
+        else:
+            ctx.status_code = 500
+            return {}
+
+    path = f"{GITEA_HOST}/api/v1/repos/realaravinth/tmp/issues"
+    requests_mock.post(
+        path,
+        json=cb,
+    )
+
+    requests_mock.post(
+        _get_path(NON_EXISTENT["owner"], NON_EXISTENT["repo"]),
+        json={},
+        status_code=404,
+    )
+
+    requests_mock.post(
+        _get_path(FORGE_ERROR["owner"], FORGE_ERROR["repo"]),
+        json={},
+        status_code=500,
+    )
+
+    requests_mock.post(
+        _get_path(FORGE_FORBIDDEN_ERROR["owner"], FORGE_FORBIDDEN_ERROR["repo"]),
+        json={},
+        status_code=403,
+    )
+
+    print("Registered get issues")
+
+
 def register_gitea(requests_mock):
     register_get_repository(requests_mock)
     register_subscribe(requests_mock)
     register_get_issues(requests_mock)
+    register_create_issues(requests_mock)
