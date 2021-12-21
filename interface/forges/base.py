@@ -124,3 +124,9 @@ F_D_FORGE_FORBIDDEN_OPERATION = Error(
     error="Forge reports operation is forbidden",
     status=403,
 )
+
+F_D_REPOSITORY_EXISTS = Error(
+    errcode="F_D_REPOSITORY_EXISTS",
+    error="Forge reports repository with the same name already exists",
+    status=409,
+)

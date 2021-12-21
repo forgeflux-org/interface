@@ -22,7 +22,12 @@ import requests
 from rfc3339 import rfc3339
 from dynaconf import settings
 
-from .base import Forge, F_D_REPOSITORY_NOT_FOUND, F_D_FORGE_FORBIDDEN_OPERATION
+from .base import (
+    Forge,
+    F_D_REPOSITORY_NOT_FOUND,
+    F_D_FORGE_FORBIDDEN_OPERATION,
+    F_D_REPOSITORY_EXISTS,
+)
 from .payload import CreateIssue, RepositoryInfo, CreatePullrequest
 from .notifications import Notification, NotificationResp, Comment
 from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
@@ -120,10 +125,17 @@ class Gitea(Forge):
             raise F_D_FORGE_UNKNOWN_ERROR
 
     def create_repository(self, repo: str, description: str):
-        url = self._get_url("/user/repos/")
+        url = self._get_url("/user/repos")
         payload = {"name": repo, "description": description}
         headers = self._auth()
-        _response = requests.request("POST", url, json=payload, headers=headers)
+        response = requests.request("POST", url, json=payload, headers=headers)
+        if response.status_code == 201:
+            return
+        elif response.status_code == 409:
+            # TODO: repository with the same name exists  <21-12-21, ATM> #
+            raise F_D_REPOSITORY_EXISTS
+        else:
+            raise F_D_FORGE_UNKNOWN_ERROR
 
     def subscribe(self, owner: str, repo: str):
         url = self._get_url(format("/repos/%s/%s/subscription" % (owner, repo)))

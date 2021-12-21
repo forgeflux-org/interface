@@ -198,8 +198,59 @@ def register_create_issues(requests_mock):
     print("Registered get issues")
 
 
+CREATE_REPO_NAME = ""
+CREATE_REPO_BODY = ""
+CREATE_REPO = {}
+CREATE_REPO_DESCRIPTION = ""
+CREATE_REPO_HTML_URL = ""
+
+CREATE_REPO_DUPLICATE_NAME = "duplicate-repo-name"
+CREATE_REPO_FORGE_UNKNOWN_ERROR_NAME = "forge-unknown-error-repo-name"
+
+file = Path(__file__).parent / "./create-repository.json"
+with file.open() as f:
+    create_repo = json.load(f)
+    CREATE_REPO_NAME = create_repo["name"]
+    CREATE_REPO_DESCRIPTION = create_repo["description"]
+    CREATE_REPO_HTML_URL = create_repo["html_url"]
+    CREATE_REPO = create_repo
+
+
+def register_create_repository(requests_mock):
+    def cb(r: Request, ctx):
+        print("Request json payload: \n\n\n\n\n")
+        print(r.json())
+        json = r.json()
+        if all(
+            [
+                json["name"] == CREATE_REPO_NAME,
+                json["description"] == CREATE_REPO_DESCRIPTION,
+            ]
+        ):
+            ctx.status_code = 201
+            return CREATE_REPO
+        elif json["name"] == CREATE_REPO_DUPLICATE_NAME:
+            # Duplicate name
+            ctx.status_code = 409
+            return {}
+        elif json["name"] == CREATE_REPO_FORGE_UNKNOWN_ERROR_NAME:
+            ctx.status_code = 300
+            return {}
+        else:
+            ctx.status_code = 500
+            return {}
+
+    path = f"{GITEA_HOST}/api/v1/user/repos"
+    requests_mock.post(
+        path,
+        json=cb,
+    )
+    print(f"Registered create repo mocking at {path}")
+
+
 def register_gitea(requests_mock):
     register_get_repository(requests_mock)
     register_subscribe(requests_mock)
     register_get_issues(requests_mock)
     register_create_issues(requests_mock)
+    register_create_repository(requests_mock)

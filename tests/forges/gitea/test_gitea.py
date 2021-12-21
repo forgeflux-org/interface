@@ -21,6 +21,7 @@ from interface.forges.payload import RepositoryInfo, CreateIssue
 from interface.forges.base import (
     F_D_REPOSITORY_NOT_FOUND,
     F_D_FORGE_FORBIDDEN_OPERATION,
+    F_D_REPOSITORY_EXISTS,
 )
 from interface.error import F_D_FORGE_UNKNOWN_ERROR, Error
 from interface.forges.gitea import Gitea
@@ -41,6 +42,10 @@ from tests.forges.gitea.test_utils import (
     CREATE_ISSUE_HTML_URL,
     CREATE_ISSUE_TITLE,
     FORGE_FORBIDDEN_ERROR,
+    CREATE_REPO_DESCRIPTION,
+    CREATE_REPO_NAME,
+    CREATE_REPO_DUPLICATE_NAME,
+    CREATE_REPO_FORGE_UNKNOWN_ERROR_NAME,
 )
 
 
@@ -138,3 +143,25 @@ def test_create_issues(requests_mock):
         assert True is False
     except Error as e:
         e.status = F_D_FORGE_FORBIDDEN_OPERATION.status
+
+
+def test_create_repository(requests_mock):
+    register_ns(requests_mock)
+    register_gitea(requests_mock)
+    g = Gitea()
+
+    g.create_repository(CREATE_REPO_NAME, CREATE_REPO_DESCRIPTION)
+
+    try:
+        g.create_repository(CREATE_REPO_DUPLICATE_NAME, CREATE_REPO_DESCRIPTION)
+        assert True is False
+    except Error as e:
+        e.status = F_D_REPOSITORY_EXISTS.status
+
+    try:
+        g.create_repository(
+            CREATE_REPO_FORGE_UNKNOWN_ERROR_NAME, CREATE_REPO_DESCRIPTION
+        )
+        assert True is False
+    except Error as e:
+        e.status = F_D_FORGE_UNKNOWN_ERROR.status
