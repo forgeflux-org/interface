@@ -262,13 +262,11 @@ class Gitea(Forge):
         _response = requests.request("POST", url, json=payload, headers=headers)
 
     def get_local_html_url(self, repo: str) -> str:
-        path = format("/%s/%s" % settings.GITEA.username, repo)
+        path = f"/{settings.GITEA.username}/{repo}"
         return urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
 
     def get_local_push_url(self, repo: str) -> str:
-        return format(
-            "git@%s:%s/%s.git" % (self.host.netloc, settings.GITEA.username, repo)
-        )
+        return f"git@{self.host.netloc}:{settings.GITEA.username}/{repo}.git"
 
 
 # if __name__ == "__main__":

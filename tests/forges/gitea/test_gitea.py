@@ -12,12 +12,15 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from dynaconf import settings
+from urllib.parse import urlparse, urlunparse
 from dateutil.parser import parse
+
+from dynaconf import settings
 import pytest
 
 from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO
 from interface.forges.payload import RepositoryInfo, CreateIssue
+from interface.forges.utils import clean_url
 from interface.forges.base import (
     F_D_REPOSITORY_NOT_FOUND,
     F_D_FORGE_FORBIDDEN_OPERATION,
@@ -165,3 +168,25 @@ def test_create_repository(requests_mock):
         assert True is False
     except Error as e:
         e.status = F_D_FORGE_UNKNOWN_ERROR.status
+
+
+def test_get_local_push_and_html_url(requests_mock):
+    register_ns(requests_mock)
+    g = Gitea()
+    host = settings.GITEA.host
+    host = urlparse(clean_url(host))
+
+    repos = [
+        "foo",
+        "bar",
+        "baz",
+    ]
+    for repo in repos:
+        assert (
+            g.get_local_push_url(repo)
+            == f"git@{host.netloc}:{settings.GITEA.username}/{repo}.git"
+        )
+        path = f"/{settings.GITEA.username}/{repo}"
+        assert g.get_local_html_url(repo) == urlunparse(
+            (host.scheme, host.netloc, path, "", "", "")
+        )
