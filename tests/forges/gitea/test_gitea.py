@@ -25,6 +25,7 @@ from interface.forges.base import (
     F_D_REPOSITORY_NOT_FOUND,
     F_D_FORGE_FORBIDDEN_OPERATION,
     F_D_REPOSITORY_EXISTS,
+    F_D_INVALID_ISSUE_URL,
 )
 from interface.error import F_D_FORGE_UNKNOWN_ERROR, Error
 from interface.forges.gitea import Gitea
@@ -32,6 +33,7 @@ from interface.forges.gitea import Gitea
 from tests.test_utils import register_ns
 from tests.test_errors import expect_error
 from tests.forges.gitea.test_utils import (
+    GITEA_HOST,
     register_gitea,
     REPOSITORY_URL,
     REPOSITORY_NAME,
@@ -210,3 +212,28 @@ def test_subscribe(requests_mock):
         assert True is False
     except Error as e:
         e.status = F_D_FORGE_UNKNOWN_ERROR.status
+
+
+def test_get_issue_index(requests_mock):
+    owner = "realaravinth"
+    repo = "tmp"
+
+    issues = [
+        (f"{GITEA_HOST}/{owner}/{repo}/issues/8", 8),
+        (f"{GITEA_HOST}/{owner}/{repo}/issues/8/", 8),
+        (f"{GITEA_HOST}/{owner}/{repo}/issues/9/foo/bar/baz", 9),
+    ]
+
+    for (url, index) in issues:
+        assert Gitea._get_issue_index(url, repo) == index
+
+    not_issues = [
+        f"{GITEA_HOST}/{owner}/{repo}/8",
+        f"{GITEA_HOST}/{owner}/{repo}/issues/foo",
+        f"{GITEA_HOST}/{owner}/{repo}/issues/foo/bar/baz",
+        f"{GITEA_HOST}/{owner}/{repo}/issues/",
+    ]
+    for url in not_issues:
+        with pytest.raises(Error) as error:
+            Gitea._get_issue_index(url, repo)
+            assert error.get_error() == F_D_INVALID_ISSUE_URL.get_error()

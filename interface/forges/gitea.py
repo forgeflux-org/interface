@@ -27,11 +27,13 @@ from .base import (
     F_D_REPOSITORY_NOT_FOUND,
     F_D_FORGE_FORBIDDEN_OPERATION,
     F_D_REPOSITORY_EXISTS,
+    F_D_INVALID_ISSUE_URL,
 )
 from .payload import CreateIssue, RepositoryInfo, CreatePullrequest
 from .notifications import Notification, NotificationResp, Comment
 from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
 from interface.error import F_D_FORGE_UNKNOWN_ERROR
+from interface.utils import trim_url
 
 
 class Gitea(Forge):
@@ -244,26 +246,35 @@ class Gitea(Forge):
         payload = {"oarganization": "bot"}
         _response = requests.request("POST", url, json=payload, headers=headers)
 
-    def _get_issue_index(self, issue_url, owner: str) -> int:
-        parsed = urlparse(issue_url)
-        path = parsed.path
-        path.endswith("/")
-        if path.endswith("/"):
-            path = path[0:-1]
-        index = path.split(owner)[0].split("issue")[2]
-        if index.startswith("/"):
-            index = index[1:]
+    @staticmethod
+    def _get_issue_index(issue_url, repo: str) -> int:
 
-        if index.endswith("/"):
-            index = index[0:-1]
+        issue_frag = "issues/"
+        if issue_frag not in issue_url:
+            raise F_D_INVALID_ISSUE_URL
+        parsed = urlparse(trim_url(issue_url))
+        path = parsed.path
+        fragments = path.split(f"{repo}/{issue_frag}")
+        if len(fragments) < 2:
+            raise F_D_INVALID_ISSUE_URL
+
+        index = fragments[1]
+
+        if not index.isdigit():
+            if "/" in index:
+                index = index.split("/")[0]
+                if not index.isdigit():
+                    raise F_D_INVALID_ISSUE_URL
+            else:
+                raise F_D_INVALID_ISSUE_URL
 
         return int(index)
 
     def comment_on_issue(self, owner: str, repo: str, issue_url: str, body: str):
         headers = self._auth()
         (owner, repo) = self.get_fetch_remote(issue_url)
-        index = self._get_issue_index(issue_url, owner)
-        url = self._get_url(format("/repos/%s/%s/issues/%s" % (owner, repo, index)))
+        index = self._get_issue_index(issue_url, repo)
+        url = self._get_url("/repos/{owner}/{repo}/issues/{index}")
         payload = {"body": body}
         _response = requests.request("POST", url, json=payload, headers=headers)
 
