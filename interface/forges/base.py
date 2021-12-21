@@ -130,3 +130,9 @@ F_D_REPOSITORY_EXISTS = Error(
     error="Forge reports repository with the same name already exists",
     status=409,
 )
+
+F_D_INVALID_ISSUE_URL = Error(
+    errcode="F_D_INVALID_ISSUE_URL",
+    error="Issue URL provided is not valid",
+    status=400,
+)
