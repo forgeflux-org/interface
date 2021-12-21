@@ -244,7 +244,7 @@ class Gitea(Forge):
         payload = {"oarganization": "bot"}
         _response = requests.request("POST", url, json=payload, headers=headers)
 
-    def get_issue_index(self, issue_url, owner: str) -> int:
+    def _get_issue_index(self, issue_url, owner: str) -> int:
         parsed = urlparse(issue_url)
         path = parsed.path
         path.endswith("/")
@@ -262,7 +262,7 @@ class Gitea(Forge):
     def comment_on_issue(self, owner: str, repo: str, issue_url: str, body: str):
         headers = self._auth()
         (owner, repo) = self.get_fetch_remote(issue_url)
-        index = self.get_issue_index(issue_url, owner)
+        index = self._get_issue_index(issue_url, owner)
         url = self._get_url(format("/repos/%s/%s/issues/%s" % (owner, repo, index)))
         payload = {"body": body}
         _response = requests.request("POST", url, json=payload, headers=headers)
