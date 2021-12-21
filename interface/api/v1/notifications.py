@@ -16,7 +16,7 @@
 from flask import Blueprint, jsonify, request
 
 from interface import db
-from interface.error import F_D_INVALID_PAYLOAD, F_D_INTERFACE_UNREACHABLE
+from interface.error import F_D_INVALID_PAYLOAD, F_D_INTERFACE_UNREACHABLE, Error
 from interface.git import get_forge
 from interface.client import SUBSCRIBE, EVENTS
 from interface.runner.events import resolve_notification
@@ -51,30 +51,33 @@ def subscribe():
     repository_url = git.forge.get_fetch_remote(data["repository_url"])
 
     (owner, repo) = git.forge.get_owner_repo_from_url(repository_url)
-    git.forge.subscribe(owner, repo)
+    try:
+        git.forge.subscribe(owner, repo)
 
-    conn = db.get_db()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT OR IGNORE INTO interface_local_repositories (html_url) VALUES (?);",
-        (repository_url,),
-    )
-    cur.execute(
-        "INSERT OR IGNORE INTO interface_interfaces (url) VALUES (?);",
-        (interface_url,),
-    )
-    conn.commit()
-    cur.execute(
-        """
-        INSERT OR IGNORE INTO interface_event_subscriptsions (repository_id, interface_id)
-        VALUES (
-            (SELECT ID from interface_interfaces WHERE url = ?),
-            (SELECT ID from interface_local_repositories WHERE html_url = ?)
-        );
-        """,
-        (interface_url, repository_url),
-    )
-    return jsonify({})
+        conn = db.get_db()
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT OR IGNORE INTO interface_local_repositories (html_url) VALUES (?);",
+            (repository_url,),
+        )
+        cur.execute(
+            "INSERT OR IGNORE INTO interface_interfaces (url) VALUES (?);",
+            (interface_url,),
+        )
+        conn.commit()
+        cur.execute(
+            """
+            INSERT OR IGNORE INTO interface_event_subscriptsions (repository_id, interface_id)
+            VALUES (
+                (SELECT ID from interface_interfaces WHERE url = ?),
+                (SELECT ID from interface_local_repositories WHERE html_url = ?)
+            );
+            """,
+            (interface_url, repository_url),
+        )
+        return jsonify({})
+    except Error as e:
+        return e.get_error_resp()
 
 
 @bp.route(EVENTS, methods=["POST"])

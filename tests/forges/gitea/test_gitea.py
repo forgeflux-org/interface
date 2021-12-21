@@ -85,7 +85,7 @@ def test_get_repository_info(client, requests_mock):
         g.get_repository(owner, repo)
         assert True is False
     except Error as e:
-        e.status = F_D_FORGE_UNKNOWN_ERROR.status
+        e.status = F_D_REPOSITORY_NOT_FOUND.status
 
     (owner, repo) = g.get_owner_repo_from_url(FORGE_ERROR["repo_url"])
     try:
@@ -190,3 +190,23 @@ def test_get_local_push_and_html_url(requests_mock):
         assert g.get_local_html_url(repo) == urlunparse(
             (host.scheme, host.netloc, path, "", "", "")
         )
+
+
+def test_subscribe(requests_mock):
+    register_ns(requests_mock)
+    register_gitea(requests_mock)
+    g = Gitea()
+
+    g.subscribe(REPOSITORY_OWNER, REPOSITORY_NAME)
+
+    try:
+        g.subscribe(NON_EXISTENT["owner"], NON_EXISTENT["repo"])
+        assert True is False
+    except Error as e:
+        e.status = F_D_REPOSITORY_NOT_FOUND.status
+
+    try:
+        g.get_issues(FORGE_ERROR["owner"], FORGE_ERROR["repo"])
+        assert True is False
+    except Error as e:
+        e.status = F_D_FORGE_UNKNOWN_ERROR.status

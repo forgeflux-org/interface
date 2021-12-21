@@ -90,12 +90,30 @@ def register_get_repository(requests_mock):
 
 
 def register_subscribe(requests_mock):
-    path = (
-        f"{GITEA_HOST}/api/v1/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/subscription"
-    )
+    def _get_path(owner: str, repo: str) -> str:
+        return f"{GITEA_HOST}/api/v1/repos/{owner}/{repo}/subscription"
+
+    path = _get_path(REPOSITORY_OWNER, REPOSITORY_NAME)
     requests_mock.put(
         path,
         json={},
+    )
+    print(f"registered repository subscription: {path}")
+
+    path = _get_path(NON_EXISTENT["owner"], NON_EXISTENT["repo"])
+    print(path)
+    requests_mock.put(
+        path,
+        json={},
+        status_code=404,
+    )
+    print(f"registered repository subscription: {path}")
+
+    path = _get_path(FORGE_ERROR["owner"], FORGE_ERROR["repo"])
+    requests_mock.put(
+        path,
+        json={},
+        status_code=500,
     )
     print(f"registered repository subscription: {path}")
 

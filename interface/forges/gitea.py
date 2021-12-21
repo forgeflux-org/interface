@@ -140,7 +140,13 @@ class Gitea(Forge):
     def subscribe(self, owner: str, repo: str):
         url = self._get_url(format("/repos/%s/%s/subscription" % (owner, repo)))
         headers = self._auth()
-        _response = requests.request("PUT", url, headers=headers)
+        response = requests.request("PUT", url, headers=headers)
+        if response.status_code == 200:
+            return
+        elif response.status_code == 404:
+            raise F_D_REPOSITORY_NOT_FOUND
+        else:
+            raise F_D_FORGE_UNKNOWN_ERROR
 
     def _into_notification(self, n) -> Notification:
         subject = n["subject"]
