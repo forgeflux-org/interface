@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from interface.db import get_db
-from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO, SUBSCRIBE
-from interface.forges.payload import RepositoryInfo
+from interface.client import SUBSCRIBE
 from interface.meta import VERSIONS
-from interface.error import F_D_INTERFACE_UNREACHABLE
+from interface.error import F_D_INTERFACE_UNREACHABLE, F_D_FORGE_UNKNOWN_ERROR
+from interface.forges.base import F_D_REPOSITORY_NOT_FOUND
 from interface.utils import clean_url
 
 from tests.test_utils import register_ns
@@ -24,9 +24,8 @@ from tests.test_errors import expect_error
 from tests.forges.gitea.test_utils import (
     register_gitea,
     REPOSITORY_URL,
-    REPOSITORY_NAME,
-    REPOSITORY_DESCRIPTION,
-    REPOSITORY_OWNER,
+    NON_EXISTENT,
+    FORGE_ERROR,
 )
 
 
@@ -65,6 +64,15 @@ def test_subscribe(client, requests_mock):
         (repository_id, interface_id),
     ).fetchone()[0]
     assert res is 1
+
+    # Test forge errors
+    data["repository_url"] = NON_EXISTENT["repo_url"]
+    res = client.post(f"/api/v1/notifications{SUBSCRIBE}", json=data)
+    expect_error(res, F_D_REPOSITORY_NOT_FOUND)
+
+    data["repository_url"] = FORGE_ERROR["repo_url"]
+    res = client.post(f"/api/v1/notifications{SUBSCRIBE}", json=data)
+    expect_error(res, F_D_FORGE_UNKNOWN_ERROR)
 
 
 def test_subscribe_interface_unreachable(client):

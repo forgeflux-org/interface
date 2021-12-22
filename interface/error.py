@@ -16,34 +16,31 @@ Errors
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from dataclasses import dataclass
+
 from flask import jsonify
 from requests import Response
 
 
+@dataclass
 class Error(Exception):
     """Helper class for presenting errors in the format specified by the specification"""
 
-    def __init__(self, errcode: str, error: str, status: int):
-        super().__init__(error)
-        self.__errcode = errcode
-        self.__error = error
-        self.__status = status
+    errcode: str
+    error: str
+    status: int
 
     def get_error(self):
         """Get error in serialziable form"""
         error = {}
-        error["errcode"] = self.__errcode
-        error["error"] = self.__error
+        error["errcode"] = self.errcode
+        error["error"] = self.error
         return error
-
-    def status(self):
-        """Get error status"""
-        return self.__status
 
     def get_error_resp(self):
         """Get error response"""
         resp = jsonify(self.get_error())
-        resp.status = self.__status
+        resp.status = self.status
         return resp
 
     @staticmethod

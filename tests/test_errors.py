@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from interface.app import create_app
-
 from interface.error import F_D_INVALID_PAYLOAD, F_D_INTERFACE_UNREACHABLE, Error
 
 
@@ -23,11 +22,15 @@ def expect_error(response, err: Error) -> bool:
     data = response.json
     return all(
         [
-            str(err.status()) in response.status,
-            err.get_error()["error"] == data["error"],
-            err.get_error()["errcode"] == data["errcode"],
+            str(err.status) in response.status,
+            err.error == data["error"],
+            err.errcode == data["errcode"],
         ]
     )
+
+
+def pytest_expect_errror(got, expected: Error) -> bool:
+    return got.value.errcode == expected.errcode
 
 
 def test_errors(client):
@@ -35,7 +38,7 @@ def test_errors(client):
 
     def verify_status(e: Error, status: int):
         """Utility function to verify status"""
-        assert e.status() == status
+        assert e.status == status
         resp = e.get_error_resp()
         assert resp.status.find(str(status)) is not -1
 

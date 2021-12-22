@@ -22,11 +22,18 @@ import requests
 from rfc3339 import rfc3339
 from dynaconf import settings
 
-from .base import Forge, F_D_REPOSITORY_NOT_FOUND, F_D_FORGE_FORBIDDEN_OPERATION
+from .base import (
+    Forge,
+    F_D_REPOSITORY_NOT_FOUND,
+    F_D_FORGE_FORBIDDEN_OPERATION,
+    F_D_REPOSITORY_EXISTS,
+    F_D_INVALID_ISSUE_URL,
+)
 from .payload import CreateIssue, RepositoryInfo, CreatePullrequest
 from .notifications import Notification, NotificationResp, Comment
 from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
 from interface.error import F_D_FORGE_UNKNOWN_ERROR
+from interface.utils import trim_url
 
 
 class Gitea(Forge):
@@ -120,15 +127,28 @@ class Gitea(Forge):
             raise F_D_FORGE_UNKNOWN_ERROR
 
     def create_repository(self, repo: str, description: str):
-        url = self._get_url("/user/repos/")
+        url = self._get_url("/user/repos")
         payload = {"name": repo, "description": description}
         headers = self._auth()
-        _response = requests.request("POST", url, json=payload, headers=headers)
+        response = requests.request("POST", url, json=payload, headers=headers)
+        if response.status_code == 201:
+            return
+        elif response.status_code == 409:
+            # TODO: repository with the same name exists  <21-12-21, ATM> #
+            raise F_D_REPOSITORY_EXISTS
+        else:
+            raise F_D_FORGE_UNKNOWN_ERROR
 
     def subscribe(self, owner: str, repo: str):
         url = self._get_url(format("/repos/%s/%s/subscription" % (owner, repo)))
         headers = self._auth()
-        _response = requests.request("PUT", url, headers=headers)
+        response = requests.request("PUT", url, headers=headers)
+        if response.status_code == 200:
+            return
+        elif response.status_code == 404:
+            raise F_D_REPOSITORY_NOT_FOUND
+        else:
+            raise F_D_FORGE_UNKNOWN_ERROR
 
     def _into_notification(self, n) -> Notification:
         subject = n["subject"]
@@ -226,37 +246,44 @@ class Gitea(Forge):
         payload = {"oarganization": "bot"}
         _response = requests.request("POST", url, json=payload, headers=headers)
 
-    def get_issue_index(self, issue_url, owner: str) -> int:
-        parsed = urlparse(issue_url)
-        path = parsed.path
-        path.endswith("/")
-        if path.endswith("/"):
-            path = path[0:-1]
-        index = path.split(owner)[0].split("issue")[2]
-        if index.startswith("/"):
-            index = index[1:]
+    @staticmethod
+    def _get_issue_index(issue_url, repo: str) -> int:
 
-        if index.endswith("/"):
-            index = index[0:-1]
+        issue_frag = "issues/"
+        if issue_frag not in issue_url:
+            raise F_D_INVALID_ISSUE_URL
+        parsed = urlparse(trim_url(issue_url))
+        path = parsed.path
+        fragments = path.split(f"{repo}/{issue_frag}")
+        if len(fragments) < 2:
+            raise F_D_INVALID_ISSUE_URL
+
+        index = fragments[1]
+
+        if not index.isdigit():
+            if "/" in index:
+                index = index.split("/")[0]
+                if not index.isdigit():
+                    raise F_D_INVALID_ISSUE_URL
+            else:
+                raise F_D_INVALID_ISSUE_URL
 
         return int(index)
 
     def comment_on_issue(self, owner: str, repo: str, issue_url: str, body: str):
         headers = self._auth()
         (owner, repo) = self.get_fetch_remote(issue_url)
-        index = self.get_issue_index(issue_url, owner)
-        url = self._get_url(format("/repos/%s/%s/issues/%s" % (owner, repo, index)))
+        index = self._get_issue_index(issue_url, repo)
+        url = self._get_url("/repos/{owner}/{repo}/issues/{index}")
         payload = {"body": body}
         _response = requests.request("POST", url, json=payload, headers=headers)
 
     def get_local_html_url(self, repo: str) -> str:
-        path = format("/%s/%s" % settings.GITEA.username, repo)
+        path = f"/{settings.GITEA.username}/{repo}"
         return urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
 
     def get_local_push_url(self, repo: str) -> str:
-        return format(
-            "git@%s:%s/%s.git" % (self.host.netloc, settings.GITEA.username, repo)
-        )
+        return f"git@{self.host.netloc}:{settings.GITEA.username}/{repo}.git"
 
 
 # if __name__ == "__main__":
