@@ -75,3 +75,6 @@ test: ## Run tests
 	$(call	test_api_spec)
 	$(call	test_libgit)
 	$(call	test_interface)
+
+test-interface: ## Run interface tests
+	$(call	test_interface)

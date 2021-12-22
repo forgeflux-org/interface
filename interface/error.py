@@ -17,13 +17,14 @@ Errors
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from flask import jsonify
-import requests
+from requests import Response
 
 
-class Error:
+class Error(Exception):
     """Helper class for presenting errors in the format specified by the specification"""
 
     def __init__(self, errcode: str, error: str, status: int):
+        super().__init__(error)
         self.__errcode = errcode
         self.__error = error
         self.__status = status
@@ -45,7 +46,8 @@ class Error:
         resp.status = self.__status
         return resp
 
-    def from_resp(resp: requests.Response):
+    @staticmethod
+    def from_resp(resp: Response):
         if resp.status_code != 200:
             data = resp.json()
             print(data)
@@ -65,4 +67,10 @@ F_D_INVALID_PAYLOAD = Error(
     errcode="F_D_INVALID_PAYLOAD",
     error="Please submit valid payload",
     status=400,
+)
+
+F_D_FORGE_UNKNOWN_ERROR = Error(
+    errcode="F_D_FORGE_UNKNOWN_ERROR",
+    error="Something went wrong on the Software Forge side",
+    status=502,
 )

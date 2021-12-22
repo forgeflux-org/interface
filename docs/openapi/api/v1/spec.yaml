@@ -16,7 +16,6 @@
       "400":
         description: Unsuccessful subscription to the repository
 
-
 /api/v1/issues/issue/create:
   post:
     description: "Sends a POST request allowing for an issue to be created in the repository"
@@ -42,7 +41,6 @@
       "400":
         description: Failed creating an issue.
 
-  
 /api/v1/repository/fetch:
   post:
     description: "Fetches the repository's base URL by cleaning a user provided URL"
@@ -68,7 +66,6 @@
       "404":
         description: Could not find repository.
 
-
 /api/v1/repository/info:
   post:
     description: "Retrieves information about a repository"
@@ -90,6 +87,16 @@
               $ref: "./components/responses/repo_info.yaml"
       "404":
         description: Could not find the repository
+        content:
+          application/json:
+            schema:
+              $ref: "./components/responses/error-repo-not-found.yaml"
+      "502":
+        description: Something went wrong on the Software Forge side
+        content:
+          application/json:
+            schema:
+              $ref: "./components/responses/error-forge-unknown-error.yaml"
 
 /api/v1/repository/fork/local:
   post:

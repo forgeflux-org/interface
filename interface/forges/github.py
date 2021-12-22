@@ -56,7 +56,9 @@ class GitHub(Forge):
     def get_forge_url(self) -> str:
         return urlunparse((self.host.scheme, self.host.netloc, "", "", "", ""))
 
-    def get_issues(self, owner: str, repo: str, *args, **kwargs):
+    def get_issues(
+        self, owner: str, repo: str, since: datetime.datetime = None, *args, **kwargs
+    ):
         """Get the issues present in a provided repository"""
 
         # Defining a formatted url with the repo details

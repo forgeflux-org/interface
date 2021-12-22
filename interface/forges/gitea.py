@@ -22,10 +22,11 @@ import requests
 from rfc3339 import rfc3339
 from dynaconf import settings
 
-from .base import Forge
+from .base import Forge, F_D_REPOSITORY_NOT_FOUND, F_D_FORGE_FORBIDDEN_OPERATION
 from .payload import CreateIssue, RepositoryInfo, CreatePullrequest
 from .notifications import Notification, NotificationResp, Comment
 from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
+from interface.error import F_D_FORGE_UNKNOWN_ERROR
 
 
 class Gitea(Forge):
@@ -44,12 +45,13 @@ class Gitea(Forge):
         url = urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
         return url
 
-    def get_issues(self, owner: str, repo: str, *args, **kwargs):
+    def get_issues(
+        self, owner: str, repo: str, since: datetime.datetime = None, *args, **kwargs
+    ):
         """Get issues on a repository. Supports pagination via 'page' optional param"""
         query = {}
-        since = kwargs.get("since")
         if since is not None:
-            query["since"] = since
+            query["since"] = rfc3339(since)
 
         page = kwargs.get("page")
         if page is not None:
@@ -59,7 +61,12 @@ class Gitea(Forge):
 
         headers = self._auth()
         response = requests.request("GET", url, params=query, headers=headers)
-        return response.json()
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            raise F_D_REPOSITORY_NOT_FOUND
+        else:
+            raise F_D_FORGE_UNKNOWN_ERROR
 
     def get_owner_repo_from_url(self, url: str) -> (str, str):
         """Get (owner, repo) from repository URL"""
@@ -78,9 +85,18 @@ class Gitea(Forge):
 
         headers = self._auth()
         payload = asdict(issue)
+        print(payload)
         response = requests.request("POST", url, json=payload, headers=headers)
-        data = response.json()
-        return data["html_url"]
+        print(f"log: {response.status_code} {response.json()}")
+        if response.status_code == 201:
+            data = response.json()
+            return data["html_url"]
+        elif response.status_code == 403:
+            raise F_D_FORGE_FORBIDDEN_OPERATION
+        elif response.status_code == 404:
+            raise F_D_REPOSITORY_NOT_FOUND
+        else:
+            raise F_D_FORGE_UNKNOWN_ERROR
 
     def _into_repository(self, data) -> RepositoryInfo:
         info = RepositoryInfo(
@@ -94,9 +110,14 @@ class Gitea(Forge):
         """Get repository details"""
         url = self._get_url(format("/repos/%s/%s" % (owner, repo)))
         response = requests.request("GET", url)
-        data = response.json()
-        info = self._into_repository(data)
-        return info
+        if response.status_code == 200:
+            data = response.json()
+            info = self._into_repository(data)
+            return info
+        elif response.status_code == 404:
+            raise F_D_REPOSITORY_NOT_FOUND
+        else:
+            raise F_D_FORGE_UNKNOWN_ERROR
 
     def create_repository(self, repo: str, description: str):
         url = self._get_url("/user/repos/")

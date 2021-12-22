@@ -24,6 +24,7 @@ from interface.forges.notifications import NotificationResp, Notification
 from interface.forges.payload import RepositoryInfo, CreatePullrequest, CreateIssue
 from interface.forges.utils import clean_url
 from interface.ns import NameService
+from interface.error import Error
 
 
 class Forge:
@@ -62,7 +63,9 @@ class Forge:
 
     """ Forge characteristics. All interfaces must implement this class"""
 
-    def get_issues(self, owner: str, repo: str, *args, **kwargs):
+    def get_issues(
+        self, owner: str, repo: str, since: datetime.datetime = None, *args, **kwargs
+    ):
         """Get issues on a repository. Supports pagination via 'page' optional param"""
         raise NotImplementedError
 
@@ -108,3 +111,16 @@ class Forge:
     def comment_on_issue(self, owner: str, repo: str, issue_url: str, body: str):
         """Add comment on an existing issue"""
         raise NotImplementedError
+
+
+F_D_REPOSITORY_NOT_FOUND = Error(
+    errcode="F_D_REPOSITORY_NOT_FOUND",
+    error="Repository not found",
+    status=404,
+)
+
+F_D_FORGE_FORBIDDEN_OPERATION = Error(
+    errcode="F_D_FORGE_FORBIDDEN_OPERATION",
+    error="Forge reports operation is forbidden",
+    status=403,
+)

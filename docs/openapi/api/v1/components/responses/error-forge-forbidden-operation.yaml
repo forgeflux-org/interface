@@ -1,0 +1,11 @@
+type: object
+properties:
+  errcode:
+    description: The F_D_FORGE_FORBIDDEN_OPERATION error code
+    type: string
+    example: F_D_FORGE_FORBIDDEN_OPERATION
+  error:
+    description: A human-readable error message
+    type: string
+    example: >-
+      Forge reports operation is forbidden

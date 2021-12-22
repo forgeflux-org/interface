@@ -40,6 +40,10 @@ def test_base_forge():
     with pytest.raises(Exception) as _:
         Forge("https://git.batsense.net")
 
+    with pytest.raises(Exception) as _:
+        f = Forge("https://git.batsense.net")
+        f.get_fetch_remote("ftp://example.com")
+
     forge = BasicForge()
 
     with pytest.raises(NotImplementedError) as _:
