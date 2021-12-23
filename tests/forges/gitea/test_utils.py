@@ -327,6 +327,7 @@ with file.open() as f:
     FORK_OWNER = fork_repo["parent"]["owner"]["login"]
     CSRF_UID = fork_repo["owner"]["id"]
 
+
 GITEA_LOGIN_COOKIE = {"k": "auth", "v": "loggedin"}
 
 
@@ -340,11 +341,10 @@ def register_create_fork(requests_mock):
 
     domain = urlparse(GITEA_HOST).netloc
 
-    csrf_repo_info_matcher = re.compile(
-        f"{GITEA_HOST}/api/v1/repos/{FORK_OWNER}/{CSRF_FORK_REPO_NAME}-*"
-    )
-
+    pattern = f"{GITEA_HOST}/api/v1/repos/{FORK_OWNER}/{CSRF_FORK_REPO_NAME}-*"
+    csrf_repo_info_matcher = re.compile(pattern)
     requests_mock.get(csrf_repo_info_matcher, json={}, status_code=404)
+    print(f"Registered mock for pattern GET {pattern}")
 
     def login_cb(r: Request, ctx):
         url = r.url
