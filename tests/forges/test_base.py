@@ -81,7 +81,7 @@ def test_base_forge():
         forge.create_pull_request(pr=pr)
 
     with pytest.raises(NotImplementedError) as _:
-        forge.fork("", "")
+        forge.fork_inner("", "")
 
     with pytest.raises(NotImplementedError) as _:
         forge.close_pr("", "")

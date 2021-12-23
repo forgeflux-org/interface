@@ -25,6 +25,7 @@ from interface.forges.payload import RepositoryInfo, CreatePullrequest, CreateIs
 from interface.forges.utils import clean_url
 from interface.ns import NameService
 from interface.error import Error
+from interface.db import get_db
 
 
 class Forge:
@@ -96,8 +97,11 @@ class Forge:
         """
         raise NotImplementedError
 
-    def fork(self, owner: str, repo: str):
-        """Fork a repository"""
+    def fork_inner(self, owner: str, repo: str) -> str:
+        """
+        Forge-specific implementation of repository forking.
+        Returns repository name where the fork resides.
+        """
         raise NotImplementedError
 
     def close_pr(self, owner: str, repo: str):

@@ -81,6 +81,29 @@ class Git:
         system = get_git_system()
         system.fetch_upstream(repo)
 
+    def fork(self, owner: str, repo: str):
+        """Fork a repository"""
+        conn = get_db()
+        cur = conn.cursor()
+        fork_exists = cur.execute(
+            """
+            SELECT fork_repo_name FROM interface_forks
+            WHERE parent_owner = ? AND parent_repo_name = ?;
+            """,
+            (owner, repo),
+        ).fetchone()
+        if fork_exists:
+            return fork_exists
+        fork_repo_name = self.forge.fork_inner(owner, repo)
+        cur.execute(
+            """
+            INSERT INTO interface_forks 
+            (parent_owner, parent_repo_name, fork_repo_name)
+            VALUES (?,?,?);
+            """,
+            (owner, repo, fork_repo_name),
+        ).fetchone()
+
 
 def get_forge() -> Git:
     if "git" not in g:
