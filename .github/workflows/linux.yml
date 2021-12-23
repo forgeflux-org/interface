@@ -53,3 +53,4 @@ jobs:
           DYNACONF_GITEA__HOST : "https://git.batsense.net"
           DYNACONF_GITEA__API_KEY : ${{ secrets.DYNACONF_GITEA__API_KEY }}
           DYNACONF_GITEA__USERNAME : ${{ secrets.DYNACONF_GITEA__USERNAME }}
+          DYNACONF_GITEA__PASSWORD : ${{ secrets.DYNACONF_GITEA__PASSWORD }}
