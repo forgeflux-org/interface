@@ -54,8 +54,10 @@ from tests.forges.gitea.test_utils import (
 )
 
 
-def test_get_repository(client):
+def test_get_repository(client, requests_mock):
     """Test version meta route"""
+    register_ns(requests_mock)
+    register_gitea(requests_mock)
     g = Gitea()
     host = settings.GITEA.host
     repo_url = f"{host}/foo/bar"
@@ -157,6 +159,7 @@ def test_create_repository(requests_mock):
 
 def test_get_local_push_and_html_url(requests_mock):
     register_ns(requests_mock)
+    register_gitea(requests_mock)
     g = Gitea()
     host = settings.GITEA.host
     host = urlparse(clean_url(host))
