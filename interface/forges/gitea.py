@@ -238,7 +238,7 @@ class Gitea(Forge):
         response = requests.request("POST", url, json=payload, headers=headers)
         return response.json()["html_url"]
 
-    def fork(self, owner: str, repo: str):
+    def fork_inner(self, owner: str, repo: str) -> str:
         """Fork a repository"""
         url = self._get_url(format("/repos/%s/%s/forks" % (owner, repo)))
         print(url)
