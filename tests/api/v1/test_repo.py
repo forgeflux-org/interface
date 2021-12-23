@@ -32,8 +32,10 @@ from tests.forges.gitea.test_utils import (
 )
 
 
-def test_get_repository(client):
+def test_get_repository(client, requests_mock):
     """Test version meta route"""
+    register_ns(requests_mock)
+    register_gitea(requests_mock)
 
     host = settings.GITEA.host
 

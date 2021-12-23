@@ -105,7 +105,6 @@ class HTMLClient:
         if resp.status_code == 302:
             return
 
-        print(resp.text)
         raise Exception(
             f"[ERROR] Authentication failed. status code {resp.status_code}"
         )
