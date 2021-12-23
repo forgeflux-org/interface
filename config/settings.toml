@@ -5,6 +5,7 @@ forge = "gitea"
 #host = ""
 #api_key = ""
 #username = ""
+#password = ""
 
 [default.github]
 #host = "https://api.github.com/"
