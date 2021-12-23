@@ -1,0 +1,22 @@
+{
+  "id": 2,
+  "login": "bot",
+  "full_name": "",
+  "email": "bot@batsense.net",
+  "avatar_url": "https://git.batsense.net/user/avatar/bot/-1",
+  "language": "en-US",
+  "is_admin": false,
+  "last_login": "2021-12-22T17:12:15+05:30",
+  "created": "2021-09-29T15:18:42+05:30",
+  "restricted": false,
+  "active": true,
+  "prohibit_login": false,
+  "location": "",
+  "website": "",
+  "description": "",
+  "visibility": "public",
+  "followers_count": 0,
+  "following_count": 0,
+  "starred_repos_count": 0,
+  "username": "bot"
+}

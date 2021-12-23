@@ -20,9 +20,15 @@ from interface.app import create_app
 from interface.meta import VERSIONS
 from interface.runner import runner
 
+from tests.test_utils import register_ns
+from tests.forges.gitea.test_utils import register_gitea
 
-def test_supported_version(app, client):
+
+def test_supported_version(app, client, requests_mock):
     """Test version meta route"""
+
+    register_ns(requests_mock)
+    register_gitea(requests_mock)
 
     worker = runner.init_app(app)
     assert worker.thread.is_alive() is True

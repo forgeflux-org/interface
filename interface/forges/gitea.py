@@ -14,10 +14,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
+from html.parser import HTMLParser
 from dataclasses import asdict
 from dateutil.parser import parse as date_parse
 from urllib.parse import urlunparse, urlparse
 import requests
+from requests import Session
+from requests.auth import HTTPBasicAuth
 
 from rfc3339 import rfc3339
 from dynaconf import settings
@@ -32,13 +35,127 @@ from .base import (
 from .payload import CreateIssue, RepositoryInfo, CreatePullrequest
 from .notifications import Notification, NotificationResp, Comment
 from .notifications import ISSUE, PULL, COMMIT, REPOSITORY
-from interface.error import F_D_FORGE_UNKNOWN_ERROR
-from interface.utils import trim_url
+from interface.error import F_D_FORGE_UNKNOWN_ERROR, Error
+from interface.utils import trim_url, clean_url, get_rand
+
+
+class ParseCSRFGiteaForm(HTMLParser):
+    token: str = None
+
+    def handle_starttag(self, tag: str, attrs: (str, str)):
+        if self.token:
+            return
+
+        if tag != "input":
+            return
+
+        token = None
+        for (index, (k, v)) in enumerate(attrs):
+            if k == "value":
+                token = v
+
+            if all([k == "name", v == "_csrf"]):
+                if token:
+                    self.token = token
+                    return
+                for (inner_index, (nk, nv)) in enumerate(attrs, start=index):
+                    if nk == "value":
+                        self.token = nv
+                        return
+
+
+class HTMLClient:
+    session: Session
+
+    def __init__(self):
+        self.host = urlparse(clean_url(settings.GITEA.host))
+        if all([self.host.scheme != "http", self.host.scheme != "https"]):
+            print(self.host.scheme)
+            raise Exception("scheme should be either http or https")
+        self.session = Session()
+        self.login()
+        print(f"constructor {self.session.cookies}")
+
+    @staticmethod
+    def get_csrf_token(page: str) -> str:
+        parser = ParseCSRFGiteaForm()
+        parser.feed(page)
+        csrf = parser.token
+        return csrf
+
+    def get_url(self, path: str) -> str:
+        return urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
+
+    def login(self):
+        url = self.get_url("/user/login")
+        resp = self.session.get(url)
+        if resp.status_code != 200:
+            print(resp.status_code, resp.text)
+            raise Exception(resp.status_code)
+
+        csrf = self.get_csrf_token(resp.text)
+        payload = {
+            "_csrf": csrf,
+            "user_name": settings.GITEA.username,
+            "password": settings.GITEA.password,
+            "remember": "on",
+        }
+        resp = self.session.post(url, data=payload, allow_redirects=False)
+        print(f"login {self.session.cookies}")
+        if resp.status_code == 302:
+            return
+
+        print(resp.text)
+        raise Exception(
+            f"[ERROR] Authentication failed. status code {resp.status_code}"
+        )
+
+    def fork(self, repo_id: int, repo_name: str, uid: int):
+        url = self.get_url(f"/repo/fork/{repo_id}")
+        payload = {
+            "uid": uid,
+            "repo_name": repo_name,
+            "description": "",
+        }
+
+        def __inner(payload, count: int = 0):
+            print(payload)
+            resp = self.session.get(url)
+            if resp.status_code != 200:
+                # Have to see source code for possible errors(wrong password? user doesn't exist?)
+                print(resp.status_code, resp.text)
+                raise Exception(resp.status_code)
+
+            csrf = self.get_csrf_token(resp.text)
+            payload["_csrf"] = csrf
+            print(f"payload in gitea: {payload}")
+            resp = self.session.post(url, data=payload, allow_redirects=False)
+            if resp.status_code == 302:
+                return self.get_url(resp.headers["location"])
+            if (
+                '<a href="/user/sign_up">Need an account? Register now.</a>'
+                in resp.text
+            ):
+                print("logging in")
+                self.login()
+                count += 1
+                return __inner(count)
+            print(resp.text)
+            raise Exception(
+                f"[ERROR]: CSRF forking repo_id: {repo_id} status: {resp.status_code}"
+            )
+
+        return __inner(payload)
 
 
 class Gitea(Forge):
+    html_client: HTMLClient
+    gitea_user_id: int
+
     def __init__(self):  # self, base_url: str, admin_user: str, admin_email):
+        self.html_client = HTMLClient()
         super().__init__(settings.GITEA.host)
+        self.gitea_user_id = self.get_gitea_user()["id"]
 
     def _auth(self):
         return {"Authorization": format("token %s" % (settings.GITEA.api_key))}
@@ -48,7 +165,7 @@ class Gitea(Forge):
         if path.startswith("/"):
             path = path[1:]
 
-        path = format("%s%s" % (prefix, path))
+        path = f"{prefix}{path}"
         url = urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
         return url
 
@@ -115,16 +232,8 @@ class Gitea(Forge):
 
     def get_repository(self, owner: str, repo: str) -> RepositoryInfo:
         """Get repository details"""
-        url = self._get_url(format("/repos/%s/%s" % (owner, repo)))
-        response = requests.request("GET", url)
-        if response.status_code == 200:
-            data = response.json()
-            info = self._into_repository(data)
-            return info
-        elif response.status_code == 404:
-            raise F_D_REPOSITORY_NOT_FOUND
-        else:
-            raise F_D_FORGE_UNKNOWN_ERROR
+        data = self.get_gitea_repo(owner, repo)
+        return self._into_repository(data)
 
     def create_repository(self, repo: str, description: str):
         url = self._get_url("/user/repos")
@@ -238,13 +347,65 @@ class Gitea(Forge):
         response = requests.request("POST", url, json=payload, headers=headers)
         return response.json()["html_url"]
 
+    def get_gitea_repo(self, owner: str, repo: str):
+        """Get repository details"""
+        url = self._get_url(f"/repos/{owner}/{repo}")
+        response = requests.request("GET", url)
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            raise F_D_REPOSITORY_NOT_FOUND
+        else:
+            raise F_D_FORGE_UNKNOWN_ERROR
+
+    def get_gitea_user(self):
+        url = self._get_url("/user")
+        headers = self._auth()
+        response = requests.request("GET", url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(
+                f"[ERROR] getting user info. status code: {response.status_code}"
+            )
+
     def fork_inner(self, owner: str, repo: str) -> str:
         """Fork a repository"""
-        url = self._get_url(format("/repos/%s/%s/forks" % (owner, repo)))
-        print(url)
+        url = self._get_url(f"/repos/{owner}/{repo}/forks")
         headers = self._auth()
-        payload = {"oarganization": "bot"}
-        _response = requests.request("POST", url, json=payload, headers=headers)
+        response = requests.request("POST", url, headers=headers)
+        if response.status_code == 202:
+            return repo
+
+        if response.status_code == 403:
+            raise F_D_FORGE_FORBIDDEN_OPERATION
+
+        if response.status_code == 404:
+            raise F_D_REPOSITORY_NOT_FOUND
+
+        if response.status_code == 500:
+            data = response.json()
+            if "message" in data:
+                if "repository is already forked by user" in data["message"]:
+                    # TODO: repository already forked
+                    raise Exception("Repository already forked by user")
+
+                if "repository is already exists by user" in data["message"]:
+                    repo_info = self.get_gitea_repo(owner, repo)
+                    rand_name = ""
+                    while True:
+                        rand_name = f"{repo}-{get_rand(10)}"
+                        try:
+                            self.get_gitea_repo(settings.GITEA.username, rand_name)
+                        except Error as error:
+                            if error.errcode == F_D_REPOSITORY_NOT_FOUND.errcode:
+                                break
+                    self.html_client.fork(
+                        repo_info["id"], rand_name, self.gitea_user_id
+                    )
+                    return rand_name
+
+        raise F_D_FORGE_UNKNOWN_ERROR
 
     @staticmethod
     def _get_issue_index(issue_url, repo: str) -> int:

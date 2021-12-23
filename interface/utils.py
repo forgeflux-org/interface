@@ -13,6 +13,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import random
+import string
 from urllib.parse import urlparse, urlunparse
 import requests
 
@@ -47,3 +49,9 @@ def verify_interface_online(url: str, version: str = None):
         return False
     except Exception as _:
         return False
+
+
+def get_rand(len: int) -> str:
+    return "".join(
+        random.choice(string.ascii_uppercase + string.digits) for _ in range(len)
+    )

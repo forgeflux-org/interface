@@ -18,9 +18,11 @@ from dateutil.parser import parse
 from dynaconf import settings
 import pytest
 
+from interface.utils import get_rand
 from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO
 from interface.forges.payload import RepositoryInfo, CreateIssue
 from interface.forges.utils import clean_url
+from interface.git import Git, get_forge
 from interface.forges.base import (
     F_D_REPOSITORY_NOT_FOUND,
     F_D_FORGE_FORBIDDEN_OPERATION,
@@ -28,7 +30,7 @@ from interface.forges.base import (
     F_D_INVALID_ISSUE_URL,
 )
 from interface.error import F_D_FORGE_UNKNOWN_ERROR, Error
-from interface.forges.gitea import Gitea
+from interface.forges.gitea import Gitea, HTMLClient
 
 from tests.test_utils import register_ns
 from tests.test_errors import expect_error, pytest_expect_errror
@@ -42,15 +44,24 @@ from tests.forges.gitea.test_utils import (
     NON_EXISTENT,
     FORGE_ERROR,
     register_get_issues_since,
+    # Create issue
     CREATE_ISSUE,
     CREATE_ISSUE_BODY,
     CREATE_ISSUE_HTML_URL,
     CREATE_ISSUE_TITLE,
     FORGE_FORBIDDEN_ERROR,
+    # Create repo
     CREATE_REPO_DESCRIPTION,
     CREATE_REPO_NAME,
     CREATE_REPO_DUPLICATE_NAME,
     CREATE_REPO_FORGE_UNKNOWN_ERROR_NAME,
+    # Fork
+    FORK_REPO_NAME,
+    CSRF_FORK_REPO_ID,
+    CSRF_FORK_REPO_NAME,
+    CSRF_UID,
+    CSRF_SUCCESSFUL_REDIRECTION,
+    FORK_OWNER,
 )
 
 
@@ -219,3 +230,24 @@ def test_get_issue_index(requests_mock):
         with pytest.raises(Error) as error:
             Gitea._get_issue_index(url, repo)
         assert pytest_expect_errror(error, F_D_INVALID_ISSUE_URL)
+
+
+def test_html_web_client(requests_mock):
+    register_ns(requests_mock)
+    register_gitea(requests_mock)
+    html_client = HTMLClient()
+    resp = html_client.fork(
+        CSRF_FORK_REPO_ID, f"{CSRF_FORK_REPO_NAME}-{get_rand(10)}", CSRF_UID
+    )
+    assert CSRF_SUCCESSFUL_REDIRECTION in urlparse(resp).path
+
+
+def test_fork(app, requests_mock):
+    register_ns(requests_mock)
+    register_gitea(requests_mock)
+    g = get_forge()
+    cached_random_name = g.fork(FORK_OWNER, CSRF_FORK_REPO_NAME)
+    cached_random_name != CSRF_FORK_REPO_NAME
+    assert cached_random_name == g.fork(FORK_OWNER, CSRF_FORK_REPO_NAME)
+    assert g.fork(FORK_OWNER, FORK_REPO_NAME) == FORK_REPO_NAME
+    assert g.fork(FORK_OWNER, FORK_REPO_NAME) == FORK_REPO_NAME
