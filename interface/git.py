@@ -81,7 +81,7 @@ class Git:
         system = get_git_system()
         system.fetch_upstream(repo)
 
-    def fork(self, owner: str, repo: str):
+    def fork(self, owner: str, repo: str) -> str:
         """Fork a repository"""
         conn = get_db()
         cur = conn.cursor()
@@ -93,7 +93,7 @@ class Git:
             (owner, repo),
         ).fetchone()
         if fork_exists:
-            return fork_exists
+            return fork_exists[0]
         fork_repo_name = self.forge.fork_inner(owner, repo)
         cur.execute(
             """
@@ -103,6 +103,7 @@ class Git:
             """,
             (owner, repo, fork_repo_name),
         ).fetchone()
+        return fork_repo_name
 
 
 def get_forge() -> Git:
