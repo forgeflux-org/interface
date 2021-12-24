@@ -17,9 +17,14 @@ import tempfile
 
 import pytest
 import requests_mock
+from dynaconf import settings
 
 from interface.app import create_app
 from interface.db import get_db, init_db
+
+
+from tests.test_utils import register_ns
+from tests.forges.gitea.test_utils import register_gitea
 
 
 @pytest.fixture
@@ -54,3 +59,14 @@ def client(app):
 def runner(app):
     """Test runner for the app's CLI commands"""
     return app.test_cli_runner()
+
+
+@pytest.fixture(autouse=True)
+def set_test_settings():
+    settings.configure(FORCE_ENV_FOR_DYNACONF="testing")
+
+
+@pytest.fixture(autouse=True)
+def register_mocks(requests_mock):
+    register_ns(requests_mock)
+    register_gitea(requests_mock)

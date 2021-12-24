@@ -5,6 +5,7 @@ forge = "gitea"
 #host = ""
 #api_key = ""
 #username = ""
+#password = ""
 
 [default.github]
 #host = "https://api.github.com/"
@@ -18,6 +19,31 @@ job_runner_delay = 1  ## in seconds
 northstar = "https://northstar.forgefed.io" # Default discovery service URL
 
 [default.server]
+domain = "localhost" # Domain at which this instance will listen from
+ip = "0.0.0.0" # IP at which this server will listen from
+port = 7000 # port at which this server will listen from
+
+[testing]
+forge = "gitea"
+
+[testing.gitea]
+host = "https://git.batsense.net"
+api_key = "fakekey1232123"
+username = "bot"
+password = "password1234"
+
+[testing.github]
+#host = "https://api.github.com/"
+#api_key = ""
+#username = ""
+
+[testing.system]
+base_dir = "/tmp/" # Location where git repositories will be cloned into
+admin_email = "foo@a.com" # Committing email
+job_runner_delay = 1  ## in seconds
+northstar = "https://northstar.forgefed.io" # Default discovery service URL
+
+[testing.server]
 domain = "localhost" # Domain at which this instance will listen from
 ip = "0.0.0.0" # IP at which this server will listen from
 port = 7000 # port at which this server will listen from

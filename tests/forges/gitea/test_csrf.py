@@ -1,3 +1,4 @@
+""" Test for Gitea CSRF parser"""
 # Interface ---  API-space federation for software forges
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
 #
@@ -12,29 +13,25 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from datetime import datetime
+from interface.forges.gitea import ParseCSRFGiteaForm
 
-from dateutil.parser import parse as date_parse
-
-from interface.app import create_app
-from interface.meta import VERSIONS
-from interface.runner import runner
-
-from tests.test_utils import register_ns
-from tests.forges.gitea.test_utils import register_gitea
+from tests.forges.gitea.test_utils import PAGE1, CSRF_TOKEN_2, CSRF_TOKEN, PAGE2
 
 
-def test_supported_version(app, client, requests_mock):
-    """Test version meta route"""
+def test_csrf_parser():
+    # return when first token is found
+    parser = ParseCSRFGiteaForm()
+    parser.feed(PAGE1)
+    assert parser.token == CSRF_TOKEN
 
-    worker = runner.init_app(app)
-    assert worker.thread.is_alive() is True
-    assert worker.get_switch().is_set() is False
-    worker.kill()
-    assert worker.thread.is_alive() is False
-    assert worker.get_switch().is_set() is True
+    # Token is already found, new parsing and searching should return immediately
+    # without any processing/changing tokens
+    parser = ParseCSRFGiteaForm()
+    parser.token = CSRF_TOKEN_2
+    parser.feed(PAGE1)
+    assert parser.token == CSRF_TOKEN_2
 
-    last_run = worker.get_last_run()
-    now = datetime.now()
-    worker._update_time(now)
-    assert date_parse(worker.get_last_run()) == now
+    # value attribute encountered early, does attribute caching work?
+    parser = ParseCSRFGiteaForm()
+    parser.feed(PAGE2)
+    assert parser.token == CSRF_TOKEN

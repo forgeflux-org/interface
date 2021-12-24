@@ -31,9 +31,6 @@ from tests.forges.gitea.test_utils import (
 
 def test_subscribe(client, requests_mock):
     """Test subscribe route"""
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
-
     interface_url = "https://interfac9.example.com/_ff/interface/versions"
     resp = {"versions": VERSIONS}
     requests_mock.get(interface_url, json=resp)

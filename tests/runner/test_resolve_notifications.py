@@ -23,8 +23,11 @@ from interface.app import create_app
 from interface.forges.notifications import ISSUE, PULL, Notification, Comment
 from interface.runner.events import resolve_notification, PrEvent, IssueEvent
 
+from tests.test_utils import register_ns
+from tests.forges.gitea.test_utils import register_gitea
 
-def test_notifications_resolve(client):
+
+def test_notifications_resolve(client, requests_mock):
     """Test resolve_notification"""
     id_ = "1"
     state = "open"

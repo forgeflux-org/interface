@@ -32,7 +32,7 @@ from tests.forges.gitea.test_utils import (
 )
 
 
-def test_get_repository(client):
+def test_get_repository(client, requests_mock):
     """Test version meta route"""
 
     host = settings.GITEA.host
@@ -57,8 +57,6 @@ def test_get_repository(client):
 
 
 def test_get_repository_info(client, requests_mock):
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
 
     print(REPOSITORY_URL)
     payload = {"repository_url": REPOSITORY_URL}

@@ -18,10 +18,14 @@ from dynaconf import settings
 
 from interface.git import Git, get_forge
 
+from tests.test_utils import register_ns
+from tests.forges.gitea.test_utils import register_gitea
+
+
 UPSTREAM = "https://github.com/realaravinth/actix-auth-middleware"
 
 
-def test_git(app, client):
+def test_git(app, client, requests_mock):
     """Test git module"""
 
     git = get_forge()

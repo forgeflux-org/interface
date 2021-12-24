@@ -14,9 +14,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
+import re
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 from requests import Request
+from requests_mock import CookieJar
 from dynaconf import settings
 
 from interface.client import GET_REPOSITORY_INFO
@@ -266,9 +269,204 @@ def register_create_repository(requests_mock):
     print(f"Registered create repo mocking at {path}")
 
 
+CSRF_FORK_REPO_NAME = "csrf"
+CSRF_FORK_REPO_ID = 20
+CSRF_FORK_REPO_LOGOUT_ID = 20
+CSRF_UID = ""
+CSRF_SUCCESSFUL_REDIRECTION = f"/{settings.GITEA.username}/csrf"
+FORK_REPO_NAME = ""
+FORK_REPO_BODY = ""
+FORK_REPO = {}
+FORK_REPO_DESCRIPTION = ""
+FORK_REPO_HTML_URL = ""
+
+CREATE_REPO_DUPLICATE_NAME = "duplicate-repo-name"
+CREATE_REPO_FORGE_UNKNOWN_ERROR_NAME = "forge-unknown-error-repo-name"
+
+
+CSRF_TOKEN = "foo"
+CSRF_TOKEN_2 = "bar"
+
+
+def get_page(inner: str) -> str:
+    page = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Document</title>
+        </head>
+        <body>
+          <form action="">
+          {inner}
+          </form>
+        </body>
+        </html>
+    """
+    return page
+
+
+PAGE1 = f"""
+    <input type="hidden" name="_csrf" value={CSRF_TOKEN}>
+    <input type="hidden" name="_csrf" value={CSRF_TOKEN_2}>
+"""
+
+PAGE2 = f"""
+    <p class="foobar">foobarbaz</p>
+    <input type="hidden" value={CSRF_TOKEN} name="_csrf" value={CSRF_TOKEN_2}>
+"""
+
+file = Path(__file__).parent / "./fork-successful.json"
+with file.open() as f:
+    fork_repo = json.load(f)
+    FORK_REPO_NAME = fork_repo["name"]
+    FORK_REPO_DESCRIPTION = fork_repo["description"]
+    FORK_REPO_HTML_URL = fork_repo["html_url"]
+    FORK_REPO = fork_repo
+    FORK_OWNER = fork_repo["parent"]["owner"]["login"]
+    CSRF_UID = fork_repo["owner"]["id"]
+
+
+GITEA_LOGIN_COOKIE = {"k": "auth", "v": "loggedin"}
+
+
+def register_create_fork(requests_mock):
+    json_path = f"{GITEA_HOST}/api/v1/repos/{FORK_OWNER}/{FORK_REPO_NAME}/forks"
+    json_path_custom_name = (
+        f"{GITEA_HOST}/api/v1/repos/{FORK_OWNER}/{CSRF_FORK_REPO_NAME}/forks"
+    )
+    web_path = f"{GITEA_HOST}/repo/fork/{CSRF_FORK_REPO_ID}"
+    login_url = f"{GITEA_HOST}/user/login"
+
+    domain = urlparse(GITEA_HOST).netloc
+
+    pattern = f"{GITEA_HOST}/api/v1/repos/{FORK_OWNER}/{CSRF_FORK_REPO_NAME}-*"
+    csrf_repo_info_matcher = re.compile(pattern)
+    requests_mock.get(csrf_repo_info_matcher, json={}, status_code=404)
+    print(f"Registered mock for pattern GET {pattern}")
+
+    def login_cb(r: Request, ctx):
+        url = r.url
+        data = parse_qs(r.text)
+
+        if all(
+            [
+                url == login_url,
+                data["_csrf"][0] == CSRF_TOKEN,
+                data["user_name"][0] == settings.GITEA.username,
+                data["password"][0] == settings.GITEA.password,
+            ]
+        ):
+            ctx.status_code = 302
+            # jar = CookieJar() jar.set(GITEA_LOGIN_COOKIE["k"], GITEA_LOGIN_COOKIE["v"], domain=domain, path="/") print(jar)
+            # ctx.cookies = jar
+            cookie = f"{GITEA_LOGIN_COOKIE['k']}={GITEA_LOGIN_COOKIE['v']}; Path=/; domain={domain};"
+            print(cookie)
+            ctx.headers = {
+                "location": CSRF_SUCCESSFUL_REDIRECTION,
+                # Cookiejar doesn't work https://github.com/jamielennox/requests-mock/issues/17
+                "Set-Cookie": cookie,
+            }
+            return ""
+
+    requests_mock.get(
+        login_url,
+        text=PAGE1,
+    )
+    print(f"Registered fork CSRF GET LOGIN route {login_url}")
+
+    requests_mock.post(
+        login_url,
+        text=login_cb,
+    )
+    print(f"Registered fork CSRF POST LOGIN route {login_url}")
+
+    def cb_name_exists(r: Request, ctx):
+        resp = {"message": "repository is already exists by user"}
+        ctx.status_code = 500
+        return resp
+
+    def cb(r: Request, ctx):
+        data = parse_qs(r.text)
+        print(f"test util: {data}")
+        #        print("printing ocokies in test util")
+        #        print(f"headers: {r.headers}")
+        #        print(r.cookies)
+
+        print(data["_csrf"][0] == CSRF_TOKEN)
+        print(data["repo_name"][0] != CSRF_FORK_REPO_NAME)
+        print(data["uid"][0] == str(CSRF_UID))
+        print(f'{data["uid"][0]} {str(CSRF_UID)}')
+        print("&description=" in r.text)
+
+        if all(
+            [
+                data["_csrf"][0] == CSRF_TOKEN,
+                data["repo_name"][0] != CSRF_FORK_REPO_NAME,
+                data["uid"][0] == str(CSRF_UID),
+                "&description=" in r.text,
+            ]
+        ):
+            #            #if r.cookies == GITEA_LOGIN_COOKIE:
+            print("user logged in")
+            ctx.status_code = 302
+            ctx.headers = {
+                "location": CSRF_SUCCESSFUL_REDIRECTION,
+            }
+            ctx.cookies = CookieJar()
+            print("logging user out")
+            # return '<a href="/user/sign_up">Need an account? Register now.</a>'
+            return ""
+
+        ctx.status_code = 500
+        return ""
+
+    requests_mock.post(
+        json_path_custom_name,
+        json=cb_name_exists,
+    )
+    print(f"Registered fork CSRF JSON route {json_path_custom_name}")
+
+    requests_mock.get(
+        web_path,
+        text=PAGE1,
+    )
+    print(f"Registered fork CSRF GET form route {web_path}")
+
+    requests_mock.post(
+        web_path,
+        text=cb,
+    )
+    print(f"Registered fork CSRF POST form route {web_path}")
+
+    requests_mock.post(json_path, json=FORK_REPO, status_code=202)
+    print(f"Registered fork json route {json_path}")
+
+    def _get_path(owner: str, repo: str) -> str:
+        return f"{GITEA_HOST}/api/v1/repos/{owner}/{repo}"
+
+    requests_mock.get(
+        _get_path(FORK_OWNER, CSRF_FORK_REPO_NAME), json={"id": CSRF_FORK_REPO_ID}
+    )
+
+
+USER_INFO = {}
+
+file = Path(__file__).parent / "./user-info.json"
+with file.open() as f:
+    USER_INFO = json.load(f)
+
+
+def register_gitea_user_info(requests_mock):
+    requests_mock.get("/api/v1/user", json=USER_INFO)
+
+
 def register_gitea(requests_mock):
     register_get_repository(requests_mock)
     register_subscribe(requests_mock)
     register_get_issues(requests_mock)
     register_create_issues(requests_mock)
     register_create_repository(requests_mock)
+    register_create_fork(requests_mock)
+    register_gitea_user_info(requests_mock)
