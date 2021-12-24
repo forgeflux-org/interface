@@ -67,8 +67,7 @@ from tests.forges.gitea.test_utils import (
 
 def test_get_repository(client, requests_mock):
     """Test version meta route"""
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
+
     g = Gitea()
     host = settings.GITEA.host
     repo_url = f"{host}/foo/bar"
@@ -84,8 +83,6 @@ def test_get_repository(client, requests_mock):
 
 
 def test_get_repository_info(client, requests_mock):
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
 
     g = Gitea()
 
@@ -107,8 +104,7 @@ def test_get_repository_info(client, requests_mock):
 
 
 def test_get_issues(requests_mock):
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
+
     g = Gitea()
 
     data = g.get_issues(REPOSITORY_OWNER, REPOSITORY_NAME)
@@ -126,8 +122,7 @@ def test_get_issues(requests_mock):
 
 
 def test_create_issues(requests_mock):
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
+
     g = Gitea()
 
     payload = CreateIssue(title=CREATE_ISSUE_TITLE, body=CREATE_ISSUE_BODY)
@@ -151,8 +146,7 @@ def test_create_issues(requests_mock):
 
 
 def test_create_repository(requests_mock):
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
+
     g = Gitea()
 
     g.create_repository(CREATE_REPO_NAME, CREATE_REPO_DESCRIPTION)
@@ -169,8 +163,7 @@ def test_create_repository(requests_mock):
 
 
 def test_get_local_push_and_html_url(requests_mock):
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
+
     g = Gitea()
     host = settings.GITEA.host
     host = urlparse(clean_url(host))
@@ -192,8 +185,7 @@ def test_get_local_push_and_html_url(requests_mock):
 
 
 def test_subscribe(requests_mock):
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
+
     g = Gitea()
 
     g.subscribe(REPOSITORY_OWNER, REPOSITORY_NAME)
@@ -233,8 +225,7 @@ def test_get_issue_index(requests_mock):
 
 
 def test_html_web_client(requests_mock):
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
+
     html_client = HTMLClient()
     resp = html_client.fork(
         CSRF_FORK_REPO_ID, f"{CSRF_FORK_REPO_NAME}-{get_rand(10)}", CSRF_UID
@@ -243,8 +234,6 @@ def test_html_web_client(requests_mock):
 
 
 def test_fork(app, requests_mock):
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
     g = get_forge()
     cached_random_name = g.fork(FORK_OWNER, CSRF_FORK_REPO_NAME)
     cached_random_name != CSRF_FORK_REPO_NAME

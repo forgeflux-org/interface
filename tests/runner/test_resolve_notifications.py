@@ -29,9 +29,6 @@ from tests.forges.gitea.test_utils import register_gitea
 
 def test_notifications_resolve(client, requests_mock):
     """Test resolve_notification"""
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
-
     id_ = "1"
     state = "open"
     updated_at = rfc3339(datetime.now())

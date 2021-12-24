@@ -28,8 +28,6 @@ UPSTREAM = "https://github.com/realaravinth/actix-auth-middleware"
 def test_git(app, client, requests_mock):
     """Test git module"""
 
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
     git = get_forge()
 
 

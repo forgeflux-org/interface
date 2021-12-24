@@ -27,9 +27,6 @@ from tests.forges.gitea.test_utils import register_gitea
 def test_supported_version(app, client, requests_mock):
     """Test version meta route"""
 
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
-
     worker = runner.init_app(app)
     assert worker.thread.is_alive() is True
     assert worker.get_switch().is_set() is False

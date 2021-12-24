@@ -24,8 +24,6 @@ from tests.forges.gitea.test_utils import register_gitea
 
 def test_ns(app, requests_mock):
     """Test ns"""
-    register_ns(requests_mock)
-    register_gitea(requests_mock)
     forge = get_forge().forge.get_forge_url()
     config_interface_url = settings.SERVER.domain
 
