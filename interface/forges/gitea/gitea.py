@@ -14,13 +14,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
-from html.parser import HTMLParser
+from urllib.parse import urlunparse, urlparse
 from dataclasses import asdict
 from dateutil.parser import parse as date_parse
-from urllib.parse import urlunparse, urlparse
+
 import requests
-from requests import Session
-from requests.auth import HTTPBasicAuth
 
 from rfc3339 import rfc3339
 from dynaconf import settings
@@ -51,7 +49,7 @@ class Gitea(Forge):
         self.gitea_user_id = self.get_gitea_user()["id"]
 
     def _auth(self):
-        return {"Authorization": format("token %s" % (settings.GITEA.api_key))}
+        return {"Authorization": f"token {settings.GITEA.api_key}"}
 
     def _get_url(self, path: str) -> str:
         prefix = "/api/v1/"
@@ -74,16 +72,15 @@ class Gitea(Forge):
         if page is not None:
             query["page"] = page
 
-        url = self._get_url(format("/repos/%s/%s/issues" % (owner, repo)))
+        url = self._get_url("/repos/{owner}/{repo}/issues")
 
         headers = self._auth()
         response = requests.request("GET", url, params=query, headers=headers)
         if response.status_code == 200:
             return response.json()
-        elif response.status_code == 404:
+        if response.status_code == 404:
             raise F_D_REPOSITORY_NOT_FOUND
-        else:
-            raise F_D_FORGE_UNKNOWN_ERROR
+        raise F_D_FORGE_UNKNOWN_ERROR
 
     def get_owner_repo_from_url(self, url: str) -> (str, str):
         """Get (owner, repo) from repository URL"""
@@ -98,7 +95,7 @@ class Gitea(Forge):
 
     def create_issue(self, owner: str, repo: str, issue: CreateIssue):
         """Creates issue on a repository"""
-        url = self._get_url(format("/repos/%s/%s/issues" % (owner, repo)))
+        url = self._get_url(f"/repos/{owner}/{repo}/issues")
 
         headers = self._auth()
         payload = asdict(issue)
@@ -108,12 +105,11 @@ class Gitea(Forge):
         if response.status_code == 201:
             data = response.json()
             return data["html_url"]
-        elif response.status_code == 403:
+        if response.status_code == 403:
             raise F_D_FORGE_FORBIDDEN_OPERATION
-        elif response.status_code == 404:
+        if response.status_code == 404:
             raise F_D_REPOSITORY_NOT_FOUND
-        else:
-            raise F_D_FORGE_UNKNOWN_ERROR
+        raise F_D_FORGE_UNKNOWN_ERROR
 
     def _into_repository(self, data) -> RepositoryInfo:
         info = RepositoryInfo(
@@ -135,11 +131,10 @@ class Gitea(Forge):
         response = requests.request("POST", url, json=payload, headers=headers)
         if response.status_code == 201:
             return
-        elif response.status_code == 409:
+        if response.status_code == 409:
             # TODO: repository with the same name exists  <21-12-21, ATM> #
             raise F_D_REPOSITORY_EXISTS
-        else:
-            raise F_D_FORGE_UNKNOWN_ERROR
+        raise F_D_FORGE_UNKNOWN_ERROR
 
     def subscribe(self, owner: str, repo: str):
         url = self._get_url(format("/repos/%s/%s/subscription" % (owner, repo)))
@@ -147,10 +142,9 @@ class Gitea(Forge):
         response = requests.request("PUT", url, headers=headers)
         if response.status_code == 200:
             return
-        elif response.status_code == 404:
+        if response.status_code == 404:
             raise F_D_REPOSITORY_NOT_FOUND
-        else:
-            raise F_D_FORGE_UNKNOWN_ERROR
+        raise F_D_FORGE_UNKNOWN_ERROR
 
     def _into_notification(self, n) -> Notification:
         subject = n["subject"]
@@ -250,10 +244,9 @@ class Gitea(Forge):
         response = requests.request("GET", url)
         if response.status_code == 200:
             return response.json()
-        elif response.status_code == 404:
+        if response.status_code == 404:
             raise F_D_REPOSITORY_NOT_FOUND
-        else:
-            raise F_D_FORGE_UNKNOWN_ERROR
+        raise F_D_FORGE_UNKNOWN_ERROR
 
     def get_gitea_user(self):
         url = self._get_url("/user")
@@ -261,10 +254,9 @@ class Gitea(Forge):
         response = requests.request("GET", url, headers=headers)
         if response.status_code == 200:
             return response.json()
-        else:
-            raise Exception(
-                f"[ERROR] getting user info. status code: {response.status_code}"
-            )
+        raise Exception(
+            f"[ERROR] getting user info. status code: {response.status_code}"
+        )
 
     def fork_inner(self, owner: str, repo: str) -> str:
         """Fork a repository"""
@@ -306,7 +298,6 @@ class Gitea(Forge):
 
     @staticmethod
     def _get_issue_index(issue_url, repo: str) -> int:
-
         issue_frag = "issues/"
         if issue_frag not in issue_url:
             raise F_D_INVALID_ISSUE_URL
