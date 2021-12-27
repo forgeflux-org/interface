@@ -19,18 +19,22 @@ Flask application
 import os
 
 from flask import Flask
+from dynaconf import settings
 
 import interface.settings
 from interface import db
 from interface import runner
 from interface.api.v1 import bp
 from interface.meta import bp as meta_bp
+from interface.auth import keygen_bp
 
 
 def create_app(test_config=None):
     """Create flask application"""
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
+    app.register_blueprint(keygen_bp)
+
     app.config.from_mapping(
         DATABASE=os.path.join(app.instance_path, "interface.db"),
     )

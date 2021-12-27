@@ -12,25 +12,22 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import sqlite3
+
+import pytest
 from dynaconf import settings
 
-from interface.app import create_app
-from interface.meta import VERSIONS
 
-from interface.auth import PublicKey
+from interface.auth import loadkey
 
 
-def test_supported_version(client):
-    """Test version meta route"""
-
-    resp = client.get("/_ff/interface/versions")
-    data = resp.json
-    assert data["versions"] == VERSIONS
+def test_auth_key_load_successful(app, requests_mock):
+    with app.app_context():
+        loadkey()
 
 
-def test_public_key_route(client):
-    """Test get private key route"""
-
-    resp = client.get("/_ff/interface/key")
-    data = PublicKey(**resp.json)
-    assert data.key == settings.PRIVATE_KEY
+def test_auth_key_load_failure(app, requests_mock):
+    settings.PRIVATE_KEY = "foobar"
+    with app.app_context():
+        with pytest.raises(Exception):
+            loadkey()
