@@ -12,6 +12,8 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from dataclasses import dataclass, asdict
+
 from signedjson.key import (
     generate_signing_key,
     get_verify_key,
@@ -20,7 +22,7 @@ from signedjson.key import (
 )
 import click
 from flask.cli import with_appcontext
-from flask import Blueprint, g
+from flask import Blueprint, g, jsonify
 from dynaconf import settings
 
 keygen_bp = Blueprint("keys", __name__)
@@ -41,6 +43,14 @@ keygen_bp = Blueprint("keys", __name__)
 
 VERSION = "zxcvb"
 ALGORITHM = "ed25519"
+
+
+@dataclass
+class PublicKey:
+    key: str
+
+    def to_resp(self):
+        return jsonify(asdict(self))
 
 
 def loadkey():

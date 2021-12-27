@@ -12,8 +12,12 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from dynaconf import settings
+
 from interface.app import create_app
 from interface.meta import VERSIONS
+
+from interface.auth import PublicKey
 
 
 def test_supported_version(client):
@@ -22,3 +26,11 @@ def test_supported_version(client):
     resp = client.get("/_ff/interface/versions")
     data = resp.json
     assert data["versions"] == VERSIONS
+
+
+def test_public_key_route(client):
+    """Test get private key route"""
+
+    resp = client.get("/_ff/interface/key")
+    data = PublicKey(**resp.json)
+    assert data.key == settings.PRIVATE_KEY
