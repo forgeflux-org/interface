@@ -44,6 +44,8 @@ steps = [
                 -- false && val(is_closed) == true: issue is PR and is closed
             is_native BOOLEAN NOT NULL DEFAULT TRUE,
             repo_scope_id INTEGER NOT NULL,
+            user_id INTEGER REFERENCES gitea_users(ID) ON DELETE CASCADE DEFAULT NULL,
+            repository INTEGER REFERENCES gitea_forge_repositories(ID) ON DELETE CASCADE DEFAULT NULL,
             signed_by INTEGER REFERENCES interfaces(ID) ON DELETE CASCADE DEFAULT NULL
         );
     """
