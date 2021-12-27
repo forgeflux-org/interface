@@ -16,10 +16,12 @@ from signedjson.key import (
     generate_signing_key,
     get_verify_key,
     encode_signing_key_base64,
+    decode_signing_key_base64,
 )
 import click
 from flask.cli import with_appcontext
-from flask import Blueprint
+from flask import Blueprint, g
+from dynaconf import settings
 
 keygen_bp = Blueprint("keys", __name__)
 
@@ -36,6 +38,18 @@ keygen_bp = Blueprint("keys", __name__)
 #    print('Signature is valid')
 # except SignatureVerifyException:
 #    print('Signature is invalid')
+
+VERSION = "zxcvb"
+ALGORITHM = "ed25519"
+
+
+def loadkey():
+    """Get database connection"""
+    if "db" not in g:
+        g.private_key = decode_signing_key_base64(
+            ALGORITHM, VERSION, settings.PRIVATE_KEY
+        )
+    return g.private_key
 
 
 @keygen_bp.cli.command("generate")

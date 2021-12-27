@@ -1,5 +1,7 @@
 [default]
 forge = "gitea"
+#private_key = ""
+
 
 [default.gitea]
 #host = ""
@@ -25,6 +27,7 @@ port = 7000 # port at which this server will listen from
 
 [testing]
 forge = "gitea"
+private_key = "KxEQO2gukWvI1UKBlHbqWXuoJEB/z1hAHWgzhTwlwSI"
 
 [testing.gitea]
 host = "https://git.batsense.net"

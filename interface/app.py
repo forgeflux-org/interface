@@ -19,6 +19,7 @@ Flask application
 import os
 
 from flask import Flask
+from dynaconf import settings
 
 import interface.settings
 from interface import db
