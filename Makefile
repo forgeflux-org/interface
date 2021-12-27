@@ -69,7 +69,8 @@ keygen: ## Generate signing keys
 lint: ## Run linter
 	@./venv/bin/black ./interface/*
 	@./venv/bin/black ./tests/*
-	. ./venv/bin/activate && ./scripts/spellcheck.sh --write
+	@./venv/bin/black ./migrations/*
+	. ./venv/bin/activate && ./scripts/spellcheck.sh --check #--write
 
 migrate: ## Run migrations
 	$(call run_migrations)
