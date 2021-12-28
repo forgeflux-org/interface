@@ -20,7 +20,11 @@ Forge behavior base class
 import datetime
 from urllib.parse import urlparse, urlunparse
 
-from interface.forges.notifications import NotificationResp, Notification
+from interface.forges.notifications import (
+    NotificationResp,
+    Notification,
+    NotificationResolver,
+)
 from interface.forges.payload import RepositoryInfo, CreatePullrequest, CreateIssue
 from interface.forges.utils import clean_url
 from interface.ns import NameService
@@ -114,6 +118,10 @@ class Forge:
 
     def comment_on_issue(self, owner: str, repo: str, issue_url: str, body: str):
         """Add comment on an existing issue"""
+        raise NotImplementedError
+
+    def get_notification_resolver(self) -> NotificationResolver:
+        """Get notification resolver"""
         raise NotImplementedError
 
 

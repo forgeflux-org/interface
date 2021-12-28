@@ -47,6 +47,7 @@ class Notification:
     updated_at: str
     title: str
     repo_url: str
+    web_url: str
     upstream: str = None
     pr_url: str = None
     comment: Comment = None
@@ -58,3 +59,123 @@ class NotificationResp:
 
     notifications: [Notification]
     last_read: datetime
+
+
+class RunNotification:
+    """Process notification"""
+
+    notification: Notification
+
+    def __post_init__(self):
+        if self._check_mandatory():
+            raise Exception("mandatory fields not present")
+
+    def _check_mandatory(self) -> bool:
+        """get mandatory fields"""
+        raise NotImplementedError
+
+    def process(self):
+        """Process a notification"""
+        raise NotImplementedError
+
+    def propagate(self):
+        """Propagate a notification"""
+        raise NotImplementedError
+
+
+class NotificationResolver:
+    @staticmethod
+    def resolve_notification(notification: Notification) -> RunNotification:
+        """Convert Notification into runnable unit of work"""
+        if notification.type == PULL:
+            return PrEvent(notification)
+        if notification.type == ISSUE:
+            return IssueEvent(notification)
+
+        raise Exception(f"Unknown notification type {notification.type}")
+
+
+@dataclass
+class CreatePrMessage:
+    repository_url: str  # // of the target PR
+    pr_url: str  # // pull request url
+    message: str  # // message body
+    head: str
+    base: str
+    title: str
+    patch: str
+    author_name: str
+    author_email: str
+
+
+@dataclass
+class PrMessage:
+    repository_url: str  # of the target PR
+    # only the interface that created the PR or
+    # the maintainers of upstream can close PR
+    pr_url: str  # pull request url
+    state: str  # open, close, merge, etc.
+    message: str  # message body
+    author_profile: str  # authors' webpage or forge profle page
+
+
+class CreatePrEvent(RunNotification):
+    """PR type Notification"""
+
+    def _check_mandatory(self) -> bool:
+        return any(
+            [
+                self.notification.pr_url is None,
+                self.notification.upstream is None,
+            ]
+        )
+
+    def process(self):
+        # Example implementation:
+        # Get PR description, title, author and patch content
+        # and associated comments
+        raise NotImplementedError
+
+    def propagate(self) -> CreatePrMessage:
+        raise NotImplementedError
+
+
+class PrEvent(RunNotification):
+    """PR type Notification"""
+
+    def _check_mandatory(self) -> bool:
+        return any(
+            [
+                self.notification.pr_url is None,
+                self.notification.upstream is None,
+            ]
+        )
+
+    def process(self):
+        # Example implementation:
+        # Get PR description, title, author and patch content
+        # and associated comments
+        raise NotImplementedError
+
+    def propagate(self) -> PrMessage:
+        raise NotImplementedError
+
+
+class IssueEvent(RunNotification):
+    """Issue type notificatin"""
+
+    def _check_mandatory(self) -> bool:
+        return any(
+            [
+                self.notification.comment is None,
+                self.notification.pr_url is None,
+            ]
+        )
+
+    def process(self):
+        # Example implementation:
+        # Get associated comments
+        raise NotImplementedError
+
+    def propagate(self):
+        raise NotImplementedError
