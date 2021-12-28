@@ -48,43 +48,6 @@ class DBUser:
         )
         conn.commit()
 
-        print("saved")
-
-        # data = cur.execute(
-
-    #            """
-    #             SELECT
-    #                 users.ID,
-    #                 users.name,
-    #                 users.profile_url,
-    #                 interfaces.ID,
-    #                 interfaces.url,
-    #                 interfaces.public_key
-    #             FROM
-    #                 gitea_users AS users
-    #             INNER JOIN interfaces AS interfaces
-    #                 ON users.signed_by = interfaces.ID
-    #            WHERE
-    #                users.user_id = '?'
-    #            """
-
-    #            """
-    #             SELECT
-    #                 ID,
-    #                 name,
-    #                 profile_url
-    #             FROM
-    #                 gitea_users
-    #            WHERE
-    #                user_id = '?'
-    #            """
-    #
-    #        ).fetchone()
-    #        print("!!!!!!")
-    #        print(data)
-    #        for i in data:
-    #            print(i)
-
     @classmethod
     def load(cls, user_id: str):
         """Load user from database with the URL of the interface which signed it's creation"""
