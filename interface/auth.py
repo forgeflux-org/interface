@@ -45,8 +45,9 @@ class KeyPair:
     @classmethod
     def from_base_64(cls, base64_key: str):
         key = decode_signing_key_base64(ALGORITHM, VERSION, base64_key)
-        cls.signing_key = key
-        return cls
+        obj = cls()
+        obj.signing_key = key
+        return obj
 
     def to_base64_public(self) -> str:
         return encode_signing_key_base64(self.signing_key)
@@ -58,7 +59,8 @@ class KeyPair:
     def loadkey(cls):
         """Load key from settings"""
         if "private_key" not in g:
-            g.private_key = cls.from_base_64(settings.PRIVATE_KEY)
+            key = cls.from_base_64(settings.PRIVATE_KEY)
+            g.private_key = key
         return g.private_key
 
 

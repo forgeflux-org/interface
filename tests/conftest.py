@@ -25,6 +25,7 @@ from interface.db import get_db, init_db
 
 from tests.test_utils import register_ns
 from tests.forges.gitea.test_utils import register_gitea
+from tests.meta_utils import mock_key, mock_version
 
 
 @pytest.fixture
@@ -70,3 +71,5 @@ def set_test_settings():
 def register_mocks(requests_mock):
     register_ns(requests_mock)
     register_gitea(requests_mock)
+    mock_key(requests_mock)
+    mock_version(requests_mock)

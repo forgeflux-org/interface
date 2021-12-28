@@ -16,10 +16,9 @@ Meta related routes
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from flask import Blueprint, jsonify, request
-from dynaconf import settings
+from flask import Blueprint, jsonify
 
-from interface.auth import PublicKey
+from interface.auth import PublicKey, KeyPair
 
 bp = Blueprint("META", __name__, url_prefix="/_ff/interface/")
 
@@ -38,4 +37,7 @@ def versions():
 @bp.route("key", methods=["GET"])
 def get_verify_key():
     """get public key"""
-    return PublicKey(key=settings.PRIVATE_KEY).to_resp()
+    key = KeyPair.loadkey()
+    key.to_base64_public()
+    public_key = PublicKey(key=key.to_base64_public())
+    return public_key.to_resp()
