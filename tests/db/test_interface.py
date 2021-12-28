@@ -16,6 +16,11 @@ from interface.db.interfaces import DBInterfaces
 from interface.auth import KeyPair
 
 
+def cmp_interface(lhs: DBInterfaces, rhs: DBInterfaces) -> bool:
+    """Compare two DBInterfaces objects"""
+    return all([lhs.public_key == rhs.public_key, lhs.url == rhs.url])
+
+
 def test_interface(client):
     """Test DBInterfaces database class"""
 
@@ -26,9 +31,6 @@ def test_interface(client):
     from_key = DBInterfaces.load_from_pk(key.to_base64_public())
     from_url = DBInterfaces.load_from_url(url)
 
-    def cmp(lhs: DBInterfaces, rhs: DBInterfaces) -> bool:
-        return all([lhs.public_key == rhs.public_key, lhs.url == rhs.url])
-
-    assert cmp(from_url, from_key) is True
-    assert cmp(from_url, data) is True
+    assert cmp_interface(from_url, from_key) is True
+    assert cmp_interface(from_url, data) is True
     assert from_url.id == from_key.id

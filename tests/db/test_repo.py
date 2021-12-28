@@ -12,13 +12,12 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from interface.db import get_db
-from interface.db.interfaces import DBInterfaces
 from interface.db.repo import DBRepo
-from interface.db.issues import DBIssue
-from interface.db.users import DBUser
 
-from interface.auth import KeyPair
+
+def cmp_repo(lhs: DBRepo, rhs: DBRepo) -> bool:
+    """Compare two DBRepo objects"""
+    return all([lhs.name == rhs.name, lhs.owner == rhs.owner])
 
 
 def test_repo(client):
@@ -36,8 +35,7 @@ def test_repo(client):
     repo.save()
     from_db = DBRepo.load(name, owner)
 
-    assert from_db.name == name
-    assert from_db.owner == owner
-    assert from_db.id is not None
+    assert cmp_repo(from_db, repo)
     from_db2 = DBRepo.load(name, owner)
-    assert from_db.id is from_db2.id
+    assert cmp_repo(from_db, from_db2)
+    assert from_db.id == from_db2.id

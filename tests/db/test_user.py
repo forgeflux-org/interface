@@ -21,6 +21,17 @@ from interface.db.users import DBUser
 from interface.auth import KeyPair
 
 
+def cmp_user(lhs: DBUser, rhs: DBUser) -> bool:
+    return all(
+        [
+            lhs.name == rhs.name,
+            lhs.user_id == rhs.user_id,
+            lhs.profile_url == rhs.profile_url,
+            lhs.signed_by.url == rhs.signed_by.url,
+        ]
+    )
+
+
 def test_user(client):
     """Test user route"""
 
@@ -40,14 +51,4 @@ def test_user(client):
     user.save()
     from_db = DBUser.load(user_id)
 
-    def cmp(lhs: DBUser, rhs: DBUser) -> bool:
-        return all(
-            [
-                lhs.name == rhs.name,
-                lhs.user_id == rhs.user_id,
-                lhs.profile_url == rhs.profile_url,
-                lhs.signed_by.url == rhs.signed_by.url,
-            ]
-        )
-
-    assert cmp(from_db, user) is True
+    assert cmp_user(from_db, user) is True
