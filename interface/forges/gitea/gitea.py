@@ -72,7 +72,7 @@ class Gitea(Forge):
         if page is not None:
             query["page"] = page
 
-        url = self._get_url("/repos/{owner}/{repo}/issues")
+        url = self._get_url(f"/repos/{owner}/{repo}/issues")
 
         headers = self._auth()
         response = requests.request("GET", url, params=query, headers=headers)
@@ -137,7 +137,7 @@ class Gitea(Forge):
         raise F_D_FORGE_UNKNOWN_ERROR
 
     def subscribe(self, owner: str, repo: str):
-        url = self._get_url(format("/repos/%s/%s/subscription" % (owner, repo)))
+        url = self._get_url(format(f"/repos/%s/%s/subscription" % (owner, repo)))
         headers = self._auth()
         response = requests.request("PUT", url, headers=headers)
         if response.status_code == 200:
