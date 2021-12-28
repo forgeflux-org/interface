@@ -23,6 +23,7 @@ import requests
 from interface.forges.base import Forge
 from interface.forges.notifications import Notification
 from interface.db import get_db
+from interface.git import get_forge
 
 GET_REPOSITORY = "/fetch"
 GET_REPOSITORY_INFO = "/info"
@@ -89,6 +90,19 @@ class ForgeClient:
         response = requests.request("POST", interface_api_url, json=payload)
         data = response.json()
         return data
+
+    def get_pubkey(self, interface_url: str):
+        parsed = urlparse(interface_url)
+        interface_url = urlunparse(
+            (parsed.scheme, parsed.netloc, "/_ff/interface/key", "", "", "")
+        )
+        response = requests.get(interface_url)
+
+        if response.status_code == 200:
+            data = response.json()
+            if "key" in data:
+                return data["key"]
+        raise Exception(f"couldn't get key for {interface_url}")
 
     def send_notification(self, notification: Notification, interface_url: str):
         """send notification to subscribed interface"""

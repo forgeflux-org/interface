@@ -22,6 +22,7 @@ from interface.client import SUBSCRIBE, EVENTS
 from interface.runner.events import resolve_notification
 from interface.forges.notifications import Notification
 from interface.utils import clean_url, verify_interface_online
+from interface.client import get_client
 
 
 bp = Blueprint("API_V1_NOTIFICATIONS", __name__, url_prefix="/notifications")
@@ -56,25 +57,49 @@ def subscribe():
 
         conn = db.get_db()
         cur = conn.cursor()
-        cur.execute(
-            "INSERT OR IGNORE INTO interface_local_repositories (html_url) VALUES (?);",
+
+        repo_exists = cur.execute(
+            "SELECT EXISTS (SELECT 1 FROM local_repositories WHERE html_url = ?);",
             (repository_url,),
-        )
-        cur.execute(
-            "INSERT OR IGNORE INTO interface_interfaces (url) VALUES (?);",
-            (interface_url,),
-        )
-        conn.commit()
+        ).fetchone()
+
+        if any([repo_exists is None, len(repo_exists) != 1, repo_exists[0] == 0]):
+            cur.execute(
+                # TODO use gitea_forge_repositories
+                "INSERT OR IGNORE INTO local_repositories (html_url) VALUES (?);",
+                (repository_url,),
+            )
+            conn.commit()
+
+        interface_exists = cur.execute(
+            "SELECT EXISTS (SELECT 1 FROM interfaces WHERE url = ?);", (interface_url,)
+        ).fetchone()
+
+        if any(
+            [
+                interface_exists is None,
+                len(interface_exists) != 1,
+                interface_exists[0] == 0,
+            ]
+        ):
+            key = get_client().get_pubkey(interface_url)
+            cur.execute(
+                "INSERT OR IGNORE INTO interfaces (url, public_key) VALUES (?, ?);",
+                (interface_url, key),
+            )
+            conn.commit()
+
         cur.execute(
             """
-            INSERT OR IGNORE INTO interface_event_subscriptsions (repository_id, interface_id)
+            INSERT OR IGNORE INTO subscriptions (repository_id, interface_id)
             VALUES (
-                (SELECT ID from interface_interfaces WHERE url = ?),
-                (SELECT ID from interface_local_repositories WHERE html_url = ?)
+                (SELECT ID from interfaces WHERE url = ?),
+                (SELECT ID from local_repositories WHERE html_url = ?)
             );
             """,
             (interface_url, repository_url),
         )
+        conn.commit()
         return jsonify({})
     except Error as e:
         return e.get_error_resp()
