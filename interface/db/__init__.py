@@ -18,3 +18,4 @@ from .interfaces import DBInterfaces
 from .repo import DBRepo
 from .issues import DBIssue
 from .users import DBUser
+from .subscriptions import DBSubscribe
