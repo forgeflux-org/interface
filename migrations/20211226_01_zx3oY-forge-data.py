@@ -23,7 +23,8 @@ steps = [
         CREATE TABLE IF NOT EXISTS gitea_forge_repositories(
             owner VARCHAR(250) NOT NULL,
             name VARCHAR(250) NOT NULL,
-            ID INTEGER PRIMARY KEY NOT NULL
+            ID INTEGER PRIMARY KEY NOT NULL,
+            UNIQUE(owner, name)
         );
     """
     ),
@@ -62,6 +63,15 @@ steps = [
             parent_of REFERENCES issue_comments(ID),
             is_native BOOLEAN NOT NULL DEFAULT TRUE,
             signed_by INTEGER REFERENCES interfaces(ID) ON DELETE CASCADE DEFAULT NULL
+        );
+    """
+    ),
+    step(
+        """
+        CREATE TABLE IF NOT EXISTS subscriptions(
+            repository_id INTEGER NOT NULL REFERENCES gitea_forge_repositories(ID) ON DELETE CASCADE,
+            interface_id INTEGER NOT NULL REFERENCES interfaces(ID) ON DELETE CASCADE,
+            UNIQUE(repository_id, interface_id)
         );
     """
     ),
