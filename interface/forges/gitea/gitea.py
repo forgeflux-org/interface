@@ -296,29 +296,6 @@ class Gitea(Forge):
 
         raise F_D_FORGE_UNKNOWN_ERROR
 
-    @staticmethod
-    def _get_issue_index(issue_url, repo: str) -> int:
-        issue_frag = "issues/"
-        if issue_frag not in issue_url:
-            raise F_D_INVALID_ISSUE_URL
-        parsed = urlparse(trim_url(issue_url))
-        path = parsed.path
-        fragments = path.split(f"{repo}/{issue_frag}")
-        if len(fragments) < 2:
-            raise F_D_INVALID_ISSUE_URL
-
-        index = fragments[1]
-
-        if not index.isdigit():
-            if "/" in index:
-                index = index.split("/")[0]
-                if not index.isdigit():
-                    raise F_D_INVALID_ISSUE_URL
-            else:
-                raise F_D_INVALID_ISSUE_URL
-
-        return int(index)
-
     def comment_on_issue(self, owner: str, repo: str, issue_url: str, body: str):
         headers = self._auth()
         (owner, repo) = self.get_fetch_remote(issue_url)

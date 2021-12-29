@@ -199,31 +199,6 @@ def test_subscribe(requests_mock):
     assert pytest_expect_errror(error, F_D_FORGE_UNKNOWN_ERROR)
 
 
-def test_get_issue_index(requests_mock):
-    owner = "realaravinth"
-    repo = "tmp"
-
-    issues = [
-        (f"{GITEA_HOST}/{owner}/{repo}/issues/8", 8),
-        (f"{GITEA_HOST}/{owner}/{repo}/issues/8/", 8),
-        (f"{GITEA_HOST}/{owner}/{repo}/issues/9/foo/bar/baz", 9),
-    ]
-
-    for (url, index) in issues:
-        assert Gitea._get_issue_index(url, repo) == index
-
-    not_issues = [
-        f"{GITEA_HOST}/{owner}/{repo}/8",
-        f"{GITEA_HOST}/{owner}/{repo}/issues/foo",
-        f"{GITEA_HOST}/{owner}/{repo}/issues/foo/bar/baz",
-        f"{GITEA_HOST}/{owner}/{repo}/issues/",
-    ]
-    for url in not_issues:
-        with pytest.raises(Error) as error:
-            Gitea._get_issue_index(url, repo)
-        assert pytest_expect_errror(error, F_D_INVALID_ISSUE_URL)
-
-
 def test_html_web_client(requests_mock):
 
     html_client = HTMLClient()
