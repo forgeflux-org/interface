@@ -27,7 +27,6 @@ def test_auth_key_load_successful(app, requests_mock):
 
 
 def test_auth_key_load_failure(app, requests_mock):
-    settings.PRIVATE_KEY = "foobar"
     with app.app_context():
         with pytest.raises(Exception):
-            KeyPair.loadkey()
+            KeyPair.from_base_64("foobar")
