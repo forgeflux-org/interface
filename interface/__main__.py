@@ -24,5 +24,6 @@ from interface.runner import runner
 if __name__ == "__main__":
     app = create_app()
     worker = runner.init_app(app)
-    app.run(threaded=True, host=settings.SERVER.ip, port=settings.SERVER.port)
+    port = int(settings.SERVER.url.split(":").pop())
+    app.run(threaded=True, host=settings.SERVER.ip, port=port)
     worker.kill()

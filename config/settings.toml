@@ -21,9 +21,7 @@ job_runner_delay = 1  ## in seconds
 northstar = "https://northstar.forgefed.io" # Default discovery service URL
 
 [default.server]
-domain = "localhost" # Domain at which this instance will listen from
-ip = "0.0.0.0" # IP at which this server will listen from
-port = 7000 # port at which this server will listen from
+url = "http://localhost:7000" # URL at which this interface will run
 
 [testing]
 forge = "gitea"
@@ -47,6 +45,4 @@ job_runner_delay = 1  ## in seconds
 northstar = "https://northstar.forgefed.io" # Default discovery service URL
 
 [testing.server]
-domain = "localhost" # Domain at which this instance will listen from
-ip = "0.0.0.0" # IP at which this server will listen from
-port = 7000 # port at which this server will listen from
+url = "http://localhost:7000" # URL at which this interface will run

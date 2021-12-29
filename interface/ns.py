@@ -71,7 +71,7 @@ class NameService:
         url = "interface/register"
         url = self._get_url(url)
         payload = {
-            "interface_url": settings.SERVER.domain,
+            "interface_url": settings.SERVER.url,
             "forge_url": [self.forge_url],
         }
         resp = requests.post(url, json=payload)

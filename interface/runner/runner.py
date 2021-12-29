@@ -55,7 +55,7 @@ class Runner:
                 INSERT OR IGNORE INTO interface_jobs_run
                     (this_interface_url, last_run) VALUES (?, ?);
                 """,
-                (settings.SERVER.domain, str(last_run)),
+                (settings.SERVER.url, str(last_run)),
             )
             conn.commit()
         self.thread = threading.Thread(target=self._background_job)
@@ -80,7 +80,7 @@ class Runner:
             cur = conn.cursor()
             cur.execute(
                 "UPDATE interface_jobs_run set last_run = ? WHERE this_interface_url = ?;",
-                (str(last_run), settings.SERVER.domain),
+                (str(last_run), settings.SERVER.url),
             )
             conn.commit()
 
@@ -90,7 +90,7 @@ class Runner:
             cur = conn.cursor()
             res = cur.execute(
                 "SELECT last_run FROM interface_jobs_run WHERE this_interface_url = ?;",
-                (settings.SERVER.domain,),
+                (settings.SERVER.url,),
             ).fetchone()
             return res[0]
 
