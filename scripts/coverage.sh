@@ -35,7 +35,15 @@ build_and_test() {
 		./target/debug/ \
 		-s . -t lcov --branch \
 		--ignore-not-existing \
+        --ignore src/error.rs \
 		--ignore "../*" -o target/lcov.info
+
+	$GRCOV . -s . --binary-path \
+		./target/debug/ \
+		-t html --branch \
+		--ignore-not-existing \
+        --ignore src/error.rs \
+		-o ./target/debug/coverage/ || true
 }
 
 run_coverage() {

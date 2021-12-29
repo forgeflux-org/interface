@@ -5,7 +5,8 @@ on:
     types: [opened, synchronize, reopened]
   push:
     branches:
-      - master
+      - "*"
+      - "!gh-pages"
 
 jobs:
   build_and_test:
@@ -53,4 +54,11 @@ jobs:
       - name: Upload to Codecov
         uses: codecov/codecov-action@v2
         with:
-          files: ./libgit/target/lcov.info,coverage.xml
+          files: ./libgit/target/lcov.info
+          flags: libgit
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          files: coverage.xml
+          flags: interface

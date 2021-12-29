@@ -5,7 +5,9 @@ on:
     types: [opened, synchronize, reopened]
   push:
     branches:
-      - master
+      - "*"
+      - "!gh-pages"
+
 
 jobs:
   build_and_test:
