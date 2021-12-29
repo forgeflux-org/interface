@@ -28,6 +28,9 @@ from .test_user import cmp_user
 
 
 def cmp_issue(lhs: DBIssue, rhs: DBIssue) -> bool:
+    assert lhs is not None
+    assert rhs is not None
+
     return all(
         [
             lhs.title == rhs.title,
