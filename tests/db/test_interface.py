@@ -1,6 +1,3 @@
-"""
-Meta related routes
-"""
 # Bridges software forges to create a distributed software development environment
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
 #
@@ -13,31 +10,27 @@ Meta related routes
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-#
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from flask import Blueprint, jsonify
-
-from interface.auth import PublicKey, KeyPair
-
-bp = Blueprint("META", __name__, url_prefix="/_ff/interface/")
-
-VERSIONS = ["1"]
-payload = {"versions": VERSIONS}
+from interface.db.interfaces import DBInterfaces
+from interface.auth import KeyPair
 
 
-@bp.route("versions", methods=["GET"])
-def versions():
-    """
-    get supported interface protocol versions
-    """
-    return jsonify(payload)
+def cmp_interface(lhs: DBInterfaces, rhs: DBInterfaces) -> bool:
+    """Compare two DBInterfaces objects"""
+    return all([lhs.public_key == rhs.public_key, lhs.url == rhs.url])
 
 
-@bp.route("key", methods=["GET"])
-def get_verify_key():
-    """get public key"""
-    key = KeyPair.loadkey()
-    key.to_base64_public()
-    public_key = PublicKey(key=key.to_base64_public())
-    return public_key.to_resp()
+def test_interface(client):
+    """Test DBInterfaces database class"""
+
+    key = KeyPair()
+    url = "https://test_interface.example.com"
+    data = DBInterfaces(url=url, public_key=key.to_base64_public())
+    data.save()
+    from_key = DBInterfaces.load_from_pk(key.to_base64_public())
+    from_url = DBInterfaces.load_from_url(url)
+
+    assert cmp_interface(from_url, from_key) is True
+    assert cmp_interface(from_url, data) is True
+    assert from_url.id == from_key.id

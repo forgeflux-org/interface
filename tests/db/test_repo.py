@@ -1,4 +1,4 @@
-# Interface ---  API-space federation for software forges
+# Bridges software forges to create a distributed software development environment
 # Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -12,31 +12,30 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import sqlite3
-
-import pytest
-from interface.db import get_db
+from interface.db.repo import DBRepo
 
 
-def test_get_close_db(app):
-    with app.app_context():
-        db = get_db()
-        assert db is get_db()
-
-    with pytest.raises(sqlite3.ProgrammingError) as e:
-        db.execute("SELECT 1")
-
-    assert "closed" in str(e.value)
+def cmp_repo(lhs: DBRepo, rhs: DBRepo) -> bool:
+    """Compare two DBRepo objects"""
+    return all([lhs.name == rhs.name, lhs.owner == rhs.owner])
 
 
-def test_init_db_command(runner, monkeypatch):
-    class Recorder(object):
-        called = False
+def test_repo(client):
+    """Test repo"""
 
-    def fake_init_db():
-        Recorder.called = True
+    owner = "foo"
+    name = "foo"
 
-    monkeypatch.setattr("interface.db.conn.init_db", fake_init_db)
-    result = runner.invoke(args=["migrate"])
-    assert "applied" in result.output
-    assert Recorder.called
+    repo = DBRepo(
+        name=name,
+        owner=owner,
+        id=None,
+    )
+
+    repo.save()
+    from_db = DBRepo.load(name, owner)
+
+    assert cmp_repo(from_db, repo)
+    from_db2 = DBRepo.load(name, owner)
+    assert cmp_repo(from_db, from_db2)
+    assert from_db.id == from_db2.id

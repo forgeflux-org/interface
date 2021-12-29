@@ -34,6 +34,7 @@ def test_notifications_resolve(client, requests_mock):
     updated_at = rfc3339(datetime.now())
     title = "test notification"
     upstream = "https://git.batsense.net/forgefedv2/interface"
+    html_url = f"{upstream}/issues/8"
     repo_url: str = upstream
 
     comment = Comment(
@@ -48,6 +49,7 @@ def test_notifications_resolve(client, requests_mock):
         title=title,
         upstream=upstream,
         repo_url=repo_url,
+        web_url=html_url,
     )
     with pytest.raises(Exception) as _:
         resolve_notification(notification)
@@ -56,7 +58,10 @@ def test_notifications_resolve(client, requests_mock):
     with pytest.raises(Exception) as _:
         resolve_notification(notification)
 
-    notification.repo_url = f"https://git.batsense.net/{settings.GITEA.username}/foo"
+    repo_url = f"https://git.batsense.net/{settings.GITEA.username}/foo"
+    notification.repo_url = repo_url
+    web_url = f"{repo_url}/issues/9"
+    notification.web_url = web_url
     with pytest.raises(Exception) as _:
         resolve_notification(notification)
 
@@ -71,6 +76,7 @@ def test_notifications_resolve(client, requests_mock):
         updated_at=updated_at,
         title=title,
         repo_url=repo_url,
+        web_url=web_url,
     )
     with pytest.raises(Exception) as _:
         resolve_notification(notification)

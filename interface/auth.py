@@ -12,6 +12,7 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import sys
 from dataclasses import dataclass, asdict
 
 from signedjson.key import (
@@ -20,26 +21,10 @@ from signedjson.key import (
     encode_signing_key_base64,
     decode_signing_key_base64,
 )
-import click
-from flask.cli import with_appcontext
 from flask import Blueprint, g, jsonify
 from dynaconf import settings
 
 keygen_bp = Blueprint("keys", __name__)
-
-# from signedjson.sign import (
-#    sign_json, verify_signed_json, SignatureVerifyException
-# )
-#
-# signed_json = sign_json({'my_key': 'my_data'}, 'Alice', signing_key)
-#
-# verify_key = get_verify_key(signing_key)
-#
-# try:
-#    verify_signed_json(signed_json, 'Alice', verify_key)
-#    print('Signature is valid')
-# except SignatureVerifyException:
-#    print('Signature is invalid')
 
 VERSION = "zxcvb"
 ALGORITHM = "ed25519"
@@ -53,19 +38,36 @@ class PublicKey:
         return jsonify(asdict(self))
 
 
-def loadkey():
-    """Get database connection"""
-    if "db" not in g:
-        g.private_key = decode_signing_key_base64(
-            ALGORITHM, VERSION, settings.PRIVATE_KEY
-        )
-    return g.private_key
+class KeyPair:
+    def __init__(self):
+        self.signing_key = generate_signing_key("zxcvb")
+
+    @classmethod
+    def from_base_64(cls, base64_key: str):
+        key = decode_signing_key_base64(ALGORITHM, VERSION, base64_key)
+        obj = cls()
+        obj.signing_key = key
+        return obj
+
+    def to_base64_public(self) -> str:
+        return encode_signing_key_base64(self.signing_key)
+
+    def to_base64_private(self) -> str:
+        return encode_signing_key_base64(get_verify_key(self.signing_key))
+
+    @classmethod
+    def loadkey(cls):
+        """Load key from settings"""
+        if "private_key" not in g:
+            key = cls.from_base_64(settings.PRIVATE_KEY)
+            g.private_key = key
+        return g.private_key
 
 
 @keygen_bp.cli.command("generate")
 def keygen():
     """Generate key"""
-    signing_key = generate_signing_key("zxcvb")
-    print(f"\n\nPrivate Key: {encode_signing_key_base64(signing_key)}")
-    print(f"Public Key: {encode_signing_key_base64(get_verify_key(signing_key))}")
-    exit(0)
+    key = KeyPair()
+    print(f"\n\nPrivate Key: {key.to_base64_private()}")
+    print(f"Public Key: {key.to_base64_public()}")
+    sys.exit(0)

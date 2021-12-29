@@ -87,7 +87,7 @@ class Git:
         cur = conn.cursor()
         fork_exists = cur.execute(
             """
-            SELECT fork_repo_name FROM interface_forks
+            SELECT fork_repo_name FROM forks
             WHERE parent_owner = ? AND parent_repo_name = ?;
             """,
             (owner, repo),
@@ -97,7 +97,7 @@ class Git:
         fork_repo_name = self.forge.fork_inner(owner, repo)
         cur.execute(
             """
-            INSERT INTO interface_forks 
+            INSERT INTO forks 
             (parent_owner, parent_repo_name, fork_repo_name)
             VALUES (?,?,?);
             """,

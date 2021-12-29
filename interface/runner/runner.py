@@ -22,6 +22,7 @@ import threading
 import time
 import datetime
 import sys
+from dateutil.parser import parse as date_parse
 
 from flask import g
 
@@ -30,7 +31,6 @@ from interface.git import get_forge
 from interface.forges.notifications import PULL, ISSUE
 from interface.forges.utils import get_patch, get_branch_name
 from interface.db import get_db
-from interface.forges.gitea import date_parse
 from interface.runner.events import resolve_notification
 
 RUNNING = False

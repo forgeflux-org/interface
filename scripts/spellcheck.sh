@@ -23,23 +23,31 @@ download() {
 }
 
 spell_check_codespell() {
-	codespell $FLAGS $PROJECT_ROOT/interface
-	codespell $FLAGS $PROJECT_ROOT/tests
-	codespell $FLAGS $PROJECT_ROOT/docs/openapi/api/
-	codespell $FLAGS $PROJECT_ROOT/docs/openapi/openapi.yaml
-	codespell $FLAGS $PROJECT_ROOT/README.md
-	codespell $FLAGS --ignore-words-list crate .$PROJECT_ROOT/libgit/src
+	_check(){
+		codespell $FLAGS --ignore-words-list=$1 $PROJECT_ROOT/$2 || true
+	}
+	_check KeyPair interface
+	_check KeyPair tests
+	_check KeyPair docs/openapi/api/
+	_check KeyPair docs/openapi/openapi.yaml
+	_check KeyPair README.md
+	_check crate   libgit/src
 }
 
 spell_check_misspell() {
 	mkdir $TMP_DIR || true
 	download
-	$MISSPELL $FLAGS $PROJECT_ROOT/interface
-	$MISSPELL $FLAGS $PROJECT_ROOT/tests
-	$MISSPELL $FLAGS $PROJECT_ROOT/docs/openapi/api/
-	$MISSPELL $FLAGS $PROJECT_ROOT/docs/openapi/openapi.yaml
-	$MISSPELL $FLAGS $PROJECT_ROOT/README.md
-	$MISSPELL $FLAGS -i crate .$PROJECT_ROOT/libgit/src
+
+	_check(){
+		$MISSPELL $FLAGS -i $1 $PROJECT_ROOT/$2 || true
+	}
+
+	_check KeyPair interface
+	_check KeyPair tests
+	_check KeyPair docs/openapi/api/
+	_check KeyPair docs/openapi/openapi.yaml
+	_check KeyPair README.md
+	_check crate libgit/src
 }
 
 check_arg $1

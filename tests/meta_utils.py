@@ -12,31 +12,27 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import sqlite3
+from dataclasses import asdict
 
-import pytest
-from interface.db import get_db
-
-
-def test_get_close_db(app):
-    with app.app_context():
-        db = get_db()
-        assert db is get_db()
-
-    with pytest.raises(sqlite3.ProgrammingError) as e:
-        db.execute("SELECT 1")
-
-    assert "closed" in str(e.value)
+from interface.meta import VERSIONS
+from interface.auth import KeyPair, PublicKey
 
 
-def test_init_db_command(runner, monkeypatch):
-    class Recorder(object):
-        called = False
+INTERFACE_VERSION_URL = "https://interfac9.example.com/_ff/interface/versions"
+INTERFACE_KEY_URL = "https://interfac9.example.com/_ff/interface/key"
 
-    def fake_init_db():
-        Recorder.called = True
 
-    monkeypatch.setattr("interface.db.conn.init_db", fake_init_db)
-    result = runner.invoke(args=["migrate"])
-    assert "applied" in result.output
-    assert Recorder.called
+def mock_version(requests_mock):
+    resp = {"versions": VERSIONS}
+    requests_mock.get(INTERFACE_VERSION_URL, json=resp)
+    print(f"Registered verison route {INTERFACE_VERSION_URL}")
+
+
+KEY = KeyPair()
+public_key = PublicKey(key=KEY.to_base64_public())
+
+
+def mock_key(requests_mock):
+    resp = asdict(public_key)
+    requests_mock.get(INTERFACE_KEY_URL, json=resp)
+    print(f"Registered verison route {INTERFACE_KEY_URL}")

@@ -18,16 +18,16 @@ import pytest
 from dynaconf import settings
 
 
-from interface.auth import loadkey
+from interface.auth import KeyPair
 
 
 def test_auth_key_load_successful(app, requests_mock):
     with app.app_context():
-        loadkey()
+        KeyPair.loadkey()
 
 
 def test_auth_key_load_failure(app, requests_mock):
     settings.PRIVATE_KEY = "foobar"
     with app.app_context():
         with pytest.raises(Exception):
-            loadkey()
+            KeyPair.loadkey()

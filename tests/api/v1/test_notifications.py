@@ -28,34 +28,34 @@ from tests.forges.gitea.test_utils import (
     FORGE_ERROR,
 )
 
+from tests.meta_utils import INTERFACE_VERSION_URL
+
 
 def test_subscribe(client, requests_mock):
     """Test subscribe route"""
-    interface_url = "https://interfac9.example.com/_ff/interface/versions"
-    resp = {"versions": VERSIONS}
-    requests_mock.get(interface_url, json=resp)
-
-    data = {"repository_url": REPOSITORY_URL, "interface_url": interface_url}
+    data = {"repository_url": REPOSITORY_URL, "interface_url": INTERFACE_VERSION_URL}
     res = client.post(f"/api/v1/notifications{SUBSCRIBE}", json=data)
     assert res.status == "200 OK"
     assert res.json == {}
 
+    interface_url = clean_url(INTERFACE_VERSION_URL)
+
     conn = get_db()
     cur = conn.cursor()
     interface_id = cur.execute(
-        "SELECT ID from interface_interfaces WHERE url = ?",
+        "SELECT ID from interfaces WHERE url = ?",
         (clean_url(interface_url),),
     ).fetchone()[0]
 
     repository_id = cur.execute(
-        "SELECT ID from interface_local_repositories WHERE html_url = ?",
+        "SELECT ID from local_repositories WHERE html_url = ?",
         (REPOSITORY_URL,),
     ).fetchone()[0]
 
     res = cur.execute(
         """
         SELECT EXISTS (
-            SELECT 1 FROM interface_event_subscriptsions
+            SELECT 1 FROM subscriptions
             WHERE repository_id = ? AND interface_id = ?
             );""",
         (repository_id, interface_id),
