@@ -26,7 +26,8 @@ from interface.forges.notifications import (
     PrEvent,
     IssueEvent,
 )
-from interface.db import get_db
+from interface.forges.gitea.utils import get_issue_index
+from interface.db import get_db, DBRepo, DBUser, DBIssue, DBInterfaces
 
 ISSUE = "Issue"
 PULL = "Pull"
@@ -139,7 +140,15 @@ class GiteaNotification(NotificationResolver):
         if self.subject.type == REPOSITORY:
             return None
 
+        repo = DBRepo.load(self.repository.name, self.repository.owner.username)
+        if repo is None:
+            repo = DBRepo(self.repository.name, self.repository.owner.username)
+
         if self.subject.type == ISSUE:
+            issue_index = get_issue_index(self.subject.url)
+
+            #            DBIssue.load(
+
             with current_app().app_context():
                 db = get_db()
 
@@ -150,7 +159,7 @@ class GiteaNotification(NotificationResolver):
                 INSERT OR IGNORE INTO interface_jobs_run
                     (this_interface_url, last_run) VALUES (?, ?);
                 """,
-                (settings.SERVER.domain, str(last_run)),
+                (settings.SERVER.url, str(last_run)),
             )
             conn.commit()
 
