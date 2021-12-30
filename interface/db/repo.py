@@ -49,9 +49,9 @@ class DBRepo:
                 SELECT ID from gitea_forge_repositories
                 WHERE name = ? AND owner = ?;
             """,
-            (owner, name),
+            (name, owner),
         ).fetchone()
-        if any([data is None, len(data) != 1]):
+        if data is None:
             return None
         cls.name = name
         cls.owner = owner

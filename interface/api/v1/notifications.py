@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from flask import Blueprint, jsonify, request
 
-from interface import db
+from interface.db import get_db, DBInterfaces, DBRepo, DBSubscribe
 from interface.error import F_D_INVALID_PAYLOAD, F_D_INTERFACE_UNREACHABLE, Error
 from interface.git import get_forge
 from interface.client import SUBSCRIBE, EVENTS
@@ -55,51 +55,15 @@ def subscribe():
     try:
         git.forge.subscribe(owner, repo)
 
-        conn = db.get_db()
-        cur = conn.cursor()
-
-        repo_exists = cur.execute(
-            "SELECT EXISTS (SELECT 1 FROM local_repositories WHERE html_url = ?);",
-            (repository_url,),
-        ).fetchone()
-
-        if any([repo_exists is None, len(repo_exists) != 1, repo_exists[0] == 0]):
-            cur.execute(
-                # TODO use gitea_forge_repositories
-                "INSERT OR IGNORE INTO local_repositories (html_url) VALUES (?);",
-                (repository_url,),
-            )
-            conn.commit()
-
-        interface_exists = cur.execute(
-            "SELECT EXISTS (SELECT 1 FROM interfaces WHERE url = ?);", (interface_url,)
-        ).fetchone()
-
-        if any(
-            [
-                interface_exists is None,
-                len(interface_exists) != 1,
-                interface_exists[0] == 0,
-            ]
-        ):
+        repo = DBRepo(name=repo, owner=owner)
+        interface = DBInterfaces.load_from_url(url=interface_url)
+        if interface is None:
             key = get_client().get_pubkey(interface_url)
-            cur.execute(
-                "INSERT OR IGNORE INTO interfaces (url, public_key) VALUES (?, ?);",
-                (interface_url, key),
-            )
-            conn.commit()
+            interface = DBInterfaces(url=interface_url, public_key=key)
+            interface.save()
 
-        cur.execute(
-            """
-            INSERT OR IGNORE INTO subscriptions (repository_id, interface_id)
-            VALUES (
-                (SELECT ID from interfaces WHERE url = ?),
-                (SELECT ID from local_repositories WHERE html_url = ?)
-            );
-            """,
-            (interface_url, repository_url),
-        )
-        conn.commit()
+        DBSubscribe(repository=repo, subscriber=interface).save()
+
         return jsonify({})
     except Error as e:
         return e.get_error_resp()

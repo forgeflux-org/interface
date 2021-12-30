@@ -44,13 +44,13 @@ class DBInterfaces:
             "SELECT ID, public_key  FROM interfaces WHERE url = ?;",
             (url,),
         ).fetchone()
-        if all([data, len(data) > 0]):
-            return cls(
-                id=data[0],
-                public_key=data[1],
-                url=url,
-            )
-        return None
+        if data is None:
+            return None
+        return cls(
+            id=data[0],
+            public_key=data[1],
+            url=url,
+        )
 
     @classmethod
     def load_from_pk(cls, public_key: str):
@@ -61,10 +61,11 @@ class DBInterfaces:
             "SELECT ID, url  FROM interfaces WHERE public_key = ?;",
             (public_key,),
         ).fetchone()
-        if all([data, len(data) > 0]):
-            return cls(
-                id=data[0],
-                url=data[1],
-                public_key=public_key,
-            )
-        return None
+        if data is None:
+            return None
+
+        return cls(
+            id=data[0],
+            url=data[1],
+            public_key=public_key,
+        )

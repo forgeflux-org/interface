@@ -17,6 +17,8 @@ from interface.db.repo import DBRepo
 
 def cmp_repo(lhs: DBRepo, rhs: DBRepo) -> bool:
     """Compare two DBRepo objects"""
+    assert lhs is not None
+    assert rhs is not None
     return all([lhs.name == rhs.name, lhs.owner == rhs.owner])
 
 

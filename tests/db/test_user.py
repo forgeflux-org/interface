@@ -22,6 +22,9 @@ from interface.auth import KeyPair
 
 
 def cmp_user(lhs: DBUser, rhs: DBUser) -> bool:
+    assert lhs is not None
+    assert rhs is not None
+
     return all(
         [
             lhs.name == rhs.name,

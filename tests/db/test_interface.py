@@ -12,8 +12,11 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from dynaconf import settings
+
 from interface.db.interfaces import DBInterfaces
 from interface.auth import KeyPair
+from interface.app import app
 
 
 def cmp_interface(lhs: DBInterfaces, rhs: DBInterfaces) -> bool:
@@ -34,3 +37,12 @@ def test_interface(client):
     assert cmp_interface(from_url, from_key) is True
     assert cmp_interface(from_url, data) is True
     assert from_url.id == from_key.id
+
+
+def test_interface_self_resgistration(app, client, requests_mock):
+    with app.app_context():
+        key = KeyPair.loadkey().to_base64_public()
+    from_key = DBInterfaces.load_from_pk(key)
+    from_db = DBInterfaces.load_from_url(settings.SERVER.url)
+    assert from_key is not None
+    assert from_db is not None

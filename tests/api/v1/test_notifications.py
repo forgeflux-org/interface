@@ -12,12 +12,13 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from interface.db import get_db
+from interface.db import get_db, DBSubscribe, DBRepo
 from interface.client import SUBSCRIBE
 from interface.meta import VERSIONS
 from interface.error import F_D_INTERFACE_UNREACHABLE, F_D_FORGE_UNKNOWN_ERROR
 from interface.forges.base import F_D_REPOSITORY_NOT_FOUND
 from interface.utils import clean_url
+from interface.git import get_forge
 
 from tests.test_utils import register_ns
 from tests.test_errors import expect_error
@@ -31,7 +32,7 @@ from tests.forges.gitea.test_utils import (
 from tests.meta_utils import INTERFACE_VERSION_URL
 
 
-def test_subscribe(client, requests_mock):
+def test_subscribe(app, client, requests_mock):
     """Test subscribe route"""
     data = {"repository_url": REPOSITORY_URL, "interface_url": INTERFACE_VERSION_URL}
     res = client.post(f"/api/v1/notifications{SUBSCRIBE}", json=data)
@@ -40,27 +41,18 @@ def test_subscribe(client, requests_mock):
 
     interface_url = clean_url(INTERFACE_VERSION_URL)
 
-    conn = get_db()
-    cur = conn.cursor()
-    interface_id = cur.execute(
-        "SELECT ID from interfaces WHERE url = ?",
-        (clean_url(interface_url),),
-    ).fetchone()[0]
+    git = get_forge()
+    repository_url = git.forge.get_fetch_remote(data["repository_url"])
 
-    repository_id = cur.execute(
-        "SELECT ID from local_repositories WHERE html_url = ?",
-        (REPOSITORY_URL,),
-    ).fetchone()[0]
+    (owner, name) = git.forge.get_owner_repo_from_url(repository_url)
 
-    res = cur.execute(
-        """
-        SELECT EXISTS (
-            SELECT 1 FROM subscriptions
-            WHERE repository_id = ? AND interface_id = ?
-            );""",
-        (repository_id, interface_id),
-    ).fetchone()[0]
-    assert res is 1
+    repo = DBRepo.load(name=name, owner=owner)
+    assert repo is not None
+
+    subscribers = DBSubscribe.load(repository=repo)
+    assert subscribers is not None
+    print(subscribers)
+    assert subscribers.pop().subscriber.url == interface_url
 
     # Test forge errors
     data["repository_url"] = NON_EXISTENT["repo_url"]

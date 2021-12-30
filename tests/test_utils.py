@@ -52,7 +52,7 @@ def register_ns(requests_mock):
     ns = clean_url(settings.SYSTEM.northstar)
     query = f"{ns}/api/v1/forge/interfaces"
     register = f"{ns}/api/v1/interface/register"
-    interface_url = clean_url(settings.SERVER.domain)
+    interface_url = clean_url(settings.SERVER.url)
 
     requests_mock.post(register, json={})
     requests_mock.post(query, json=[interface_url])
