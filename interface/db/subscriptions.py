@@ -53,7 +53,7 @@ class DBSubscribe:
         print("Saved subscriber")
 
     @classmethod
-    def load(cls, repository: DBRepo):
+    def load(cls, repository: DBRepo) -> "DBSubscribe":
         """Load issue from database"""
         conn = get_db()
         cur = conn.cursor()

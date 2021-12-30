@@ -89,7 +89,7 @@ class DBIssue:
         conn.commit()
 
     @classmethod
-    def load(cls, repository: DBRepo, repo_scope_id: str):
+    def load(cls, repository: DBRepo, repo_scope_id: str) -> "DBIssue":
         """Load issue from database"""
         conn = get_db()
         cur = conn.cursor()

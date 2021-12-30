@@ -48,7 +48,7 @@ class DBUser:
         conn.commit()
 
     @classmethod
-    def load(cls, user_id: str):
+    def load(cls, user_id: str) -> "DBUser":
         """Load user from database with the URL of the interface which signed it's creation"""
         conn = get_db()
         cur = conn.cursor()
