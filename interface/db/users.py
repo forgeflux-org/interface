@@ -23,17 +23,16 @@ from .interfaces import DBInterfaces
 class DBUser:
     """User information as stored in the database"""
 
+    # Display name
     name: str
+    # login handle/username
     user_id: str
     profile_url: str
-    signed_by: DBInterfaces = None
+    signed_by: DBInterfaces
     id: int = None
 
     def save(self):
         """Save user to database"""
-        if not self.signed_by:
-            raise ValueError("signed_by is required for object creation")
-
         self.signed_by.save()
 
         conn = get_db()
