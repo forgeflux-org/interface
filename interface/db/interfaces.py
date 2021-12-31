@@ -69,3 +69,23 @@ class DBInterfaces:
             url=data[1],
             public_key=public_key,
         )
+
+    @classmethod
+    def load_from_database_id(cls, db_id: int) -> "DBInterfaces":
+        """
+        Load interface from database using Database assigned, autoincrementd ID.
+        This ID is different from the one assigned by forges.
+        """
+        conn = get_db()
+        cur = conn.cursor()
+        data = cur.execute(
+            "SELECT public_key, url  FROM interfaces WHERE ID = ?;",
+            (db_id,),
+        ).fetchone()
+        if data is None:
+            return None
+        return cls(
+            public_key=data[0],
+            url=data[1],
+            id=db_id,
+        )

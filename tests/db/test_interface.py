@@ -34,8 +34,11 @@ def test_interface(client):
     from_key = DBInterfaces.load_from_pk(key.to_base64_public())
     from_url = DBInterfaces.load_from_url(url)
 
+    with_id = DBInterfaces.load_from_database_id(from_url.id)
+
     assert cmp_interface(from_url, from_key) is True
     assert cmp_interface(from_url, data) is True
+    assert cmp_interface(from_url, with_id) is True
     assert from_url.id == from_key.id
 
 

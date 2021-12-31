@@ -41,7 +41,7 @@ class DBRepo:
 
     @classmethod
     def load(cls, name: str, owner: str) -> "DBRepo":
-        """Save repository to database"""
+        """Load repository from database"""
         conn = get_db()
         cur = conn.cursor()
         data = cur.execute(
@@ -56,4 +56,26 @@ class DBRepo:
         cls.name = name
         cls.owner = owner
         cls.id = data[0]
+        return cls
+
+    @classmethod
+    def load_with_id(cls, db_id: str) -> "DBRepo":
+        """
+        Load repository from database with database assigned ID>
+        Database ID is different from forge assigned ID.
+        """
+        conn = get_db()
+        cur = conn.cursor()
+        data = cur.execute(
+            """
+                SELECT name, owner from gitea_forge_repositories
+                WHERE ID = ?;
+            """,
+            (db_id,),
+        ).fetchone()
+        if data is None:
+            return None
+        cls.name = data[0]
+        cls.owner = data[1]
+        cls.id = db_id
         return cls

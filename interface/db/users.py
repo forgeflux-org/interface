@@ -70,12 +70,48 @@ class DBUser:
             """,
             (user_id,),
         ).fetchone()
-        if any([data is None, len(data) != 6]):
+        if data is None:
             return None
         return cls(
             id=data[0],
             name=data[1],
             user_id=user_id,
+            profile_url=data[2],
+            signed_by=DBInterfaces(id=data[3], url=data[4], public_key=data[4]),
+        )
+
+    @classmethod
+    def load_with_db_id(cls, db_id: str) -> "DBUser":
+        """
+        Load user from database with the database assigned ID.
+        DB assigned ID is different from the one the forge assigns.
+        """
+        conn = get_db()
+        cur = conn.cursor()
+        data = cur.execute(
+            """
+             SELECT
+                 users.user_id,
+                 users.name,
+                 users.profile_url,
+                 interfaces.ID,
+                 interfaces.url,
+                 interfaces.public_key
+             FROM
+                 gitea_users AS users
+             INNER JOIN interfaces AS interfaces
+                 ON users.signed_by = interfaces.ID
+            WHERE
+                users.ID = ?
+            """,
+            (db_id,),
+        ).fetchone()
+        if data is None:
+            return None
+        return cls(
+            user_id=data[0],
+            name=data[1],
+            id=db_id,
             profile_url=data[2],
             signed_by=DBInterfaces(id=data[3], url=data[4], public_key=data[4]),
         )

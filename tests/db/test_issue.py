@@ -108,4 +108,8 @@ def test_issue(client):
     issue.save()
 
     issue_from_db = DBIssue.load(repo, repo_scope_id=repo_scope_id)
+    with_id = DBIssue.load_with_id(issue_from_db.id)
+    with_html_url = DBIssue.load_with_html_url(html_url)
     assert cmp_issue(issue_from_db, issue) is True
+    assert cmp_issue(issue_from_db, with_id) is True
+    assert cmp_issue(issue_from_db, with_html_url) is True
