@@ -56,6 +56,13 @@ class KeyPair:
         return encode_signing_key_base64(get_verify_key(self.signing_key))
 
     @classmethod
+    def loadkey_fresh(cls):
+        """Use this method sparingly as it reads private_key from config every time it's called.
+        Could be expensive
+        """
+        return cls.from_base_64(settings.PRIVATE_KEY)
+
+    @classmethod
     def loadkey(cls):
         """Load key from settings"""
         if "private_key" not in g:

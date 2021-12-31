@@ -22,7 +22,7 @@ from interface.utils import trim_url
 from interface.forges.base import F_D_INVALID_ISSUE_URL
 
 
-def get_issue_index(issue_url, repo: str) -> int:
+def get_issue_index(issue_url) -> int:
     """
     Get isssue index from issue URL
     https://git.batsense.net/{owner}/{repo}/issues/{id} returns {id}
@@ -32,7 +32,7 @@ def get_issue_index(issue_url, repo: str) -> int:
         raise F_D_INVALID_ISSUE_URL
     parsed = urlparse(trim_url(issue_url))
     path = parsed.path
-    fragments = path.split(f"{repo}/{issue_frag}")
+    fragments = path.split(f"{issue_frag}")
     if len(fragments) < 2:
         raise F_D_INVALID_ISSUE_URL
 

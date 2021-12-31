@@ -37,6 +37,7 @@ from interface.error import F_D_FORGE_UNKNOWN_ERROR, Error
 from interface.utils import trim_url, clean_url, get_rand
 
 from .html_client import HTMLClient
+from .utils import get_issue_index
 
 
 class Gitea(Forge):
@@ -299,7 +300,7 @@ class Gitea(Forge):
     def comment_on_issue(self, owner: str, repo: str, issue_url: str, body: str):
         headers = self._auth()
         (owner, repo) = self.get_fetch_remote(issue_url)
-        index = self._get_issue_index(issue_url, repo)
+        index = get_issue_index(issue_url)
         url = self._get_url("/repos/{owner}/{repo}/issues/{index}")
         payload = {"body": body}
         _response = requests.request("POST", url, json=payload, headers=headers)

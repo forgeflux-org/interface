@@ -34,7 +34,7 @@ def test_get_issue_index():
     ]
 
     for (url, index) in issues:
-        assert get_issue_index(url, repo) == index
+        assert get_issue_index(url) == index
 
     not_issues = [
         f"{GITEA_HOST}/{owner}/{repo}/8",
@@ -44,5 +44,5 @@ def test_get_issue_index():
     ]
     for url in not_issues:
         with pytest.raises(Error) as error:
-            get_issue_index(url, repo)
+            get_issue_index(url)
         assert pytest_expect_errror(error, F_D_INVALID_ISSUE_URL)

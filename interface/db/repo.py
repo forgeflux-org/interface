@@ -40,7 +40,7 @@ class DBRepo:
         conn.commit()
 
     @classmethod
-    def load(cls, name: str, owner: str):
+    def load(cls, name: str, owner: str) -> "DBRepo":
         """Save repository to database"""
         conn = get_db()
         cur = conn.cursor()

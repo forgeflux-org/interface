@@ -36,7 +36,7 @@ class DBInterfaces:
         conn.commit()
 
     @classmethod
-    def load_from_url(cls, url: str):
+    def load_from_url(cls, url: str) -> "DBInterfaces":
         """Load interface from database"""
         conn = get_db()
         cur = conn.cursor()
@@ -53,7 +53,7 @@ class DBInterfaces:
         )
 
     @classmethod
-    def load_from_pk(cls, public_key: str):
+    def load_from_pk(cls, public_key: str) -> "DBInterfaces":
         """Load interface from database"""
         conn = get_db()
         cur = conn.cursor()

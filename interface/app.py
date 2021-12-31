@@ -28,6 +28,7 @@ from interface.api.v1 import bp
 from interface.meta import bp as meta_bp
 from interface.auth import keygen_bp, KeyPair
 from interface.db import DBInterfaces
+from interface.forges.gitea.admin import get_db_user
 
 
 def create_app(test_config=None):
@@ -51,10 +52,8 @@ def create_app(test_config=None):
         pass
 
     db.init_app(app)
-
     with app.app_context():
-        key = KeyPair.loadkey().to_base64_public()
-        DBInterfaces(url=settings.SERVER.url, public_key=key).save()
+        get_db_user()
 
     @app.after_request
     def flock_google(response):
