@@ -24,7 +24,7 @@ from interface.forges.base import F_D_INVALID_ISSUE_URL
 
 def get_issue_index(issue_url) -> int:
     """
-    Get isssue index from issue URL
+    Get issue index from issue URL
     https://git.batsense.net/{owner}/{repo}/issues/{id} returns {id}
     """
     issue_frag = "issues/"

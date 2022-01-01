@@ -38,6 +38,7 @@ from interface.utils import trim_url, clean_url, get_rand
 
 from .html_client import HTMLClient
 from .utils import get_issue_index
+from .responses import GiteaIssue
 
 
 class Gitea(Forge):
@@ -60,6 +61,10 @@ class Gitea(Forge):
         path = f"{prefix}{path}"
         url = urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
         return url
+
+    @staticmethod
+    def get_issue(issue_url: str) -> GiteaIssue:
+        return GiteaIssue.get_issue(issue_url)
 
     def get_issues(
         self, owner: str, repo: str, since: datetime.datetime = None, *args, **kwargs
