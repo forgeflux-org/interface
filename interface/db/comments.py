@@ -48,6 +48,26 @@ class DBComment:
         """
         self.is_native = bool(self.is_native)
 
+    def __update(self):
+        """
+        Update changes in database
+        Only fields that can be mutated on the forge will be updated in the DB
+        """
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            UPDATE gitea_issue_comments
+            SET
+                body = ?,
+                updated = ?
+            WHERE
+                comment_id = ?;
+            """,
+            (self.body, self.updated, self.comment_id),
+        )
+        conn.commit()
+
     def save(self):
         """Save COmment to database"""
         self.user.save()
@@ -56,8 +76,6 @@ class DBComment:
 
         conn = get_db()
         cur = conn.cursor()
-        print(type(self.comment_id))
-        print(type(self.updated))
         cur.execute(
             """
             INSERT OR IGNORE INTO gitea_issue_comments
@@ -89,6 +107,7 @@ class DBComment:
             ),
         )
         conn.commit()
+        self.__update()
 
     @classmethod
     def load_from_comment_url(cls, comment_url: str) -> "DBComment":

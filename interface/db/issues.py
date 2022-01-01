@@ -56,7 +56,7 @@ class DBIssue:
         sqlite returns 0 for False and 1 for True and is not automatically typecast
         into bools. This method typecasts all bool values of this class.
 
-        To be invoked by every load_* invokation
+        To be invoked by every load_* invocation
         """
         self.is_merged = None if self.is_merged is None else bool(self.is_merged)
         self.is_native = bool(self.is_native)
