@@ -47,7 +47,8 @@ steps = [
             repo_scope_id INTEGER NOT NULL,
             user_id INTEGER REFERENCES gitea_users(ID) ON DELETE CASCADE NOT NULL,
             repository INTEGER REFERENCES gitea_forge_repositories(ID) ON DELETE CASCADE NOT NULL,
-            signed_by INTEGER REFERENCES interfaces(ID) ON DELETE CASCADE NOT NULL
+            signed_by INTEGER REFERENCES interfaces(ID) ON DELETE CASCADE NOT NULL,
+            UNIQUE(repository, repo_scope_id)
         );
     """
     ),
