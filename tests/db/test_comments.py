@@ -141,6 +141,8 @@ def test_comment(client):
     comment2.save()
 
     for comment in DBComment.load_issue_comments(issue):
+        from_url = DBComment.load_from_comment_url(comment.html_url)
+        assert cmp_comment(comment, from_url)
         if comment.comment_id == comment1.comment_id:
             assert cmp_comment(comment1, comment)
         else:

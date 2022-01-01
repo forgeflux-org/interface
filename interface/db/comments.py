@@ -82,8 +82,50 @@ class DBComment:
         conn.commit()
 
     @classmethod
+    @classmethod
+    def load_from_comment_url(cls, comment_url: str) -> "DBComment":
+        """Load comment based on comment URL from database"""
+        conn = get_db()
+        cur = conn.cursor()
+        data = cur.execute(
+            """
+         SELECT
+             body,
+             belongs_to_issue,
+             created,
+             updated,
+             comment_id,
+             is_native,
+             user,
+             signed_by
+         FROM
+             gitea_issue_comments
+         WHERE
+             html_url = ?
+             """,
+            (comment_url,),
+        ).fetchone()
+        if data is None:
+            return None
+
+        user = DBUser.load_with_db_id(data[6])
+        signed_by = DBInterfaces.load_from_database_id(data[7])
+        belongs_to_issue = DBIssue.load_with_id(data[1])
+        cls(
+            body=data[0],
+            html_url=comment_url,
+            created=data[2],
+            updated=data[3],
+            comment_id=data[4],
+            is_native=data[5],
+            user=user,
+            signed_by=signed_by,
+            belongs_to_issue=belongs_to_issue,
+        )
+
+    @classmethod
     def load_issue_comments(cls, issue: DBIssue) -> "[DBComment]":
-        """Load issue from database"""
+        """Load comments belonging to an issue from database"""
         conn = get_db()
         cur = conn.cursor()
         data = cur.execute(
