@@ -19,37 +19,37 @@ from interface.db.interfaces import DBInterfaces
 from interface.db.repo import DBRepo
 from interface.db.issues import DBIssue
 from interface.db.users import DBUser
+from interface.db.comments import DBComment
 
 from interface.auth import KeyPair
 
-from .test_interface import cmp_interface
-from .test_repo import cmp_repo
-from .test_user import cmp_user
+
+from tests.db.test_user import cmp_user
+from tests.db.test_issue import cmp_issue
+from tests.db.test_interface import cmp_interface
 
 
-def cmp_issue(lhs: DBIssue, rhs: DBIssue) -> bool:
+def cmp_comment(lhs: DBComment, rhs: DBComment) -> bool:
     assert lhs is not None
     assert rhs is not None
 
     return all(
         [
-            lhs.title == rhs.title,
-            lhs.description == rhs.description,
-            lhs.repo_scope_id == rhs.repo_scope_id,
-            lhs.html_url == rhs.html_url,
+            lhs.body == rhs.body,
             lhs.created == rhs.created,
             lhs.updated == rhs.updated,
-            lhs.is_closed == rhs.is_closed,
-            lhs.is_merged == rhs.is_merged,
             lhs.is_native == rhs.is_native,
-            cmp_repo(lhs.repository, rhs.repository),
             cmp_user(lhs.user, rhs.user),
             cmp_interface(lhs.signed_by, rhs.signed_by),
+            cmp_issue(lhs.belongs_to_issue, rhs.belongs_to_issue),
+            lhs.comment_id == rhs.comment_id,
+            lhs.html_url == rhs.html_url,
+            lhs.signed_by.url == rhs.signed_by.url,
         ]
     )
 
 
-def test_issue(client):
+def test_comment(client):
     """Test user route"""
 
     # first interface data
@@ -105,11 +105,43 @@ def test_issue(client):
         is_merged=is_merged,
         is_native=is_native,
     )
-    issue.save()
 
-    issue_from_db = DBIssue.load(repo, repo_scope_id=repo_scope_id)
-    with_id = DBIssue.load_with_id(issue_from_db.id)
-    with_html_url = DBIssue.load_with_html_url(html_url)
-    assert cmp_issue(issue_from_db, issue) is True
-    assert cmp_issue(issue_from_db, with_id) is True
-    assert cmp_issue(issue_from_db, with_html_url) is True
+    comment_body = "test comment"
+    comment_id1 = 1
+    comment_url1 = f"https://git.batsense.net/{repo_owner}/{repo_name}/issues/{repo_scope_id}/{comment_id1}"
+    comment1 = DBComment(
+        body=comment_body,
+        created=str(datetime.now()),
+        updated=str(datetime.now()),
+        is_native=True,
+        signed_by=interface1,
+        belongs_to_issue=issue,
+        user=user,
+        html_url=comment_url1,
+        comment_id=comment_id1,
+    )
+
+    comment1.save()
+
+    comment_id2 = 2
+    comment_url2 = f"https://git.batsense.net/{repo_owner}/{repo_name}/issues/{repo_scope_id}/{comment_id2}"
+
+    comment2 = DBComment(
+        body=comment_body,
+        created=str(datetime.now()),
+        updated=str(datetime.now()),
+        is_native=True,
+        signed_by=interface1,
+        belongs_to_issue=issue,
+        user=user,
+        html_url=comment_url2,
+        comment_id=comment_id2,
+    )
+
+    comment2.save()
+
+    for comment in DBComment.load_issue_comments(issue):
+        if comment.comment_id == comment1.comment_id:
+            assert cmp_comment(comment1, comment)
+        else:
+            assert cmp_comment(comment2, comment)

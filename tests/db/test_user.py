@@ -53,5 +53,7 @@ def test_user(client):
 
     user.save()
     from_db = DBUser.load(user_id)
+    with_id = DBUser.load_with_db_id(from_db.id)
 
     assert cmp_user(from_db, user) is True
+    assert cmp_user(from_db, with_id) is True

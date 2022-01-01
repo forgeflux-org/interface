@@ -14,7 +14,7 @@ steps = [
             user_id VARCHAR(250) UNIQUE NOT NULL,
             profile_url TEXT UNIQUE NOT NULL,
             ID INTEGER PRIMARY KEY NOT NULL,
-            signed_by INTEGER REFERENCES interfaces(ID) ON DELETE CASCADE DEFAULT NULL
+            signed_by INTEGER REFERENCES interfaces(ID) ON DELETE CASCADE NOT NULL
         );
     """
     ),
@@ -45,9 +45,9 @@ steps = [
                 -- false && val(is_closed) == true: issue is PR and is closed
             is_native BOOLEAN NOT NULL DEFAULT TRUE,
             repo_scope_id INTEGER NOT NULL,
-            user_id INTEGER REFERENCES gitea_users(ID) ON DELETE CASCADE DEFAULT NULL,
-            repository INTEGER REFERENCES gitea_forge_repositories(ID) ON DELETE CASCADE DEFAULT NULL,
-            signed_by INTEGER REFERENCES interfaces(ID) ON DELETE CASCADE DEFAULT NULL
+            user_id INTEGER REFERENCES gitea_users(ID) ON DELETE CASCADE NOT NULL,
+            repository INTEGER REFERENCES gitea_forge_repositories(ID) ON DELETE CASCADE NOT NULL,
+            signed_by INTEGER REFERENCES interfaces(ID) ON DELETE CASCADE NOT NULL
         );
     """
     ),
@@ -59,18 +59,19 @@ steps = [
             html_url TEXT NOT NULL UNIQUE,
             created VARCHAR(50) NOT NULL,
             updated VARCHAR(50) NOT NULL,
-            issue_scope_id INTEGER NOT NULL,
-            parent_of REFERENCES issue_comments(ID),
+            comment_id INTEGER NOT NULL UNIQUE,
             is_native BOOLEAN NOT NULL DEFAULT TRUE,
-            signed_by INTEGER REFERENCES interfaces(ID) ON DELETE CASCADE DEFAULT NULL
+            user INTEGER REFERENCES gitea_users(ID) ON DELETE CASCADE NOT NULL,
+            belongs_to_issue INTEGER REFERENCES gitea_forge_issues(ID) ON DELETE CASCADE NOT NULL,
+            signed_by INTEGER REFERENCES interfaces(ID) ON DELETE CASCADE NOT NULL
         );
     """
     ),
     step(
         """
         CREATE TABLE IF NOT EXISTS subscriptions(
-            repository_id INTEGER NOT NULL REFERENCES gitea_forge_repositories(ID) ON DELETE CASCADE,
-            interface_id INTEGER NOT NULL REFERENCES interfaces(ID) ON DELETE CASCADE,
+            repository_id INTEGER NOT NULL REFERENCES gitea_forge_repositories(ID) ON DELETE CASCADE NOT NULL,
+            interface_id INTEGER NOT NULL REFERENCES interfaces(ID) ON DELETE CASCADE NOT NULL,
             UNIQUE(repository_id, interface_id)
         );
     """

@@ -135,7 +135,7 @@ class DBIssue:
         """,
             (repo_scope_id, repository.name, repository.owner),
         ).fetchone()
-        if any([data is None, len(data) != 20]):
+        if data is None:
             return None
 
         repository.id = data[17]
@@ -168,4 +168,173 @@ class DBIssue:
                 id=data[18],
             ),
             repository=repository,
+        )
+
+    @classmethod
+    def load_with_id(cls, db_id: str) -> "DBIssue":
+        """
+        Load issue from database using database ID
+        This ID very different from the one assigned by the forge
+        """
+        conn = get_db()
+        cur = conn.cursor()
+        data = cur.execute(
+            """
+         SELECT
+             issues.title,
+             issues.description,
+             issues.html_url,
+             issues.created,
+             issues.updated,
+             issues.is_closed,
+             issues.is_merged,
+             issues.is_native,
+             issues.repo_scope_id,
+             users.name,
+             users.user_id,
+             users.profile_url,
+             users.ID,
+             user_was_signed_by.ID,
+             user_was_signed_by.url,
+             user_was_signed_by.public_key,
+             interfaces.url,
+             interfaces.public_key,
+             interfaces.ID,
+             repositories.ID,
+             repositories.name,
+             repositories.owner
+        FROM
+             gitea_forge_issues AS issues
+        INNER JOIN gitea_forge_repositories AS repositories
+            ON issues.repository = repositories.ID
+        INNER JOIN gitea_users AS users
+             ON issues.user_id = users.ID
+        INNER JOIN interfaces AS interfaces
+            ON issues.signed_by = interfaces.ID
+        INNER JOIN interfaces AS user_was_signed_by
+            ON users.signed_by = user_was_signed_by.ID
+        WHERE
+            issues.ID = ?
+        """,
+            (db_id,),
+        ).fetchone()
+        if data is None:
+            return None
+
+        return cls(
+            id=db_id,
+            title=data[0],
+            description=data[1],
+            html_url=data[2],
+            created=data[3],
+            updated=data[4],
+            is_closed=data[5],
+            is_merged=data[6],
+            is_native=data[7],
+            repo_scope_id=data[8],
+            user=DBUser(
+                name=data[9],
+                user_id=data[10],
+                profile_url=data[11],
+                id=data[12],
+                signed_by=DBInterfaces(
+                    id=data[13],
+                    url=data[14],
+                    public_key=data[15],
+                ),
+            ),
+            signed_by=DBInterfaces(
+                url=data[16],
+                public_key=data[17],
+                id=data[18],
+            ),
+            repository=DBRepo(
+                id=data[19],
+                name=data[20],
+                owner=data[21],
+            ),
+        )
+
+    @classmethod
+    def load_with_html_url(cls, html_url: str) -> "DBIssue":
+        """
+        Load issue from database using HTML URL
+        """
+        conn = get_db()
+        cur = conn.cursor()
+        data = cur.execute(
+            """
+         SELECT
+             issues.title,
+             issues.description,
+             issues.ID,
+             issues.created,
+             issues.updated,
+             issues.is_closed,
+             issues.is_merged,
+             issues.is_native,
+             issues.repo_scope_id,
+             users.name,
+             users.user_id,
+             users.profile_url,
+             users.ID,
+             user_was_signed_by.ID,
+             user_was_signed_by.url,
+             user_was_signed_by.public_key,
+             interfaces.url,
+             interfaces.public_key,
+             interfaces.ID,
+             repositories.ID,
+             repositories.name,
+             repositories.owner
+        FROM
+             gitea_forge_issues AS issues
+        INNER JOIN gitea_forge_repositories AS repositories
+            ON issues.repository = repositories.ID
+        INNER JOIN gitea_users AS users
+             ON issues.user_id = users.ID
+        INNER JOIN interfaces AS interfaces
+            ON issues.signed_by = interfaces.ID
+        INNER JOIN interfaces AS user_was_signed_by
+            ON users.signed_by = user_was_signed_by.ID
+        WHERE
+            issues.html_url = ?
+        """,
+            (html_url,),
+        ).fetchone()
+        if data is None:
+            return None
+
+        return cls(
+            html_url=html_url,
+            title=data[0],
+            description=data[1],
+            id=data[2],
+            created=data[3],
+            updated=data[4],
+            is_closed=data[5],
+            is_merged=data[6],
+            is_native=data[7],
+            repo_scope_id=data[8],
+            user=DBUser(
+                name=data[9],
+                user_id=data[10],
+                profile_url=data[11],
+                id=data[12],
+                signed_by=DBInterfaces(
+                    id=data[13],
+                    url=data[14],
+                    public_key=data[15],
+                ),
+            ),
+            signed_by=DBInterfaces(
+                url=data[16],
+                public_key=data[17],
+                id=data[18],
+            ),
+            repository=DBRepo(
+                id=data[19],
+                name=data[20],
+                owner=data[21],
+            ),
         )

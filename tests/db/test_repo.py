@@ -36,8 +36,10 @@ def test_repo(client):
 
     repo.save()
     from_db = DBRepo.load(name, owner)
+    with_id = DBRepo.load_with_id(from_db.id)
 
     assert cmp_repo(from_db, repo)
+    assert cmp_repo(from_db, with_id)
     from_db2 = DBRepo.load(name, owner)
     assert cmp_repo(from_db, from_db2)
     assert from_db.id == from_db2.id
