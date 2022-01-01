@@ -39,6 +39,15 @@ class DBComment:
     __belongs_to_issue_id: int = None
     __signed_by_interface_id: int = None
 
+    def __set_sqlite_to_bools(self):
+        """
+        sqlite returns 0 for False and 1 for True and is not automatically typecast
+        into bools. This method typecasts all bool values of this class.
+
+        To be invoked by every load_* invocation
+        """
+        self.is_native = bool(self.is_native)
+
     def save(self):
         """Save COmment to database"""
         self.user.save()
@@ -82,7 +91,6 @@ class DBComment:
         conn.commit()
 
     @classmethod
-    @classmethod
     def load_from_comment_url(cls, comment_url: str) -> "DBComment":
         """Load comment based on comment URL from database"""
         conn = get_db()
@@ -111,7 +119,7 @@ class DBComment:
         user = DBUser.load_with_db_id(data[6])
         signed_by = DBInterfaces.load_from_database_id(data[7])
         belongs_to_issue = DBIssue.load_with_id(data[1])
-        cls(
+        comment = cls(
             body=data[0],
             html_url=comment_url,
             created=data[2],
@@ -122,6 +130,8 @@ class DBComment:
             signed_by=signed_by,
             belongs_to_issue=belongs_to_issue,
         )
+        comment.__set_sqlite_to_bools()
+        return comment
 
     @classmethod
     def load_issue_comments(cls, issue: DBIssue) -> "[DBComment]":
@@ -153,17 +163,18 @@ class DBComment:
         for comment in data:
             user = DBUser.load_with_db_id(comment[6])
             signed_by = DBInterfaces.load_from_database_id(comment[7])
-            comments.append(
-                cls(
-                    body=comment[0],
-                    html_url=comment[1],
-                    created=comment[2],
-                    updated=comment[3],
-                    comment_id=comment[4],
-                    is_native=comment[5],
-                    user=user,
-                    signed_by=signed_by,
-                    belongs_to_issue=issue,
-                )
+            comment = cls(
+                body=comment[0],
+                html_url=comment[1],
+                created=comment[2],
+                updated=comment[3],
+                comment_id=comment[4],
+                is_native=comment[5],
+                user=user,
+                signed_by=signed_by,
+                belongs_to_issue=issue,
             )
+            comment.__set_sqlite_to_bools()
+            comments.append(comment)
+
         return comments
