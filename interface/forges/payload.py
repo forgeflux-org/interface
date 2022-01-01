@@ -29,11 +29,20 @@ class RepositoryInfo:
 
 
 @dataclass
+class Author:
+    username: str
+    name: str
+    profile_url: str
+
+
+@dataclass
 class CreateIssue:
     """Create new issue payload"""
 
     title: str
     body: str
+    author: Author
+    html_url: str
     due_date: str = None
     closed: bool = False
 
@@ -66,4 +75,15 @@ class CreatePullrequest:
     """
     base: str
     title: str
+    html_url: str
+    author: Author
     body: str = None
+
+
+@dataclass
+class CommentOnIssue:
+    """Comment on an Issue or a PR"""
+
+    body: str
+    author: Author
+    html_url: str

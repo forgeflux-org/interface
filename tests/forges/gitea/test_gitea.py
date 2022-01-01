@@ -20,7 +20,7 @@ import pytest
 
 from interface.utils import get_rand
 from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO
-from interface.forges.payload import RepositoryInfo, CreateIssue
+from interface.forges.payload import RepositoryInfo, CreateIssue, Author
 from interface.forges.utils import clean_url
 from interface.git import Git, get_forge
 from interface.forges.base import (
@@ -124,8 +124,14 @@ def test_get_issues(requests_mock):
 def test_create_issues(requests_mock):
 
     g = Gitea()
+    author = Author(name="Author", username="author", profile_url="https://example.com")
 
-    payload = CreateIssue(title=CREATE_ISSUE_TITLE, body=CREATE_ISSUE_BODY)
+    payload = CreateIssue(
+        title=CREATE_ISSUE_TITLE,
+        body=CREATE_ISSUE_BODY,
+        author=author,
+        html_url=author.profile_url,
+    )
     html_url = g.create_issue(REPOSITORY_OWNER, REPOSITORY_NAME, payload)
     assert html_url == CREATE_ISSUE_HTML_URL
 
