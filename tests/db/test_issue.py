@@ -14,10 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from datetime import datetime
 
+import pytest
+
 from interface.db import get_db
 from interface.db.interfaces import DBInterfaces
 from interface.db.repo import DBRepo
-from interface.db.issues import DBIssue
+from interface.db.issues import DBIssue, OPEN, MERGED, CLOSED
 from interface.db.users import DBUser
 
 from interface.auth import KeyPair
@@ -107,9 +109,88 @@ def test_issue(client):
     )
     issue.save()
 
+    pr_repo_scope_id = 2
+    html_url_of_pr = (
+        f"https://git.batsense/{repo_owner}/{repo_name}/issues/{pr_repo_scope_id}"
+    )
+    pr = DBIssue(
+        title="test issue PR",
+        description=description,
+        html_url=html_url_of_pr,
+        created=created,
+        updated=updated,
+        repo_scope_id=pr_repo_scope_id,
+        repository=repo,
+        user=user,
+        signed_by=interface2,
+        is_closed=is_closed,
+        is_merged=False,
+        is_native=is_native,
+    )
+    pr.save()
+
+    pr_from_db = DBIssue.load(repo, repo_scope_id=pr_repo_scope_id)
+    assert cmp_issue(pr, pr_from_db) is True
+
     issue_from_db = DBIssue.load(repo, repo_scope_id=repo_scope_id)
     with_id = DBIssue.load_with_id(issue_from_db.id)
     with_html_url = DBIssue.load_with_html_url(html_url)
     assert cmp_issue(issue_from_db, issue) is True
     assert cmp_issue(issue_from_db, with_id) is True
     assert cmp_issue(issue_from_db, with_html_url) is True
+
+    # testing states and updates
+    db_stored_id = issue_from_db.id
+    issue = DBIssue.load_with_id(db_stored_id)
+    assert issue.is_pr() is False
+    with pytest.raises(TypeError) as e:
+        issue.set_merged(str(datetime.now()))
+
+    assert issue.state() == OPEN
+    assert issue.is_closed is False
+    assert issue.is_merged is None
+
+    # test close issue
+    closed_at = str(datetime.now())
+    issue.set_closed(closed_at)
+    from_db = DBIssue.load_with_id(db_stored_id)
+    assert from_db.state() == CLOSED
+    assert from_db.updated == closed_at
+    assert from_db.is_closed is True
+    assert from_db.is_merged is None
+
+    # test open issue
+    opened_at = str(datetime.now())
+    issue.set_open(opened_at)
+    from_db = DBIssue.load_with_id(db_stored_id)
+    assert from_db.is_closed is False
+    assert from_db.is_merged is None
+
+    ## test PR states
+
+    # is_pr is True
+    pr_stored_id = pr_from_db.id
+    pr = DBIssue.load_with_id(pr_stored_id)
+    assert pr.is_pr() is True
+
+    # merge PR
+    merged_at = str(datetime.now())
+    pr.set_merged(merged_at)
+    assert pr.state() == MERGED
+    assert pr.updated == merged_at
+    assert pr.is_closed is True
+    assert pr.is_merged is True
+
+    # Re-open PR
+    opened_at = str(datetime.now())
+    pr.set_open(opened_at)
+    assert pr.state() == OPEN
+    assert pr.updated == opened_at
+    assert pr.is_closed is False
+    assert pr.is_merged is False
+
+    # Re-open PR
+    opened_at = str(datetime.now())
+    pr.set_open(opened_at)
+    assert pr.state() == OPEN
+    assert pr.updated == opened_at
