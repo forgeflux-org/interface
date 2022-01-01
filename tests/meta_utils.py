@@ -25,7 +25,7 @@ INTERFACE_KEY_URL = "https://interfac9.example.com/_ff/interface/key"
 def mock_version(requests_mock):
     resp = {"versions": VERSIONS}
     requests_mock.get(INTERFACE_VERSION_URL, json=resp)
-    print(f"Registered verison route {INTERFACE_VERSION_URL}")
+    print(f"Registered version route {INTERFACE_VERSION_URL}")
 
 
 KEY = KeyPair()
@@ -35,4 +35,4 @@ public_key = PublicKey(key=KEY.to_base64_public())
 def mock_key(requests_mock):
     resp = asdict(public_key)
     requests_mock.get(INTERFACE_KEY_URL, json=resp)
-    print(f"Registered verison route {INTERFACE_KEY_URL}")
+    print(f"Registered version route {INTERFACE_KEY_URL}")
