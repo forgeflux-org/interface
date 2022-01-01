@@ -18,6 +18,11 @@ Payload data structures
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from dataclasses import dataclass
 
+from interface.db import (
+    DBUser,
+    DBInterfaces,
+)
+
 
 @dataclass
 class RepositoryInfo:
@@ -25,14 +30,30 @@ class RepositoryInfo:
 
     name: str
     owner: str
-    description: str
+    description: str = None
 
 
 @dataclass
 class Author:
-    username: str
+    """Information of the author of a comment, issue or pull request"""
+
+    fqdn_username: str
     name: str
     profile_url: str
+
+    def to_db_user(self, public_key: str) -> DBUser:
+        """Convert Author into DBUser"""
+        if "@" not in self.fqdn_username:
+            raise ValueError(
+                "Username has to be FQDN of form: usrename@forge.example.com"
+            )
+
+        return DBUser(
+            name=self.name,
+            user_id=self.fqdn_username,
+            signed_by=DBInterfaces.load_from_pk(public_key),
+            profile_url=self.profile_url,
+        )
 
 
 @dataclass
@@ -42,6 +63,7 @@ class CreateIssue:
     title: str
     body: str
     author: Author
+    repository: RepositoryInfo
     html_url: str
     due_date: str = None
     closed: bool = False
@@ -54,9 +76,10 @@ class CreatePullrequest:
     See https://docs.github.com/en/rest/reference/pulls
     """
 
-    owner: str
-    message: str
-    repo: str
+    author: Author
+    repository: RepositoryInfo
+    title: str
+    html_url: str
     """
     From GitHub Docs:
 
@@ -74,9 +97,6 @@ class CreatePullrequest:
     a base of another repository.
     """
     base: str
-    title: str
-    html_url: str
-    author: Author
     body: str = None
 
 
@@ -86,4 +106,6 @@ class CommentOnIssue:
 
     body: str
     author: Author
+    repository: RepositoryInfo
+    issue_id: int
     html_url: str
