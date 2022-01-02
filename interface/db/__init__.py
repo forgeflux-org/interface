@@ -20,3 +20,4 @@ from .issues import DBIssue
 from .users import DBUser
 from .subscriptions import DBSubscribe
 from .comments import DBComment
+from .events import DBTask, JobStatus
