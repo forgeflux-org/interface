@@ -23,5 +23,14 @@ steps = [
             UNIQUE(job_id, signed_by)
         );
     """
-    )
+    ),
+    step(
+        """
+        CREATE TABLE IF NOT EXISTS tasks_json(
+            ID INTEGER PRIMARY KEY NOT NULL,
+            task_id UNIQUE REFERENCES tasks(ID) ON DELETE CASCADE NOT NULL,
+            json TEXT NOT NULL
+        );
+    """
+    ),
 ]
