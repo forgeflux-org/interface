@@ -19,6 +19,7 @@ from signedjson.key import (
     generate_signing_key,
     get_verify_key,
     encode_signing_key_base64,
+    decode_verify_key_base64,
     decode_signing_key_base64,
 )
 from flask import Blueprint, g, jsonify
@@ -61,6 +62,10 @@ class KeyPair:
         Could be expensive
         """
         return cls.from_base_64(settings.PRIVATE_KEY)
+
+    @staticmethod
+    def decode_public_key_base_64(base64_key: str):
+        return decode_verify_key_base64(ALGORITHM, VERSION, base64_key)
 
     @classmethod
     def loadkey(cls):
