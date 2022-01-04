@@ -51,6 +51,9 @@ def test_user(client):
         id=None,
     )
 
+    assert DBUser.load(user_id) is None
+    assert DBUser.load_with_db_id(11) is None
+
     user.save()
     from_db = DBUser.load(user_id)
     with_id = DBUser.load_with_db_id(from_db.id)

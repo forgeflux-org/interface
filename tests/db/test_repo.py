@@ -33,6 +33,8 @@ def test_repo(client):
         owner=owner,
         id=None,
     )
+    assert DBRepo.load(name, owner) is None
+    assert DBRepo.load_with_id(11) is None
 
     repo.save()
     from_db = DBRepo.load(name, owner)
