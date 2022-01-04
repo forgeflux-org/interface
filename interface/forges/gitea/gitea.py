@@ -30,7 +30,12 @@ from interface.forges.base import (
     F_D_REPOSITORY_EXISTS,
     F_D_INVALID_ISSUE_URL,
 )
-from interface.forges.payload import CreateIssue, RepositoryInfo, CreatePullrequest
+from interface.forges.payload import (
+    CreateIssue,
+    RepositoryInfo,
+    CreatePullrequest,
+    CommentOnIssue,
+)
 from interface.forges.notifications import Notification, NotificationResp, Comment
 from interface.forges.notifications import ISSUE, PULL, COMMIT, REPOSITORY
 from interface.error import F_D_FORGE_UNKNOWN_ERROR, Error
@@ -302,12 +307,12 @@ class Gitea(Forge):
 
         raise F_D_FORGE_UNKNOWN_ERROR
 
-    def comment_on_issue(self, owner: str, repo: str, issue_url: str, body: str):
+    def comment_on_issue(self, comment: CommentOnIssue):
         headers = self._auth()
-        (owner, repo) = self.get_fetch_remote(issue_url)
-        index = get_issue_index(issue_url)
+        (owner, repo) = self.get_fetch_remote(comment.issue_url)
+        index = get_issue_index(comment.issue_url)
         url = self._get_url("/repos/{owner}/{repo}/issues/{index}")
-        payload = {"body": body}
+        payload = {"body": comment.body}
         _response = requests.request("POST", url, json=payload, headers=headers)
 
     def get_local_html_url(self, repo: str) -> str:
