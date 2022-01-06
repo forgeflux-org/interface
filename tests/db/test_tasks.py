@@ -58,7 +58,13 @@ def test_task(client):
     task = DBTask(
         signed_by=interface,
     )
+
+    assert DBTask.load_with_db_id(11) is None
+    assert DBTask.load_with_job_id(task.uuid) is None
+    assert DBTaskJson.load_with_job_id(task.uuid) is None
+
     task.save()
+
     from_db_with_db_id = DBTask.load_with_db_id(task.id)
     from_db_with_job_id = DBTask.load_with_job_id(task.uuid)
     assert cmp_tasks(task, from_db_with_db_id)
@@ -92,6 +98,10 @@ def test_task(client):
     )
 
     task_json = DBTaskJson(job_uuid=task.uuid, message=comment)
+
+    assert DBTaskJson.load_with_db_id(11) is None
+    assert DBTaskJson.load_with_job_id(task.uuid) is None
+
     task_json.save()
 
     assert cmp_task_json(task_json, DBTaskJson.load_with_db_id(task_json.id))
@@ -104,3 +114,9 @@ def test_task(client):
     assert task_json is not None
     assert task is not None
     assert task_json.job_uuid == task.uuid
+
+
+def test_event_status():
+    assert str(JobStatus.COMPLETED) == "COMPLETED"
+    assert str(JobStatus.ERROR) == "ERROR"
+    assert str(JobStatus.QUEUED) == "QUEUED"

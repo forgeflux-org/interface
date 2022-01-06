@@ -196,4 +196,7 @@ class DBComment:
             comment.__set_sqlite_to_bools()
             comments.append(comment)
 
+        if len(comments) == 0:
+            return None
+
         return comments

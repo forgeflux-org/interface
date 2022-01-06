@@ -74,7 +74,8 @@ class DBSubscribe:
         """,
             (repository.owner, repository.name),
         ).fetchall()
-        if data is None:
+
+        if len(data) == 0:
             return None
 
         subscribers = []
@@ -83,13 +84,11 @@ class DBSubscribe:
                 cls(
                     subscriber=DBInterfaces(
                         url=interface[0],
-                        public_key=interface[2],
-                        id=interface[1],
+                        public_key=interface[1],
+                        id=interface[2],
                     ),
                     repository=repository,
                 )
             )
 
-        if len(subscribers) == 0:
-            return None
         return subscribers

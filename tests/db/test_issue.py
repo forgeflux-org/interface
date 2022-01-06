@@ -107,6 +107,10 @@ def test_issue(client):
         is_merged=is_merged,
         is_native=is_native,
     )
+    assert DBIssue.load(repository=repo, repo_scope_id=repo_scope_id) is None
+    assert DBIssue.load_with_html_url(html_url=html_url) is None
+    assert DBIssue.load_with_id(db_id=11) is None
+
     issue.save()
 
     pr_repo_scope_id = 2
@@ -127,6 +131,7 @@ def test_issue(client):
         is_merged=False,
         is_native=is_native,
     )
+
     pr.save()
 
     pr_from_db = DBIssue.load(repo, repo_scope_id=pr_repo_scope_id)

@@ -30,6 +30,11 @@ def test_interface(client):
     key = KeyPair()
     url = "https://test_interface.example.com"
     data = DBInterfaces(url=url, public_key=key.to_base64_public())
+
+    assert DBInterfaces.load_from_pk(key.to_base64_public()) is None
+    assert DBInterfaces.load_from_url(url) is None
+    assert DBInterfaces.load_from_database_id(11) is None
+
     data.save()
     from_key = DBInterfaces.load_from_pk(key.to_base64_public())
     from_url = DBInterfaces.load_from_url(url)

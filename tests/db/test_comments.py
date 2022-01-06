@@ -120,6 +120,8 @@ def test_comment(client):
         html_url=comment_url1,
         comment_id=comment_id1,
     )
+    assert DBComment.load_issue_comments(issue) is None
+    assert DBComment.load_from_comment_url(comment1.html_url) is None
 
     comment1.save()
 
