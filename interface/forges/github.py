@@ -1,5 +1,5 @@
 # Bridges software forges to create a distributed software development environment
-# Copyright © 2021 G V Datta Adithya <dat.adithya@gmail.com>
+# Copyright © 2022 G V Datta Adithya <dat.adithya@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as

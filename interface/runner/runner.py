@@ -2,7 +2,7 @@
 A job runner that receives events(notifications) and runs relevant jobs on them
 """
 # Bridges software forges to create a distributed software development environment
-# Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
+# Copyright © 2022 Aravinth Manivannan <realaravinth@batsense.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as

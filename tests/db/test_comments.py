@@ -1,5 +1,5 @@
 # Bridges software forges to create a distributed software development environment
-# Copyright © 2021 Aravinth Manivannan <realaravinth@batsense.net>
+# Copyright © 2022 Aravinth Manivannan <realaravinth@batsense.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -141,6 +141,8 @@ def test_comment(client):
     comment2.save()
 
     for comment in DBComment.load_issue_comments(issue):
+        from_url = DBComment.load_from_comment_url(comment.html_url)
+        assert cmp_comment(comment, from_url)
         if comment.comment_id == comment1.comment_id:
             assert cmp_comment(comment1, comment)
         else:
