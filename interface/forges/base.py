@@ -25,7 +25,12 @@ from interface.forges.notifications import (
     Notification,
     NotificationResolver,
 )
-from interface.forges.payload import RepositoryInfo, CreatePullrequest, CreateIssue
+from interface.forges.payload import (
+    RepositoryInfo,
+    CreatePullrequest,
+    CreateIssue,
+    CommentOnIssue,
+)
 from interface.forges.utils import clean_url
 from interface.ns import NameService
 from interface.error import Error
@@ -74,7 +79,7 @@ class Forge:
         """Get issues on a repository. Supports pagination via 'page' optional param"""
         raise NotImplementedError
 
-    def create_issue(self, owner: str, repo: str, issue: CreateIssue) -> str:
+    def create_issue(self, issue: CreateIssue) -> str:
         """Creates issue on a repository. reurns html url of the newly created issue"""
         raise NotImplementedError
 
@@ -116,7 +121,7 @@ class Forge:
         """Get notification by Id"""
         raise NotImplementedError
 
-    def comment_on_issue(self, owner: str, repo: str, issue_url: str, body: str):
+    def comment_on_issue(self, comment: CommentOnIssue):
         """Add comment on an existing issue"""
         raise NotImplementedError
 

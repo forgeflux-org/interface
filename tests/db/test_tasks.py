@@ -12,11 +12,12 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from dynaconf import settings
+import json
+from dataclasses import asdict
 
 from interface.auth import KeyPair
-from interface.app import app
-from interface.db import DBInterfaces, JobStatus, DBTask
+from interface.forges.payload import MetaData, Author, CommentOnIssue, RepositoryInfo
+from interface.db import DBInterfaces, JobStatus, DBTask, save_message, DBTaskJson
 
 from .test_interface import cmp_interface
 
@@ -35,6 +36,17 @@ def cmp_tasks(lhs: DBTask, rhs: DBTask) -> bool:
     )
 
 
+def cmp_task_json(lhs: DBTaskJson, rhs: DBTaskJson) -> bool:
+    """Compare two DBTaskJson objects"""
+    return all(
+        [
+            lhs.id == rhs.id,
+            lhs.job_uuid == rhs.job_uuid,
+            json.dumps(asdict(lhs.message)) == json.dumps(asdict(rhs.message)),
+        ]
+    )
+
+
 def test_task(client):
     """Test DBTask database class"""
 
@@ -47,18 +59,18 @@ def test_task(client):
         signed_by=interface,
     )
     task.save()
-    from_db_with_db_id = DBTask.load_job_with_db_id(task.id)
+    from_db_with_db_id = DBTask.load_with_db_id(task.id)
     from_db_with_job_id = DBTask.load_with_job_id(task.uuid)
     assert cmp_tasks(task, from_db_with_db_id)
     assert cmp_tasks(task, from_db_with_job_id)
 
     task.set_error()
     assert task.get_status() is JobStatus.ERROR
-    assert DBTask.load_job_with_db_id(task.id).get_status() is JobStatus.ERROR
+    assert DBTask.load_with_db_id(task.id).get_status() is JobStatus.ERROR
 
     task.set_completed()
     assert task.get_status() is JobStatus.COMPLETED
-    assert DBTask.load_job_with_db_id(task.id).get_status() is JobStatus.COMPLETED
+    assert DBTask.load_with_db_id(task.id).get_status() is JobStatus.COMPLETED
     db_id = task.id
     uuid = task.uuid
 
@@ -66,3 +78,29 @@ def test_task(client):
     task.save()
     assert task.id != db_id
     assert task.uuid != uuid
+
+    # test tasks_json
+    author = Author(
+        fqdn_username="foo@github.com", name="Foo", profile_url="https://github.com"
+    )
+    meta = MetaData(
+        html_url="https://github.com/foo/bar/issues/4", interface_url=url, author=author
+    )
+    repo = RepositoryInfo(name="foo", owner="bar")
+    comment = CommentOnIssue(
+        meta=meta, body="test comment", repository=repo, issue_url=meta.html_url
+    )
+
+    task_json = DBTaskJson(job_uuid=task.uuid, message=comment)
+    task_json.save()
+
+    assert cmp_task_json(task_json, DBTaskJson.load_with_db_id(task_json.id))
+    assert cmp_task_json(task_json, DBTaskJson.load_with_job_id(task.uuid))
+
+    task = save_message(comment)
+    assert cmp_tasks(task, DBTask.load_with_db_id(task.id))
+    task_json = DBTaskJson.load_with_job_id(task.uuid)
+    task = DBTask.load_with_db_id(task.id)
+    assert task_json is not None
+    assert task is not None
+    assert task_json.job_uuid == task.uuid

@@ -20,7 +20,13 @@ import pytest
 
 from interface.utils import get_rand
 from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO
-from interface.forges.payload import RepositoryInfo, CreateIssue, Author, RepositoryInfo
+from interface.forges.payload import (
+    RepositoryInfo,
+    CreateIssue,
+    Author,
+    RepositoryInfo,
+    MetaData,
+)
 from interface.forges.utils import clean_url
 from interface.git import Git, get_forge
 from interface.forges.base import (
@@ -129,14 +135,11 @@ def test_create_issues(requests_mock):
         fqdn_username="author@example.com",
         profile_url="https://example.com",
     )
+    meta = MetaData(html_url="", author=author, interface_url="")
     repo = RepositoryInfo(name=REPOSITORY_NAME, owner=REPOSITORY_OWNER)
 
     payload = CreateIssue(
-        title=CREATE_ISSUE_TITLE,
-        repository=repo,
-        body=CREATE_ISSUE_BODY,
-        author=author,
-        html_url=author.profile_url,
+        title=CREATE_ISSUE_TITLE, repository=repo, body=CREATE_ISSUE_BODY, meta=meta
     )
     html_url = g.create_issue(REPOSITORY_OWNER, REPOSITORY_NAME, payload)
     assert html_url == CREATE_ISSUE_HTML_URL

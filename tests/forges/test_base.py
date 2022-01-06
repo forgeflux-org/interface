@@ -25,6 +25,8 @@ from interface.forges.payload import (
     CreatePullrequest,
     Author,
     RepositoryInfo,
+    MetaData,
+    CommentOnIssue,
 )
 
 
@@ -43,6 +45,14 @@ def test_base_forge():
         name="Author",
         fqdn_username="author@example.com",
         profile_url="https://example.com",
+    )
+
+    meta = MetaData(html_url="", author=author, interface_url="")
+    repo = (
+        RepositoryInfo(
+            name="",
+            owner="",
+        ),
     )
 
     with pytest.raises(Exception) as _:
@@ -73,14 +83,13 @@ def test_base_forge():
         issue = CreateIssue(
             title="",
             body="",
-            author=author,
+            meta=meta,
             repository=RepositoryInfo(
                 name="",
                 owner="",
             ),
-            html_url=author.profile_url,
         )
-        forge.create_issue("", "", issue)
+        forge.create_issue(issue)
 
     with pytest.raises(NotImplementedError) as _:
         forge.get_repository("", "")
@@ -100,12 +109,8 @@ def test_base_forge():
             base="",
             title="",
             body="",
-            author=author,
-            html_url=author.profile_url,
-            repository=RepositoryInfo(
-                name="",
-                owner="",
-            ),
+            meta=meta,
+            repository=repo,
         )
         forge.create_pull_request(pr=pr)
 
@@ -119,4 +124,5 @@ def test_base_forge():
         forge.get_notification("")
 
     with pytest.raises(NotImplementedError) as _:
-        forge.comment_on_issue("", "", "", "")
+        comment = CommentOnIssue(meta=meta, body="", repository=repo, issue_url="")
+        forge.comment_on_issue(comment)
