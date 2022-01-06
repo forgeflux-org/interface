@@ -20,7 +20,7 @@ import pytest
 
 from interface.utils import get_rand
 from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO
-from interface.forges.payload import RepositoryInfo, CreateIssue
+from interface.forges.payload import RepositoryInfo, CreateIssue, Author, RepositoryInfo
 from interface.forges.utils import clean_url
 from interface.git import Git, get_forge
 from interface.forges.base import (
@@ -124,21 +124,39 @@ def test_get_issues(requests_mock):
 def test_create_issues(requests_mock):
 
     g = Gitea()
+    author = Author(
+        name="Author",
+        fqdn_username="author@example.com",
+        profile_url="https://example.com",
+    )
+    repo = RepositoryInfo(name=REPOSITORY_NAME, owner=REPOSITORY_OWNER)
 
-    payload = CreateIssue(title=CREATE_ISSUE_TITLE, body=CREATE_ISSUE_BODY)
+    payload = CreateIssue(
+        title=CREATE_ISSUE_TITLE,
+        repository=repo,
+        body=CREATE_ISSUE_BODY,
+        author=author,
+        html_url=author.profile_url,
+    )
     html_url = g.create_issue(REPOSITORY_OWNER, REPOSITORY_NAME, payload)
     assert html_url == CREATE_ISSUE_HTML_URL
 
     with pytest.raises(Error) as error:
+        payload.repository.owner = NON_EXISTENT["owner"]
+        payload.repository.name = NON_EXISTENT["repo"]
         g.create_issue(NON_EXISTENT["owner"], NON_EXISTENT["repo"], payload)
 
     assert pytest_expect_errror(error, F_D_REPOSITORY_NOT_FOUND)
 
     with pytest.raises(Error) as error:
+        payload.repository.owner = FORGE_ERROR["owner"]
+        payload.repository.name = FORGE_ERROR["repo"]
         g.create_issue(FORGE_ERROR["owner"], FORGE_ERROR["repo"], payload)
     assert pytest_expect_errror(error, F_D_FORGE_UNKNOWN_ERROR)
 
     with pytest.raises(Error) as error:
+        payload.repository.owner = FORGE_FORBIDDEN_ERROR["owner"]
+        payload.repository.name = FORGE_FORBIDDEN_ERROR["repo"]
         g.create_issue(
             FORGE_FORBIDDEN_ERROR["owner"], FORGE_FORBIDDEN_ERROR["repo"], payload
         )

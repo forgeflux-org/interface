@@ -14,8 +14,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from dataclasses import dataclass
+from dateutil.parser import parse as date_parse
 
 from flask import current_app
+from dynaconf import settings
 
 from interface.forges.notifications import (
     CreatePrEvent,
@@ -27,104 +29,23 @@ from interface.forges.notifications import (
     IssueEvent,
 )
 from interface.forges.gitea.utils import get_issue_index
+from interface.utils import clean_url, trim_url
 from interface.db import get_db, DBRepo, DBUser, DBIssue, DBInterfaces
+
+from interface.forges.gitea.responses import (
+    GiteaInternalTracker,
+    GiteaNotificationSubject,
+    GiteaOwner,
+    GiteaRepoPermissions,
+    GiteaRepo,
+    GiteaIssue,
+    GiteaComment,
+)
 
 ISSUE = "Issue"
 PULL = "Pull"
 COMMIT = "commit"
 REPOSITORY = "repository"
-
-
-@dataclass
-class GiteaInternalTracker:
-    enable_time_tracker: bool
-    allow_only_contributors_to_track_time: bool
-    enable_issue_dependencies: bool
-
-
-@dataclass
-class GiteaRepoPermissions:
-    admin: bool
-    push: bool
-    pull: bool
-
-
-@dataclass
-class GiteaOwner:
-    id: int
-    login: str
-    full_name: str
-    email: str
-    avatar_url: str
-    language: str
-    is_admin: bool
-    last_login: str
-    created: str
-    restricted: bool
-    active: bool
-    prohibit_login: bool
-    location: str
-    website: str
-    description: str
-    visibility: str
-    followers_count: int
-    following_count: int
-    starred_repos_count: int
-    username: str
-
-
-@dataclass
-class GiteaRepo:
-    id: int
-    owner: GiteaOwner
-    name: str
-    full_name: str
-    description: str
-    empty: bool
-    private: bool
-    fork: bool
-    template: bool
-    parent: str = None
-    mirror: bool
-    size: int
-    html_url: str
-    ssh_url: str
-    clone_url: str
-    original_url: str
-    website: str
-    stars_count: int
-    forks_count: int
-    watchers_count: int
-    open_issues_count: int
-    open_pr_counter: int
-    release_counter: int
-    default_branch: str
-    archived: bool
-    created_at: str
-    updated_at: str
-    permissions: GiteaRepoPermissions
-    has_issues: bool
-    internal_tracker: GiteaInternalTracker = None
-    has_wiki: bool
-    has_pull_requests: bool
-    has_projects: bool
-    ignore_whitespace_conflicts: bool
-    allow_merge_commits: bool
-    allow_rebase: bool
-    allow_rebase_explicit: bool
-    allow_squash_merge: bool
-    default_merge_style: str
-    avatar_url: str
-    internal: bool
-    mirror_interval: str
-
-
-class GiteaNotificationSubject:
-    title: str
-    url: str
-    latest_comment_url: str
-    type: str
-    state: str
 
 
 class GiteaNotification(NotificationResolver):
@@ -136,6 +57,23 @@ class GiteaNotification(NotificationResolver):
     updated_at: str
     url: str
 
+    def __process_issue(self):
+        if self.subject.type != ISSUE:
+            raise TypeError("this method is to be called only on issues")
+
+        issue_index = get_issue_index(self.subject.url)
+        issue = DBIssue.load(
+            repository=self.repository.to_db_repo(), repo_scope_id=issue_index
+        )
+
+        if issue is None or issue.is_closed:
+            issue_from_gitea = GiteaIssue.get_issue(self.subject.url)
+            issue_from_gitea.to_db_issue().save()
+            if issue_from_gitea.comments > 0:
+                comments = GiteaComment.from_issue(issue_from_gitea)
+
+    #        if from_db is None:
+
     def resolve(self):
         if self.subject.type == REPOSITORY:
             return None
@@ -145,7 +83,6 @@ class GiteaNotification(NotificationResolver):
             repo = DBRepo(self.repository.name, self.repository.owner.username)
 
         if self.subject.type == ISSUE:
-            issue_index = get_issue_index(self.subject.url)
 
             #            DBIssue.load(
 

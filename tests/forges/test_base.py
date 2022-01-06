@@ -20,7 +20,12 @@ import pytest
 from dynaconf import settings
 
 from interface.forges.base import Forge
-from interface.forges.payload import CreateIssue, CreatePullrequest
+from interface.forges.payload import (
+    CreateIssue,
+    CreatePullrequest,
+    Author,
+    RepositoryInfo,
+)
 
 
 class BasicForge(Forge):
@@ -33,6 +38,12 @@ class BasicForge(Forge):
 
 def test_base_forge():
     """test Forge"""
+
+    author = Author(
+        name="Author",
+        fqdn_username="author@example.com",
+        profile_url="https://example.com",
+    )
 
     with pytest.raises(Exception) as _:
         Forge("ssh://git@foo:x")
@@ -59,7 +70,16 @@ def test_base_forge():
         forge.get_issues("", "")
 
     with pytest.raises(NotImplementedError) as _:
-        issue = CreateIssue(title="", body="")
+        issue = CreateIssue(
+            title="",
+            body="",
+            author=author,
+            repository=RepositoryInfo(
+                name="",
+                owner="",
+            ),
+            html_url=author.profile_url,
+        )
         forge.create_issue("", "", issue)
 
     with pytest.raises(NotImplementedError) as _:
@@ -76,7 +96,16 @@ def test_base_forge():
 
     with pytest.raises(NotImplementedError) as _:
         pr = CreatePullrequest(
-            owner="", message="", repo="", head="", base="", title="", body=""
+            head="",
+            base="",
+            title="",
+            body="",
+            author=author,
+            html_url=author.profile_url,
+            repository=RepositoryInfo(
+                name="",
+                owner="",
+            ),
         )
         forge.create_pull_request(pr=pr)
 
