@@ -439,3 +439,22 @@ class DBIssue:
             },
         }
         return actor
+
+    def webfinger(self):
+        act_url = self.actor_url()
+        resp = {
+            "subject": f"acct:{self.actor_name()}@{trimed_base_url}",
+            "links": [
+                {
+                    "rel": "self",
+                    "type": "application/activity+json",
+                    "href": act_url,
+                },
+                {
+                    "rel": "http://webfinger.net/rel/profile-page",
+                    "type": "text/html",
+                    "href": act_url,
+                },
+            ],
+        }
+        return resp

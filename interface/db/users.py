@@ -181,7 +181,26 @@ class DBUser:
             "publicKey": {
                 "id": f"{act_url}#main-key",
                 "owner": act_url,
-                "publicKeyPem": self.private_key.public_key(),
+                "publicKeyPem": self.private_key.to_json_key(),
             },
         }
         return actor
+
+    def webfinger(self):
+        act_url = self.actor_url()
+        resp = {
+            "subject": f"acct:{self.user_id}@{trimed_base_url}",
+            "links": [
+                {
+                    "rel": "self",
+                    "type": "application/activity+json",
+                    "href": act_url,
+                },
+                {
+                    "rel": "http://webfinger.net/rel/profile-page",
+                    "type": "text/html",
+                    "href": act_url,
+                },
+            ],
+        }
+        return resp
