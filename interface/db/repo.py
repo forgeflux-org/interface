@@ -83,7 +83,7 @@ class DBRepo:
         cls.name = name
         cls.owner = owner
         cls.id = data[0]
-        cls.private_key = RSAKeyPair.load_prvate_from_str(data[1])
+        cls.private_key = RSAKeyPair.load_private_from_str(data[1])
         return cls
 
     @classmethod
@@ -105,7 +105,7 @@ class DBRepo:
             return None
         cls.name = data[0]
         cls.owner = data[1]
-        cls.private_key = RSAKeyPair.load_prvate_from_str(data[2])
+        cls.private_key = RSAKeyPair.load_private_from_str(data[2])
         cls.id = db_id
         return cls
 

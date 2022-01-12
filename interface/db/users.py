@@ -115,7 +115,7 @@ class DBUser:
             profile_url=data[2],
             signed_by=signed_by,
         )
-        res.private_key = RSAKeyPair.load_prvate_from_str(data[3])
+        res.private_key = RSAKeyPair.load_private_from_str(data[3])
         print(res)
         print(type(res))
         return res
@@ -156,7 +156,7 @@ class DBUser:
             profile_url=data[2],
             signed_by=DBInterfaces(id=data[3], url=data[4], public_key=data[5]),
         )
-        res.private_key = RSAKeyPair.load_prvate_from_str(data[6])
+        res.private_key = RSAKeyPair.load_private_from_str(data[6])
         return res
 
     def actor_url(self) -> str:

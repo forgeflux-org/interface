@@ -113,7 +113,7 @@ class RSAKeyPair:
         return pem.decode("utf-8")
 
     @classmethod
-    def load_prvate_from_str(cls, key: str) -> "RSAKeyPair":
+    def load_private_from_str(cls, key: str) -> "RSAKeyPair":
         x = cls()
         x.key = serialization.load_pem_private_key(key.encode("utf-8"), password=None)
         return x

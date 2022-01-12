@@ -290,7 +290,7 @@ class DBIssue:
             user=user,
             signed_by=signed_by,
             repository=repository,
-            private_key=RSAKeyPair.load_prvate_from_str(data[12]),
+            private_key=RSAKeyPair.load_private_from_str(data[12]),
         )
 
         issue.__set_sqlite_to_bools()
@@ -348,7 +348,7 @@ class DBIssue:
             user=user,
             signed_by=signed_by,
             repository=repository,
-            private_key=RSAKeyPair.load_prvate_from_str(data[12]),
+            private_key=RSAKeyPair.load_private_from_str(data[12]),
         )
         issue.__set_sqlite_to_bools()
         return issue
@@ -404,7 +404,7 @@ class DBIssue:
             user=user,
             signed_by=signed_by,
             repository=repository,
-            private_key=RSAKeyPair.load_prvate_from_str(data[12]),
+            private_key=RSAKeyPair.load_private_from_str(data[12]),
         )
         issue.__set_sqlite_to_bools()
         return issue
