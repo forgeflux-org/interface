@@ -14,11 +14,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from dataclasses import dataclass
 from sqlite3 import IntegrityError
+from dynaconf import settings
 
 from interface.auth import RSAKeyPair
+from interface.utils import trim_url
 
 from .conn import get_db
 from .interfaces import DBInterfaces
+
+trimed_base_url = trim_url(settings.SERVER.url)
 
 
 @dataclass
@@ -111,7 +115,7 @@ class DBUser:
             profile_url=data[2],
             signed_by=signed_by,
         )
-        res.private_key = RSAKeyPair.load_prvate_from_str(data[3])
+        res.private_key = RSAKeyPair.load_private_from_str(data[3])
         print(res)
         print(type(res))
         return res
@@ -152,5 +156,32 @@ class DBUser:
             profile_url=data[2],
             signed_by=DBInterfaces(id=data[3], url=data[4], public_key=data[5]),
         )
-        res.private_key = RSAKeyPair.load_prvate_from_str(data[6])
+        res.private_key = RSAKeyPair.load_private_from_str(data[6])
         return res
+
+    def actor_url(self) -> str:
+        act_url = f"{trimed_base_url}/u/{self.user_id}"
+        return act_url
+
+    def to_actor(self):
+        act_url = self.actor_url()
+
+        actor = {
+            "@context": [
+                "https://www.w3.org/ns/activitystreams",
+                "https://w3id.org/security/v1",
+            ],
+            "id": act_url,
+            "type": "Person",
+            "preferredUsername": self.name,
+            "inbox": f"{act_url}/inbox",
+            "outbox": f"{act_url}/outbox",
+            "followers": f"{act_url}/followers",
+            "following": f"{act_url}/following",
+            "publicKey": {
+                "id": f"{act_url}#main-key",
+                "owner": act_url,
+                "publicKeyPem": self.private_key.public_key(),
+            },
+        }
+        return actor

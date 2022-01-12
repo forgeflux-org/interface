@@ -113,7 +113,7 @@ class RSAKeyPair:
         return pem.decode("utf-8")
 
     @classmethod
-    def load_prvate_from_str(cls, key: str) -> "RSAKeyPair":
+    def load_private_from_str(cls, key: str) -> "RSAKeyPair":
         x = cls()
         x.key = serialization.load_pem_private_key(key.encode("utf-8"), password=None)
         return x
@@ -121,4 +121,14 @@ class RSAKeyPair:
     @staticmethod
     def load_public_from_str(key: str):
         key = serialization.load_pem_public_key(key.encode("utf-8"))
+        return key
+
+    def to_json_key(self) -> str:
+        """new line characters are formatted to \\n"""
+        key = self.public_key().replace("\n", "\\n")
+        return key
+
+    @staticmethod
+    def from_json_key(key) -> str:
+        key = key.replace("\\n", "\n")
         return key

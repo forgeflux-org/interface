@@ -16,7 +16,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from dateutil.parser import parse as date_parse
 from sqlite3 import IntegrityError
+from dynaconf import settings
 
+from interface.utils import trim_url
 from interface.auth import RSAKeyPair
 
 from .conn import get_db
@@ -27,6 +29,8 @@ from .interfaces import DBInterfaces
 OPEN = "open"
 MERGED = "merged"
 CLOSED = "closed"
+
+trimed_base_url = trim_url(settings.SERVER.url)
 
 
 @dataclass
@@ -286,7 +290,7 @@ class DBIssue:
             user=user,
             signed_by=signed_by,
             repository=repository,
-            private_key=RSAKeyPair.load_prvate_from_str(data[12]),
+            private_key=RSAKeyPair.load_private_from_str(data[12]),
         )
 
         issue.__set_sqlite_to_bools()
@@ -344,7 +348,7 @@ class DBIssue:
             user=user,
             signed_by=signed_by,
             repository=repository,
-            private_key=RSAKeyPair.load_prvate_from_str(data[12]),
+            private_key=RSAKeyPair.load_private_from_str(data[12]),
         )
         issue.__set_sqlite_to_bools()
         return issue
@@ -400,7 +404,38 @@ class DBIssue:
             user=user,
             signed_by=signed_by,
             repository=repository,
-            private_key=RSAKeyPair.load_prvate_from_str(data[12]),
+            private_key=RSAKeyPair.load_private_from_str(data[12]),
         )
         issue.__set_sqlite_to_bools()
         return issue
+
+    def actor_name(self) -> str:
+        name = f"!{self.repository.actor_name()}!{self.repo_scope_id}"
+        return name
+
+    def actor_url(self) -> str:
+        act_url = f"{trimed_base_url}/i/!{self.actor_name()}"
+        return act_url
+
+    def to_actor(self):
+        act_url = self.actor_url()
+
+        actor = {
+            "@context": [
+                "https://www.w3.org/ns/activitystreams",
+                "https://w3id.org/security/v1",
+            ],
+            "id": act_url,
+            "type": "Group",
+            "preferredUsername": self.actor_name(),
+            "inbox": f"{act_url}/inbox",
+            "outbox": f"{act_url}/outbox",
+            "followers": f"{act_url}/followers",
+            "following": f"{act_url}/following",
+            "publicKey": {
+                "id": f"{act_url}#main-key",
+                "owner": act_url,
+                "publicKeyPem": self.private_key.to_json_key(),
+            },
+        }
+        return actor

@@ -14,10 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from dataclasses import dataclass
 from sqlite3 import IntegrityError
+from dynaconf import settings
 
 from interface.auth import RSAKeyPair
+from interface.utils import trim_url
 
 from .conn import get_db
+
+trimed_base_url = trim_url(settings.SERVER.url)
 
 
 @dataclass
@@ -79,7 +83,7 @@ class DBRepo:
         cls.name = name
         cls.owner = owner
         cls.id = data[0]
-        cls.private_key = RSAKeyPair.load_prvate_from_str(data[1])
+        cls.private_key = RSAKeyPair.load_private_from_str(data[1])
         return cls
 
     @classmethod
@@ -101,6 +105,37 @@ class DBRepo:
             return None
         cls.name = data[0]
         cls.owner = data[1]
-        cls.private_key = RSAKeyPair.load_prvate_from_str(data[2])
+        cls.private_key = RSAKeyPair.load_private_from_str(data[2])
         cls.id = db_id
         return cls
+
+    def actor_name(self) -> str:
+        name = f"!{self.owner}!{self.name}"
+        return name
+
+    def actor_url(self) -> str:
+        act_url = f"{trimed_base_url}/r/!{self.actor_name()}"
+        return act_url
+
+    def to_actor(self):
+        act_url = self.actor_url()
+
+        actor = {
+            "@context": [
+                "https://www.w3.org/ns/activitystreams",
+                "https://w3id.org/security/v1",
+            ],
+            "id": act_url,
+            "type": "Group",
+            "preferredUsername": self.actor_name(),
+            "inbox": f"{act_url}/inbox",
+            "outbox": f"{act_url}/outbox",
+            "followers": f"{act_url}/followers",
+            "following": f"{act_url}/following",
+            "publicKey": {
+                "id": f"{act_url}#main-key",
+                "owner": act_url,
+                "publicKeyPem": self.private_key.to_json_key(),
+            },
+        }
+        return actor
