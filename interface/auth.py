@@ -122,3 +122,13 @@ class RSAKeyPair:
     def load_public_from_str(key: str):
         key = serialization.load_pem_public_key(key.encode("utf-8"))
         return key
+
+    def to_json_key(self) -> str:
+        """new line characters are formatted to \\n"""
+        key = self.public_key().replace("\n", "\\n")
+        return key
+
+    @staticmethod
+    def from_json_key(key) -> str:
+        key = key.replace("\\n", "\n")
+        return key

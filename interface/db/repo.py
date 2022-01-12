@@ -135,7 +135,7 @@ class DBRepo:
             "publicKey": {
                 "id": f"{act_url}#main-key",
                 "owner": act_url,
-                "publicKeyPem": self.private_key.public_key(),
+                "publicKeyPem": self.private_key.to_json_key(),
             },
         }
         return actor
