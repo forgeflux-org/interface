@@ -15,7 +15,9 @@
 from dataclasses import dataclass
 from datetime import datetime
 from dateutil.parser import parse as date_parse
+from sqlite3 import IntegrityError
 
+from interface.auth import RSAKeyPair
 
 from .conn import get_db
 from .users import DBUser
@@ -50,6 +52,7 @@ class DBIssue:
     #        -- true: issue is PR and merged
     #        -- false && val(is_closed) == true: issue is PR and is closed
     is_native: bool = True
+    private_key: RSAKeyPair = None
 
     def __set_sqlite_to_bools(self):
         """
@@ -154,55 +157,79 @@ class DBIssue:
 
     def save(self):
         """Save Issue to database"""
+
+        issue = self.load(self.repository, self.repo_scope_id)
+        if issue is not None:
+            self.private_key = issue.private_key
+            self.user = issue.user
+            self.repository = issue.repository
+            self.id = issue.id
+            print("issue early exit")
+            return
+
         self.user.save()
         self.signed_by.save()
         self.repository.save()
 
         conn = get_db()
         cur = conn.cursor()
-        cur.execute(
-            """
-            INSERT OR IGNORE INTO gitea_forge_issues
-                (
-                    title, description, html_url, created,
-                    updated, is_closed, is_merged, is_native,
-                    repo_scope_id, user_id, repository, signed_by
+        count = 0
+        while True:
+            try:
+                self.private_key = RSAKeyPair()
+
+                cur.execute(
+                    """
+                    INSERT INTO gitea_forge_issues
+                        (
+                            title, description, html_url, created,
+                            updated, is_closed, is_merged, is_native,
+                            repo_scope_id, user_id, repository, signed_by, private_key
+                        )
+                        VALUES (
+                            ?, ?, ?, ?,
+                            ?, ?, ?, ?,
+                            ?,
+                            (SELECT ID from gitea_users WHERE user_id  = ?),
+                            (SELECT ID from gitea_forge_repositories WHERE owner  = ? AND name = ?),
+                            (SELECT ID from interfaces WHERE url  = ?),
+                            ?
+                        )
+                    """,
+                    (
+                        self.title,
+                        self.description,
+                        self.html_url,
+                        self.created,
+                        self.updated,
+                        self.is_closed,
+                        self.is_merged,
+                        self.is_native,
+                        self.repo_scope_id,
+                        self.user.user_id,
+                        self.repository.owner,
+                        self.repository.name,
+                        self.signed_by.url,
+                        self.private_key.private_key(),
+                    ),
                 )
-                VALUES (
-                    ?, ?, ?, ?,
-                    ?, ?, ?, ?,
-                    ?,
-                    (SELECT ID from gitea_users WHERE user_id  = ?),
-                    (SELECT ID from gitea_forge_repositories WHERE owner  = ? AND name = ?),
-                    (SELECT ID from interfaces WHERE url  = ?)
-                )
-            """,
-            (
-                self.title,
-                self.description,
-                self.html_url,
-                self.created,
-                self.updated,
-                self.is_closed,
-                self.is_merged,
-                self.is_native,
-                self.repo_scope_id,
-                self.user.user_id,
-                self.repository.owner,
-                self.repository.name,
-                self.signed_by.url,
-            ),
-        )
-        conn.commit()
-        self.id = cur.execute(
-            """
+                conn.commit()
+                break
+            except IntegrityError as e:
+                print(e)
+                count += 1
+                if count > 5:
+                    raise e
+                continue
+            self.id = cur.execute(
+                """
                 SELECT id FROM gitea_forge_issues
                 WHERE repo_scope_id = ? AND html_url = ?
                 """,
-            (self.repo_scope_id, self.html_url),
-        ).fetchone()[
-            0
-        ]  # If sqlite result doesn't contain anything at [0]
+                (self.repo_scope_id, self.html_url),
+            ).fetchone()[
+                0
+            ]  # If sqlite result doesn't contain anything at [0]
         # pos then save wasn't successful or some other
         # error occurred
         self.__update()
@@ -215,49 +242,35 @@ class DBIssue:
         data = cur.execute(
             """
          SELECT
-             issues.ID,
-             issues.title,
-             issues.description,
-             issues.html_url,
-             issues.created,
-             issues.updated,
-             issues.is_closed,
-             issues.is_merged,
-             issues.is_native,
-             users.name,
-             users.user_id,
-             users.profile_url,
-             users.ID,
-             user_was_signed_by.ID,
-             user_was_signed_by.url,
-             user_was_signed_by.public_key,
-             interfaces.url,
-             interfaces.public_key,
-             interfaces.ID,
-             repositories.ID
+             ID,
+             title,
+             description,
+             html_url,
+             created,
+             updated,
+             is_closed,
+             is_merged,
+             is_native,
+             user_id,
+             signed_by,
+             repository,
+             private_key
         FROM
-             gitea_forge_issues AS issues
-        INNER JOIN gitea_forge_repositories AS repositories
-            ON issues.repository = repositories.ID
-        INNER JOIN gitea_users AS users
-             ON issues.user_id = users.ID
-        INNER JOIN interfaces AS interfaces
-            ON issues.signed_by = interfaces.ID
-        INNER JOIN interfaces AS user_was_signed_by
-            ON users.signed_by = user_was_signed_by.ID
+             gitea_forge_issues
         WHERE
-            issues.repo_scope_id = ?
+            repo_scope_id = ?
         AND
-            repositories.name = ?
-        AND
-            repositories.owner = ?;
+            repository =
+            (SELECT ID FROM gitea_forge_repositories WHERE name = ? AND owner = ?)
         """,
             (repo_scope_id, repository.name, repository.owner),
         ).fetchone()
         if data is None:
             return None
 
-        repository.id = data[17]
+        user = DBUser.load_with_db_id(data[9])
+        signed_by = DBInterfaces.load_from_database_id(data[10])
+        repository = DBRepo.load_with_id(data[11])
 
         issue = cls(
             id=data[0],
@@ -270,23 +283,10 @@ class DBIssue:
             is_merged=data[7],
             is_native=data[8],
             repo_scope_id=repo_scope_id,
-            user=DBUser(
-                name=data[9],
-                user_id=data[10],
-                profile_url=data[11],
-                id=data[12],
-                signed_by=DBInterfaces(
-                    id=data[13],
-                    url=data[14],
-                    public_key=data[15],
-                ),
-            ),
-            signed_by=DBInterfaces(
-                url=data[16],
-                public_key=data[17],
-                id=data[18],
-            ),
+            user=user,
+            signed_by=signed_by,
             repository=repository,
+            private_key=RSAKeyPair.load_prvate_from_str(data[12]),
         )
 
         issue.__set_sqlite_to_bools()
@@ -303,45 +303,32 @@ class DBIssue:
         data = cur.execute(
             """
          SELECT
-             issues.title,
-             issues.description,
-             issues.html_url,
-             issues.created,
-             issues.updated,
-             issues.is_closed,
-             issues.is_merged,
-             issues.is_native,
-             issues.repo_scope_id,
-             users.name,
-             users.user_id,
-             users.profile_url,
-             users.ID,
-             user_was_signed_by.ID,
-             user_was_signed_by.url,
-             user_was_signed_by.public_key,
-             interfaces.url,
-             interfaces.public_key,
-             interfaces.ID,
-             repositories.ID,
-             repositories.name,
-             repositories.owner
+             title,
+             description,
+             html_url,
+             created,
+             updated,
+             is_closed,
+             is_merged,
+             is_native,
+             repo_scope_id,
+             user_id,
+             signed_by,
+             repository,
+             private_key
         FROM
-             gitea_forge_issues AS issues
-        INNER JOIN gitea_forge_repositories AS repositories
-            ON issues.repository = repositories.ID
-        INNER JOIN gitea_users AS users
-             ON issues.user_id = users.ID
-        INNER JOIN interfaces AS interfaces
-            ON issues.signed_by = interfaces.ID
-        INNER JOIN interfaces AS user_was_signed_by
-            ON users.signed_by = user_was_signed_by.ID
+             gitea_forge_issues
         WHERE
-            issues.ID = ?
+            ID = ?
         """,
             (db_id,),
         ).fetchone()
         if data is None:
             return None
+
+        user = DBUser.load_with_db_id(data[9])
+        signed_by = DBInterfaces.load_from_database_id(data[10])
+        repository = DBRepo.load_with_id(data[11])
 
         issue = cls(
             id=db_id,
@@ -354,27 +341,10 @@ class DBIssue:
             is_merged=data[6],
             is_native=data[7],
             repo_scope_id=data[8],
-            user=DBUser(
-                name=data[9],
-                user_id=data[10],
-                profile_url=data[11],
-                id=data[12],
-                signed_by=DBInterfaces(
-                    id=data[13],
-                    url=data[14],
-                    public_key=data[15],
-                ),
-            ),
-            signed_by=DBInterfaces(
-                url=data[16],
-                public_key=data[17],
-                id=data[18],
-            ),
-            repository=DBRepo(
-                id=data[19],
-                name=data[20],
-                owner=data[21],
-            ),
+            user=user,
+            signed_by=signed_by,
+            repository=repository,
+            private_key=RSAKeyPair.load_prvate_from_str(data[12]),
         )
         issue.__set_sqlite_to_bools()
         return issue
@@ -389,45 +359,32 @@ class DBIssue:
         data = cur.execute(
             """
          SELECT
-             issues.title,
-             issues.description,
-             issues.ID,
-             issues.created,
-             issues.updated,
-             issues.is_closed,
-             issues.is_merged,
-             issues.is_native,
-             issues.repo_scope_id,
-             users.name,
-             users.user_id,
-             users.profile_url,
-             users.ID,
-             user_was_signed_by.ID,
-             user_was_signed_by.url,
-             user_was_signed_by.public_key,
-             interfaces.url,
-             interfaces.public_key,
-             interfaces.ID,
-             repositories.ID,
-             repositories.name,
-             repositories.owner
+             title,
+             description,
+             ID,
+             created,
+             updated,
+             is_closed,
+             is_merged,
+             is_native,
+             repo_scope_id,
+             user_id,
+             signed_by,
+             repository,
+             private_key
         FROM
-             gitea_forge_issues AS issues
-        INNER JOIN gitea_forge_repositories AS repositories
-            ON issues.repository = repositories.ID
-        INNER JOIN gitea_users AS users
-             ON issues.user_id = users.ID
-        INNER JOIN interfaces AS interfaces
-            ON issues.signed_by = interfaces.ID
-        INNER JOIN interfaces AS user_was_signed_by
-            ON users.signed_by = user_was_signed_by.ID
+             gitea_forge_issues
         WHERE
-            issues.html_url = ?
+            html_url = ?
         """,
             (html_url,),
         ).fetchone()
         if data is None:
             return None
+
+        user = DBUser.load_with_db_id(data[9])
+        signed_by = DBInterfaces.load_from_database_id(data[10])
+        repository = DBRepo.load_with_id(data[11])
 
         issue = cls(
             html_url=html_url,
@@ -440,27 +397,10 @@ class DBIssue:
             is_merged=data[6],
             is_native=data[7],
             repo_scope_id=data[8],
-            user=DBUser(
-                name=data[9],
-                user_id=data[10],
-                profile_url=data[11],
-                id=data[12],
-                signed_by=DBInterfaces(
-                    id=data[13],
-                    url=data[14],
-                    public_key=data[15],
-                ),
-            ),
-            signed_by=DBInterfaces(
-                url=data[16],
-                public_key=data[17],
-                id=data[18],
-            ),
-            repository=DBRepo(
-                id=data[19],
-                name=data[20],
-                owner=data[21],
-            ),
+            user=user,
+            signed_by=signed_by,
+            repository=repository,
+            private_key=RSAKeyPair.load_prvate_from_str(data[12]),
         )
         issue.__set_sqlite_to_bools()
         return issue

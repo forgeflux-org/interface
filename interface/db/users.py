@@ -13,7 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from dataclasses import dataclass
+from sqlite3 import IntegrityError
 
+from interface.auth import RSAKeyPair
 
 from .conn import get_db
 from .interfaces import DBInterfaces
@@ -30,22 +32,51 @@ class DBUser:
     profile_url: str
     signed_by: DBInterfaces
     id: int = None
+    private_key: RSAKeyPair = None
 
     def save(self):
         """Save user to database"""
         self.signed_by.save()
 
+        user = self.load(self.user_id)
+        if user is not None:
+            self.private_key = user.private_key
+            self.id = user.id
+            print("early return")
+            return
+
+        print("no early return")
+
         conn = get_db()
         cur = conn.cursor()
-        cur.execute(
-            """
-            INSERT OR IGNORE INTO gitea_users
-                (name, user_id, profile_url, signed_by) VALUES
-                (?, ?, ?, (SELECT ID from interfaces WHERE url = ?));
-            """,
-            (self.name, self.user_id, self.profile_url, self.signed_by.url),
-        )
-        conn.commit()
+        count = 0
+        while True:
+            try:
+                self.private_key = RSAKeyPair()
+                cur.execute(
+                    """
+                    INSERT INTO gitea_users
+                        (name, user_id, profile_url, signed_by, private_key) VALUES
+                        (?, ?, ?, (SELECT ID from interfaces WHERE url = ?), ?);
+                    """,
+                    (
+                        self.name,
+                        self.user_id,
+                        self.profile_url,
+                        self.signed_by.url,
+                        self.private_key.private_key(),
+                    ),
+                )
+                conn.commit()
+                break
+            except IntegrityError as e:
+                count += 1
+                if count > 5:
+                    raise e
+                continue
+
+        print(f"save {self.user_id}")
+        print(f" from save: {self.private_key.private_key()}")
 
     @classmethod
     def load(cls, user_id: str) -> "DBUser":
@@ -55,30 +86,35 @@ class DBUser:
         data = cur.execute(
             """
              SELECT
-                 users.ID,
-                 users.name,
-                 users.profile_url,
-                 interfaces.ID,
-                 interfaces.url,
-                 interfaces.public_key
+                 ID,
+                 name,
+                 profile_url,
+                 private_key,
+                 signed_by
              FROM
-                 gitea_users AS users
-             INNER JOIN interfaces AS interfaces
-                 ON users.signed_by = interfaces.ID
+                 gitea_users
             WHERE
-                users.user_id = ?
+                user_id = ?
             """,
             (user_id,),
         ).fetchone()
+        print(f"load {user_id}")
         if data is None:
+            print("data is none")
             return None
-        return cls(
+
+        signed_by = DBInterfaces.load_from_database_id(data[4])
+        res = cls(
             id=data[0],
             name=data[1],
             user_id=user_id,
             profile_url=data[2],
-            signed_by=DBInterfaces(id=data[3], url=data[4], public_key=data[4]),
+            signed_by=signed_by,
         )
+        res.private_key = RSAKeyPair.load_prvate_from_str(data[3])
+        print(res)
+        print(type(res))
+        return res
 
     @classmethod
     def load_with_db_id(cls, db_id: str) -> "DBUser":
@@ -96,7 +132,8 @@ class DBUser:
                  users.profile_url,
                  interfaces.ID,
                  interfaces.url,
-                 interfaces.public_key
+                 interfaces.public_key,
+                 users.private_key
              FROM
                  gitea_users AS users
              INNER JOIN interfaces AS interfaces
@@ -108,10 +145,12 @@ class DBUser:
         ).fetchone()
         if data is None:
             return None
-        return cls(
+        res = cls(
             user_id=data[0],
             name=data[1],
             id=db_id,
             profile_url=data[2],
-            signed_by=DBInterfaces(id=data[3], url=data[4], public_key=data[4]),
+            signed_by=DBInterfaces(id=data[3], url=data[4], public_key=data[5]),
         )
+        res.private_key = RSAKeyPair.load_prvate_from_str(data[6])
+        return res

@@ -13,6 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from dataclasses import dataclass
+from sqlite3 import IntegrityError
+
+from interface.auth import RSAKeyPair
 
 from .conn import get_db
 
@@ -24,20 +27,39 @@ class DBRepo:
     name: str
     owner: str
     id: int = None
+    private_key: RSAKeyPair = None
 
     def save(self):
         """Save repository to database"""
+        repo = self.load(self.name, self.owner)
+        if repo is not None:
+            self.private_key = repo.private_key
+            self.id = repo.id
+            print("repo early exit")
+            return
+
         conn = get_db()
         cur = conn.cursor()
-        cur.execute(
-            """
-            INSERT OR IGNORE INTO gitea_forge_repositories
-                (owner, name) VALUES
-                (?, ?);
-            """,
-            (self.owner, self.name),
-        )
-        conn.commit()
+        count = 0
+        while True:
+            try:
+                self.private_key = RSAKeyPair()
+                cur.execute(
+                    """
+                    INSERT INTO gitea_forge_repositories
+                        (owner, name, private_key) VALUES
+                        (?, ?, ?);
+                    """,
+                    (self.owner, self.name, self.private_key.private_key()),
+                )
+                conn.commit()
+                break
+            except IntegrityError as e:
+                print(e)
+                count += 1
+                if count > 5:
+                    raise e
+                continue
 
     @classmethod
     def load(cls, name: str, owner: str) -> "DBRepo":
@@ -46,16 +68,18 @@ class DBRepo:
         cur = conn.cursor()
         data = cur.execute(
             """
-                SELECT ID from gitea_forge_repositories
+                SELECT ID, private_key from gitea_forge_repositories
                 WHERE name = ? AND owner = ?;
             """,
             (name, owner),
         ).fetchone()
+        print(data)
         if data is None:
             return None
         cls.name = name
         cls.owner = owner
         cls.id = data[0]
+        cls.private_key = RSAKeyPair.load_prvate_from_str(data[1])
         return cls
 
     @classmethod
@@ -68,7 +92,7 @@ class DBRepo:
         cur = conn.cursor()
         data = cur.execute(
             """
-                SELECT name, owner from gitea_forge_repositories
+                SELECT name, owner, private_key from gitea_forge_repositories
                 WHERE ID = ?;
             """,
             (db_id,),
@@ -77,5 +101,6 @@ class DBRepo:
             return None
         cls.name = data[0]
         cls.owner = data[1]
+        cls.private_key = RSAKeyPair.load_prvate_from_str(data[2])
         cls.id = db_id
         return cls

@@ -59,20 +59,6 @@ class Author:
     name: str
     profile_url: str
 
-    def to_db_user(self, public_key: str) -> DBUser:
-        """Convert Author into DBUser"""
-        if "@" not in self.fqdn_username:
-            raise ValueError(
-                "Username has to be FQDN of form: usrename@forge.example.com"
-            )
-
-        return DBUser(
-            name=self.name,
-            user_id=self.fqdn_username,
-            signed_by=DBInterfaces.load_from_pk(public_key),
-            profile_url=self.profile_url,
-        )
-
 
 EPOCH = datetime.utcfromtimestamp(0)
 
