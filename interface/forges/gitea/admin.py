@@ -37,7 +37,7 @@ def get_db_user() -> DBInterfaces:
         interface = get_db_interface()
         username = settings.GITEA.username
         host = trim_url(clean_url(settings.GITEA.host))
-        profile_url = f"{host}/username"
+        profile_url = f"{host}/{username}"
         db_user = DBUser(
             name=username,
             user_id=username,

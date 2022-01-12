@@ -83,3 +83,42 @@ def keygen():
     print(f"\n\nPrivate Key: {key.to_base64_private()}")
     print(f"Public Key: {key.to_base64_public()}")
     sys.exit(0)
+
+
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+
+
+class RSAKeyPair:
+    def __init__(self):
+        self.key = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048,
+        )
+
+    def public_key(self):
+        key = self.key.public_key().public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        #        return key.decode("ascii")
+        return key.decode("utf-8")
+
+    def private_key(self):
+        pem = self.key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+        return pem.decode("utf-8")
+
+    @classmethod
+    def load_prvate_from_str(cls, key: str) -> "RSAKeyPair":
+        x = cls()
+        x.key = serialization.load_pem_private_key(key.encode("utf-8"), password=None)
+        return x
+
+    @staticmethod
+    def load_public_from_str(key: str):
+        key = serialization.load_pem_public_key(key.encode("utf-8"))
+        return key

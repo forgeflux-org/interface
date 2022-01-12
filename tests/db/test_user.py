@@ -42,20 +42,21 @@ def test_user(client):
     url = "https://db-test-user.example.com"
     interface = DBInterfaces(url=url, public_key=key.to_base64_public())
     name = "db_test_user"
-    user_id = f"{name}@git.batsense.net"
+    user_id = name
     user = DBUser(
         name=name,
         user_id=user_id,
-        profile_url=f"https://git.batsense.net/{name}",
+        profile_url=f"https://git.batsense.net/{user_id}",
         signed_by=interface,
-        id=None,
     )
 
     assert DBUser.load(user_id) is None
     assert DBUser.load_with_db_id(11) is None
 
     user.save()
-    from_db = DBUser.load(user_id)
+
+    from_db = DBUser.load(user.user_id)
+    assert from_db is not None
     with_id = DBUser.load_with_db_id(from_db.id)
 
     assert cmp_user(from_db, user) is True

@@ -10,10 +10,11 @@ steps = [
     step(
         """
         CREATE TABLE IF NOT EXISTS gitea_users(
+            ID INTEGER PRIMARY KEY NOT NULL,
             name VARCHAR(250) NOT NULL,
             user_id VARCHAR(250) UNIQUE NOT NULL,
             profile_url TEXT UNIQUE NOT NULL,
-            ID INTEGER PRIMARY KEY NOT NULL,
+            private_key TEXT UNIQUE NOT NULL,
             signed_by INTEGER REFERENCES interfaces(ID) ON DELETE CASCADE NOT NULL
         );
     """
@@ -24,6 +25,7 @@ steps = [
             owner VARCHAR(250) NOT NULL,
             name VARCHAR(250) NOT NULL,
             ID INTEGER PRIMARY KEY NOT NULL,
+            private_key TEXT UNIQUE NOT NULL,
             UNIQUE(owner, name)
         );
     """
@@ -35,6 +37,7 @@ steps = [
             title TEXT NOT NULL,
             description TEXT,
             html_url TEXT NOT NULL UNIQUE,
+            private_key TEXT NOT NULL UNIQUE,
             created VARCHAR(50) NOT NULL,
             updated VARCHAR(50) NOT NULL,
             is_closed BOOLEAN NOT NULL DEFAULT FALSE,
