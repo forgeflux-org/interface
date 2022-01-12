@@ -17,18 +17,7 @@ from dynaconf import settings
 from flask import g
 
 from interface.utils import clean_url, trim_url
-from interface.db import DBUser, DBInterfaces
-from interface.auth import KeyPair
-
-
-def get_db_interface() -> DBInterfaces:
-    """Get DBInterfaces of this interface"""
-    if "g.db_interface" not in g:
-        key = KeyPair.loadkey_fresh().to_base64_public()
-        interface = DBInterfaces(url=settings.SERVER.url, public_key=key)
-        interface.save()
-        g.db_interface = interface
-    return g.db_interface
+from interface.db import DBUser, DBInterfaces, get_db_interface
 
 
 def get_db_user() -> DBInterfaces:
