@@ -460,6 +460,7 @@ with file.open() as f:
 
 def register_gitea_user_info(requests_mock):
     requests_mock.get("/api/v1/user", json=USER_INFO)
+    requests_mock.get(f"/api/v1/user/{USER_INFO['username']}", json=USER_INFO)
 
 
 def register_gitea(requests_mock):

@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from .conn import init_app, get_db, get_git_system, init_db
 
-from .interfaces import DBInterfaces
+from .interfaces import DBInterfaces, get_db_interface
 from .repo import DBRepo
 from .issues import DBIssue
 from .users import DBUser

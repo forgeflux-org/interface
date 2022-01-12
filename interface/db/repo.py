@@ -80,11 +80,10 @@ class DBRepo:
         print(data)
         if data is None:
             return None
-        cls.name = name
-        cls.owner = owner
-        cls.id = data[0]
-        cls.private_key = RSAKeyPair.load_private_from_str(data[1])
-        return cls
+        resp = cls(name=name, owner=owner)
+        resp.id = data[0]
+        resp.private_key = RSAKeyPair.load_private_from_str(data[1])
+        return resp
 
     @classmethod
     def load_with_id(cls, db_id: str) -> "DBRepo":
@@ -103,11 +102,10 @@ class DBRepo:
         ).fetchone()
         if data is None:
             return None
-        cls.name = data[0]
-        cls.owner = data[1]
-        cls.private_key = RSAKeyPair.load_private_from_str(data[2])
-        cls.id = db_id
-        return cls
+        resp = cls(name=data[0], owner=data[1])
+        resp.private_key = RSAKeyPair.load_private_from_str(data[2])
+        resp.id = db_id
+        return resp
 
     def actor_name(self) -> str:
         name = f"!{self.owner}!{self.name}"

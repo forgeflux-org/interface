@@ -13,7 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from dataclasses import dataclass
+from dynaconf import settings
+from flask import g
 
+from interface.auth import KeyPair
 from .conn import get_db
 
 
@@ -89,3 +92,13 @@ class DBInterfaces:
             url=data[1],
             id=db_id,
         )
+
+
+def get_db_interface() -> DBInterfaces:
+    """Get DBInterfaces of this interface"""
+    if "g.db_interface" not in g:
+        key = KeyPair.loadkey_fresh().to_base64_public()
+        interface = DBInterfaces(url=settings.SERVER.url, public_key=key)
+        interface.save()
+        g.db_interface = interface
+    return g.db_interface

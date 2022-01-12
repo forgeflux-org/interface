@@ -30,6 +30,7 @@ from interface.forges.payload import (
     CreatePullrequest,
     CreateIssue,
     CommentOnIssue,
+    ForgeUser,
 )
 from interface.forges.utils import clean_url
 from interface.ns import NameService
@@ -127,6 +128,10 @@ class Forge:
 
     def get_notification_resolver(self) -> NotificationResolver:
         """Get notification resolver"""
+        raise NotImplementedError
+
+    def get_user(name: str) -> ForgeUser:
+        """Get local user information"""
         raise NotImplementedError
 
 
