@@ -68,6 +68,7 @@ from tests.forges.gitea.test_utils import (
     CSRF_UID,
     CSRF_SUCCESSFUL_REDIRECTION,
     FORK_OWNER,
+    USER_INFO,
 )
 
 
@@ -236,3 +237,9 @@ def test_fork(app, requests_mock):
     assert cached_random_name == g.fork(FORK_OWNER, CSRF_FORK_REPO_NAME)
     assert g.fork(FORK_OWNER, FORK_REPO_NAME) == FORK_REPO_NAME
     assert g.fork(FORK_OWNER, FORK_REPO_NAME) == FORK_REPO_NAME
+
+
+def test_user(app, requests_mock):
+    g = get_forge()
+    data = g.forge.get_user(USER_INFO["username"])
+    assert data.user_id == USER_INFO["username"]

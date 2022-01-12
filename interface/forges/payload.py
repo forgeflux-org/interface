@@ -20,10 +20,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, unique
 
-from interface.db import (
-    DBUser,
-    DBInterfaces,
-)
+from interface.db import DBUser, DBInterfaces, DBRepo, get_db_interface
 from interface.utils import clean_url, trim_url
 
 
@@ -50,6 +47,9 @@ class RepositoryInfo:
     owner: str
     description: str = None
 
+    def to_db_repo(self) -> DBRepo:
+        return DBRepo(name=self.name, owner=self.owner)
+
 
 @dataclass
 class Author:
@@ -58,6 +58,23 @@ class Author:
     fqdn_username: str
     name: str
     profile_url: str
+
+
+# TODO get rid of Author. ForgeUser is supposed to be used only to represent
+# local users
+@dataclass
+class ForgeUser:
+    name: str
+    user_id: str
+    profile_url: str
+
+    def to_db_user(self) -> DBUser:
+        return DBUser(
+            name=self.name,
+            user_id=self.user_id,
+            profile_url=self.profile_url,
+            signed_by=get_db_interface(),
+        )
 
 
 EPOCH = datetime.utcfromtimestamp(0)
