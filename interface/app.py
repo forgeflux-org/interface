@@ -24,7 +24,6 @@ from dynaconf import settings
 import interface.settings
 from interface import db
 from interface import runner
-from interface.api.v1 import bp
 from interface.meta import bp as meta_bp
 from interface.auth import keygen_bp, KeyPair
 from interface.db import DBInterfaces
@@ -61,7 +60,6 @@ def create_app(test_config=None):
         return response
 
     app.register_blueprint(meta_bp)
-    app.register_blueprint(bp)
     return app
 
 
