@@ -459,8 +459,11 @@ with file.open() as f:
 
 
 def register_gitea_user_info(requests_mock):
-    requests_mock.get("/api/v1/user", json=USER_INFO)
-    requests_mock.get(f"/api/v1/user/{USER_INFO['username']}", json=USER_INFO)
+    url_1 = f"{GITEA_HOST}/api/v1/user"
+    requests_mock.get(url_1, json=USER_INFO)
+    url_2 = f"{GITEA_HOST}/api/v1/users/{USER_INFO['username']}"
+    requests_mock.get(url_2, json=USER_INFO)
+    print(f"Registered mocking for {url_1} and {url_2}")
 
 
 def register_gitea(requests_mock):

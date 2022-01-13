@@ -271,19 +271,26 @@ class Gitea(Forge):
         )
 
     def get_user(self, name: str) -> ForgeUser:
-        url = self._get_url(f"/user/{name}")
+        url = self._get_url(f"/users/{name}")
         headers = self._auth()
-        response = requests.request("GET", url, headers=headers)
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
             data = response.json()
             username = data["username"]
             name = data["full_name"].strip()
             name = username if len(name) == 0 else name
             profile_url = f"{trim_url(clean_url(settings.GITEA.host))}/{username}"
-            return ForgeUser(name=name, user_id=username, profile_url=profile_url)
-        raise Exception(
-            f"[ERROR] getting user info. status code: {response.status_code}"
-        )
+            avatar_url = data["avatar_url"]
+            description = data["description"]
+            return ForgeUser(
+                name=name,
+                user_id=username,
+                profile_url=profile_url,
+                avatar_url=avatar_url,
+                description=description,
+            )
+        err_msg = f"[ERROR] getting user info. status code: {response.status_code} {response.text}"
+        raise Exception(err_msg)
 
     def fork_inner(self, owner: str, repo: str) -> str:
         """Fork a repository"""
