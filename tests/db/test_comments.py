@@ -75,11 +75,13 @@ def test_comment(client):
         signed_by=interface1,
         id=None,
     )
+    user.save()
 
     # repository data
     repo_name = "repo_name"
-    repo_owner = "repo_owner"
-    repo = DBRepo(name=repo_name, owner=repo_owner)
+    repo_owner = user.user_id
+    repo = DBRepo(name=repo_name, owner=user, description="foo")
+    repo.save()
 
     title = "Test issue"
     description = "foo bar"
@@ -107,6 +109,7 @@ def test_comment(client):
         is_merged=is_merged,
         is_native=is_native,
     )
+    issue.save()
 
     comment_body = "test comment"
     comment_id1 = 1

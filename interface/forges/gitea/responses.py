@@ -83,6 +83,8 @@ class GiteaOwner:
             user_id=self.username,
             profile_url=f"{trim_url(clean_url(settings.GITEA.host))}/{self.username}",
             signed_by=get_db_interface(),
+            description=self.description,
+            avatar_url=self.avatar_url,
         )
 
 
@@ -132,7 +134,9 @@ class GiteaRepo:
     mirror_interval: str
 
     def to_db_repo(self) -> DBRepo:
-        return DBRepo(name=self.name, owner=self.owner.username)
+        owner = self.owner.to_db_user()
+        owner.save()
+        return DBRepo(name=self.name, owner=owner, description=self.description)
 
 
 class GiteaNotificationSubject:

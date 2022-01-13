@@ -16,21 +16,18 @@ from dataclasses import dataclass
 from datetime import datetime
 from dateutil.parser import parse as date_parse
 from sqlite3 import IntegrityError
-from dynaconf import settings
 
-from interface.utils import trim_url
 from interface.auth import RSAKeyPair
 
 from .conn import get_db
 from .users import DBUser
 from .repo import DBRepo
 from .interfaces import DBInterfaces
+from .webfinger import INTERFACE_BASE_URL, INTERFACE_DOMAIN
 
 OPEN = "open"
 MERGED = "merged"
 CLOSED = "closed"
-
-trimed_base_url = trim_url(settings.SERVER.url)
 
 
 @dataclass
@@ -194,9 +191,9 @@ class DBIssue:
                             ?, ?, ?, ?,
                             ?, ?, ?, ?,
                             ?,
-                            (SELECT ID from gitea_users WHERE user_id  = ?),
-                            (SELECT ID from gitea_forge_repositories WHERE owner  = ? AND name = ?),
-                            (SELECT ID from interfaces WHERE url  = ?),
+                            (SELECT ID FROM gitea_users WHERE user_id  = ?),
+                            ?,
+                            (SELECT ID FROM interfaces WHERE url  = ?),
                             ?
                         )
                     """,
@@ -211,8 +208,7 @@ class DBIssue:
                         self.is_native,
                         self.repo_scope_id,
                         self.user.user_id,
-                        self.repository.owner,
-                        self.repository.name,
+                        self.repository.id,
                         self.signed_by.url,
                         self.private_key.private_key(),
                     ),
@@ -264,17 +260,15 @@ class DBIssue:
         WHERE
             repo_scope_id = ?
         AND
-            repository =
-            (SELECT ID FROM gitea_forge_repositories WHERE name = ? AND owner = ?)
+            repository = ?
         """,
-            (repo_scope_id, repository.name, repository.owner),
+            (repo_scope_id, repository.id),
         ).fetchone()
         if data is None:
             return None
 
         user = DBUser.load_with_db_id(data[9])
         signed_by = DBInterfaces.load_from_database_id(data[10])
-        repository = DBRepo.load_with_id(data[11])
 
         issue = cls(
             id=data[0],
@@ -414,7 +408,7 @@ class DBIssue:
         return name
 
     def actor_url(self) -> str:
-        act_url = f"{trimed_base_url}/i/!{self.actor_name()}"
+        act_url = f"{INTERFACE_BASE_URL}/i/!{self.actor_name()}"
         return act_url
 
     def to_actor(self):
@@ -440,10 +434,14 @@ class DBIssue:
         }
         return actor
 
+    def webfinger_subject(self) -> str:
+        subject = f"acct:{self.actor_name()}:{INTERFACE_DOMAIN}"
+        return subject
+
     def webfinger(self):
         act_url = self.actor_url()
         resp = {
-            "subject": f"acct:{self.actor_name()}@{trimed_base_url}",
+            "subject": self.webfinger_subject(),
             "links": [
                 {
                     "rel": "self",

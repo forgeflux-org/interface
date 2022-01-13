@@ -14,14 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from dataclasses import dataclass
 from sqlite3 import IntegrityError
-from dynaconf import settings
 
 from interface.auth import RSAKeyPair
-from interface.utils import trim_url
 
 from .conn import get_db
-
-trimed_base_url = trim_url(settings.SERVER.url)
+from .webfinger import INTERFACE_BASE_URL, INTERFACE_DOMAIN
+from .users import DBUser
 
 
 @dataclass
@@ -29,18 +27,21 @@ class DBRepo:
     """Repository information as stored in the database"""
 
     name: str
-    owner: str
+    owner: DBUser
+    description: str
     id: int = None
     private_key: RSAKeyPair = None
 
     def save(self):
         """Save repository to database"""
-        repo = self.load(self.name, self.owner)
+        repo = self.load(self.name, self.owner.user_id)
         if repo is not None:
             self.private_key = repo.private_key
             self.id = repo.id
             print("repo early exit")
             return
+
+        self.owner.save()
 
         conn = get_db()
         cur = conn.cursor()
@@ -51,12 +52,19 @@ class DBRepo:
                 cur.execute(
                     """
                     INSERT INTO gitea_forge_repositories
-                        (owner, name, private_key) VALUES
-                        (?, ?, ?);
+                        (owner_id, name, private_key, description) VALUES
+                        (?, ?, ?, ?);
                     """,
-                    (self.owner, self.name, self.private_key.private_key()),
+                    (
+                        self.owner.id,
+                        self.name,
+                        self.private_key.private_key(),
+                        self.description,
+                    ),
                 )
                 conn.commit()
+                repo = self.load(self.name, self.owner.user_id)
+                self.id = repo.id
                 break
             except IntegrityError as e:
                 print(e)
@@ -68,19 +76,25 @@ class DBRepo:
     @classmethod
     def load(cls, name: str, owner: str) -> "DBRepo":
         """Load repository from database"""
+        owner = DBUser.load(owner)
+        if owner is None:
+            print("owner is none")
+            return None
+
         conn = get_db()
         cur = conn.cursor()
+
         data = cur.execute(
             """
-                SELECT ID, private_key from gitea_forge_repositories
-                WHERE name = ? AND owner = ?;
+                SELECT ID, private_key, description from gitea_forge_repositories
+                WHERE name = ? AND owner_id = ?;
             """,
-            (name, owner),
+            (name, owner.id),
         ).fetchone()
         print(data)
         if data is None:
             return None
-        resp = cls(name=name, owner=owner)
+        resp = cls(name=name, owner=owner, description=data[2])
         resp.id = data[0]
         resp.private_key = RSAKeyPair.load_private_from_str(data[1])
         return resp
@@ -95,14 +109,16 @@ class DBRepo:
         cur = conn.cursor()
         data = cur.execute(
             """
-                SELECT name, owner, private_key from gitea_forge_repositories
+                SELECT name, owner_id, private_key, description
+                FROM gitea_forge_repositories
                 WHERE ID = ?;
             """,
             (db_id,),
         ).fetchone()
         if data is None:
             return None
-        resp = cls(name=data[0], owner=data[1])
+        owner = DBUser.load_with_db_id(data[1])
+        resp = cls(name=data[0], owner=owner, description=data[3])
         resp.private_key = RSAKeyPair.load_private_from_str(data[2])
         resp.id = db_id
         return resp
@@ -112,7 +128,7 @@ class DBRepo:
         return name
 
     def actor_url(self) -> str:
-        act_url = f"{trimed_base_url}/r/!{self.actor_name()}"
+        act_url = f"{INTERFACE_BASE_URL}/r/!{self.actor_name()}"
         return act_url
 
     def to_actor(self):
@@ -126,6 +142,9 @@ class DBRepo:
             "id": act_url,
             "type": "Group",
             "preferredUsername": self.actor_name(),
+            "name": self.actor_name(),
+            "summary": f"<p>{self.description}</p>",
+            "url": act_url,
             "inbox": f"{act_url}/inbox",
             "outbox": f"{act_url}/outbox",
             "followers": f"{act_url}/followers",
@@ -135,13 +154,35 @@ class DBRepo:
                 "owner": act_url,
                 "publicKeyPem": self.private_key.to_json_key(),
             },
+            "manuallyApprovesFollowers": False,
+            "discoverable": True,
+            "published": "2016-03-16T00:00:00Z",
+            "alsoKnownAs": [act_url],
+            "tag": [],
+            "endpoints": {"sharedInbox": f"{act_url}/inbox"},
+            "icon": {
+                "type": "Image",
+                "mediaType": "image/png",
+                "url": self.owner.avatar_url,
+            },
+            "image": {
+                "type": "Image",
+                "mediaType": "image/png",
+                "url": self.owner.avatar_url,
+            },
         }
+
         return actor
+
+    def webfinger_subject(self) -> str:
+        subject = f"acct:{self.actor_name()}:{INTERFACE_DOMAIN}"
+        return subject
 
     def webfinger(self):
         act_url = self.actor_url()
         resp = {
-            "subject": f"acct:{self.actor_name()}@{trimed_base_url}",
+            "subject": self.webfinger_subject(),
+            "aliases": [act_url],
             "links": [
                 {
                     "rel": "self",
