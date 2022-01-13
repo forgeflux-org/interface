@@ -24,11 +24,12 @@ steps = [
     step(
         """
         CREATE TABLE IF NOT EXISTS gitea_forge_repositories(
-            owner VARCHAR(250) NOT NULL,
+            owner_id INTEGER REFERENCES gitea_users(ID) ON DELETE CASCADE NOT NULL,
             name VARCHAR(250) NOT NULL,
+            description TEXT NOT NULL,
             ID INTEGER PRIMARY KEY NOT NULL,
             private_key TEXT UNIQUE NOT NULL,
-            UNIQUE(owner, name)
+            UNIQUE(owner_id, name)
         );
     """
     ),

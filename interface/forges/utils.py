@@ -21,6 +21,8 @@ import requests
 
 from interface.utils import clean_url, trim_url
 
+from interface.db import DBUser
+
 
 def get_patch(url: str) -> str:
     """Get patch from pull request"""

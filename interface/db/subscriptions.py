@@ -37,14 +37,10 @@ class DBSubscribe:
             """
             INSERT OR IGNORE INTO subscriptions
                 ( repository_id, interface_id)
-            VALUES (
-                (SELECT ID FROM gitea_forge_repositories WHERE owner  = ? AND name = ?),
-                (SELECT ID FROM interfaces WHERE url  = ?)
-            )
+            VALUES (?, (SELECT ID FROM interfaces WHERE url  = ?))
             """,
             (
-                self.repository.owner,
-                self.repository.name,
+                self.repository.id,
                 self.subscriber.url,
             ),
         )
@@ -68,11 +64,9 @@ class DBSubscribe:
         INNER JOIN interfaces AS interfaces
             ON subscriptions.interface_id = interfaces.ID
         WHERE
-            subscriptions.repository_id = (
-                SELECT ID FROM gitea_forge_repositories WHERE owner = ? AND name = ?
-            );
+            subscriptions.repository_id = ?
         """,
-            (repository.owner, repository.name),
+            (repository.id,),
         ).fetchall()
 
         if len(data) == 0:

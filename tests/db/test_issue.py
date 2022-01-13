@@ -78,15 +78,16 @@ def test_issue(client):
         id=None,
     )
 
+    user.save()
+
     # repository data
     repo_name = "repo_name"
-    repo_owner = "repo_owner"
-    repo = DBRepo(name=repo_name, owner=repo_owner)
+    repo = DBRepo(name=repo_name, description="foo", owner=user)
 
     title = "Test issue"
     description = "foo bar"
     repo_scope_id = 8
-    html_url = f"https://git.batsense/{repo_owner}/{repo_name}/issues/{repo_scope_id}"
+    html_url = f"https://git.batsense/{user.user_id}/{repo_name}/issues/{repo_scope_id}"
     created = str(datetime.now())
     updated = str(datetime.now())
     # repository= repo
@@ -117,7 +118,7 @@ def test_issue(client):
 
     pr_repo_scope_id = 2
     html_url_of_pr = (
-        f"https://git.batsense/{repo_owner}/{repo_name}/issues/{pr_repo_scope_id}"
+        f"https://git.batsense/{user.user_id}/{repo_name}/issues/{pr_repo_scope_id}"
     )
     pr = DBIssue(
         title="test issue PR",

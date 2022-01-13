@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from dynaconf import settings
 
-from interface.db import DBInterfaces, DBSubscribe, DBRepo
+from interface.db import DBInterfaces, DBSubscribe, DBRepo, DBUser
 from interface.auth import KeyPair
 from interface.app import app
 
@@ -40,7 +40,17 @@ def test_interface(client):
     interface = DBInterfaces(url=url, public_key=key.to_base64_public())
     interface.save()
 
-    repo = DBRepo(name="name", owner="owner")
+    owner = DBUser(
+        name="owner",
+        user_id="owner",
+        description="owner",
+        profile_url="http://localhost/owner",
+        avatar_url="http://localhost/owner",
+        signed_by=interface,
+    )
+    owner.save()
+
+    repo = DBRepo(name="name", description="description", owner=owner)
     repo.save()
 
     subscriber = DBSubscribe(repository=repo, subscriber=interface)

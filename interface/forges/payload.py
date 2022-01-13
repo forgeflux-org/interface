@@ -47,9 +47,6 @@ class RepositoryInfo:
     owner: str
     description: str = None
 
-    def to_db_repo(self) -> DBRepo:
-        return DBRepo(name=self.name, owner=self.owner)
-
 
 @dataclass
 class Author:

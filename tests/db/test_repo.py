@@ -12,36 +12,85 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from interface.db.repo import DBRepo
+from interface.db import DBRepo, DBUser, DBInterfaces
+from interface.auth import KeyPair
+
+from .test_user import cmp_user
 
 
 def cmp_repo(lhs: DBRepo, rhs: DBRepo) -> bool:
     """Compare two DBRepo objects"""
     assert lhs is not None
     assert rhs is not None
-    return all([lhs.name == rhs.name, lhs.owner == rhs.owner])
+    return all(
+        [
+            lhs.name == rhs.name,
+            lhs.description == rhs.description,
+            cmp_user(lhs.owner, rhs.owner),
+        ]
+    )
 
 
 def test_repo(client):
     """Test repo"""
 
-    owner = "foo"
+    # first interface data
+    key1 = KeyPair()
+    interface_url1 = "https://db-test-issue.example.com"
+    interface1 = DBInterfaces(url=interface_url1, public_key=key1.to_base64_public())
+
+    # user data signed by interface1
+    username = "db_test_user"
+    user_id = f"{username}@git.batsense.net"
+    profile_url = f"https://git.batsense.net/{username}"
+    user = DBUser(
+        name=username,
+        user_id=user_id,
+        profile_url=profile_url,
+        avatar_url=profile_url,
+        description="description",
+        signed_by=interface1,
+        id=None,
+    )
+
     name = "foo"
 
     repo = DBRepo(
         name=name,
-        owner=owner,
+        owner=user,
+        description="foo",
         id=None,
     )
-    assert DBRepo.load(name, owner) is None
+    assert DBRepo.load(name, user.user_id) is None
     assert DBRepo.load_with_id(11) is None
 
+    user.save()
     repo.save()
-    from_db = DBRepo.load(name, owner)
+    from_db = DBRepo.load(name, user.user_id)
     with_id = DBRepo.load_with_id(from_db.id)
 
     assert cmp_repo(from_db, repo)
     assert cmp_repo(from_db, with_id)
-    from_db2 = DBRepo.load(name, owner)
+    from_db2 = DBRepo.load(name, user.user_id)
     assert cmp_repo(from_db, from_db2)
     assert from_db.id == from_db2.id
+
+    webfinger = from_db.webfinger()
+    assert webfinger["subject"] == from_db.webfinger_subject()
+    assert webfinger["aliases"] == [from_db.actor_url()]
+    assert len(webfinger["links"]) == 2
+    for link in webfinger["links"]:
+        assert link["href"] == from_db.actor_url()
+
+    actor = from_db.to_actor()
+    assert actor["preferredUsername"] == from_db.actor_name()
+    assert actor["name"] == from_db.actor_name()
+    assert actor["id"] == from_db.actor_url()
+    assert actor["inbox"] == f"{from_db.actor_url()}/inbox"
+    assert actor["outbox"] == f"{from_db.actor_url()}/outbox"
+    assert actor["followers"] == f"{from_db.actor_url()}/followers"
+    assert actor["following"] == f"{from_db.actor_url()}/following"
+    assert from_db.description in actor["summary"]
+    assert actor["url"] == from_db.actor_url()
+    assert actor["icon"]["url"] == from_db.owner.avatar_url
+    assert actor["image"]["url"] == from_db.owner.avatar_url
