@@ -14,6 +14,8 @@ steps = [
             name VARCHAR(250) NOT NULL,
             user_id VARCHAR(250) UNIQUE NOT NULL,
             profile_url TEXT UNIQUE NOT NULL,
+            avatar_url TEXT NOT NULL,
+            description TEXT NOT NULL,
             private_key TEXT UNIQUE NOT NULL,
             signed_by INTEGER REFERENCES interfaces(ID) ON DELETE CASCADE NOT NULL
         );

@@ -67,12 +67,16 @@ class ForgeUser:
     name: str
     user_id: str
     profile_url: str
+    avatar_url: str
+    description: str
 
     def to_db_user(self) -> DBUser:
         return DBUser(
             name=self.name,
             user_id=self.user_id,
             profile_url=self.profile_url,
+            avatar_url=self.avatar_url,
+            description=self.description,
             signed_by=get_db_interface(),
         )
 

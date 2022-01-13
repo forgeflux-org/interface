@@ -17,6 +17,7 @@ from interface.db.interfaces import DBInterfaces
 from interface.db.repo import DBRepo
 from interface.db.issues import DBIssue
 from interface.db.users import DBUser
+from interface.db.webfinger import INTERFACE_BASE_URL, INTERFACE_DOMAIN
 
 from interface.auth import KeyPair
 
@@ -30,6 +31,8 @@ def cmp_user(lhs: DBUser, rhs: DBUser) -> bool:
             lhs.name == rhs.name,
             lhs.user_id == rhs.user_id,
             lhs.profile_url == rhs.profile_url,
+            lhs.avatar_url == rhs.avatar_url,
+            lhs.description == rhs.description,
             lhs.signed_by.url == rhs.signed_by.url,
         ]
     )
@@ -47,6 +50,8 @@ def test_user(client):
         name=name,
         user_id=user_id,
         profile_url=f"https://git.batsense.net/{user_id}",
+        avatar_url=f"https://git.batsense.net/{user_id}",
+        description="description",
         signed_by=interface,
     )
 
@@ -61,3 +66,27 @@ def test_user(client):
 
     assert cmp_user(from_db, user) is True
     assert cmp_user(from_db, with_id) is True
+
+    assert from_db.actor_url() == f"{INTERFACE_BASE_URL}/u/{from_db.user_id}"
+    assert from_db.actor_name() == from_db.user_id
+    assert from_db.webfinger_subject() == f"acct:{from_db.user_id}@{INTERFACE_DOMAIN}"
+
+    webfinger = from_db.webfinger()
+    assert webfinger["subject"] == from_db.webfinger_subject()
+    assert webfinger["aliases"] == [from_db.actor_url()]
+    assert len(webfinger["links"]) == 2
+    for link in webfinger["links"]:
+        assert link["href"] == from_db.actor_url()
+
+    actor = from_db.to_actor()
+    assert actor["preferredUsername"] == from_db.user_id
+    assert actor["name"] == from_db.name
+    assert actor["id"] == from_db.actor_url()
+    assert actor["inbox"] == f"{from_db.actor_url()}/inbox"
+    assert actor["outbox"] == f"{from_db.actor_url()}/outbox"
+    assert actor["followers"] == f"{from_db.actor_url()}/followers"
+    assert actor["following"] == f"{from_db.actor_url()}/following"
+    assert from_db.description in actor["summary"]
+    assert actor["url"] == from_db.actor_url()
+    assert actor["icon"]["url"] == from_db.avatar_url
+    assert actor["image"]["url"] == from_db.avatar_url

@@ -72,6 +72,8 @@ def test_issue(client):
         name=username,
         user_id=user_id,
         profile_url=profile_url,
+        avatar_url=profile_url,
+        description="description",
         signed_by=interface1,
         id=None,
     )
