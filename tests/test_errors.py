@@ -14,7 +14,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from interface.app import create_app
-from interface.error import F_D_INVALID_PAYLOAD, F_D_INTERFACE_UNREACHABLE, Error
+from interface.error import (
+    F_D_INVALID_PAYLOAD,
+    F_D_INTERFACE_UNREACHABLE,
+    Error,
+    bad_req,
+    internal_server_error,
+    not_found,
+)
 
 
 def expect_error(response, err: Error) -> bool:
@@ -44,3 +51,6 @@ def test_errors(client):
 
     verify_status(F_D_INVALID_PAYLOAD, 400)
     verify_status(F_D_INTERFACE_UNREACHABLE, 503)
+    assert bad_req().status_code == 400
+    assert internal_server_error().status_code == 500
+    assert not_found().status_code == 404

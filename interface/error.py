@@ -71,3 +71,24 @@ F_D_FORGE_UNKNOWN_ERROR = Error(
     error="Something went wrong on the Software Forge side",
     status=502,
 )
+
+
+def bad_req():
+    """Empty response with 400 bad request status code"""
+    res = Response()
+    res.status_code = 400
+    return res
+
+
+def internal_server_error():
+    """Empty response with 500 internal_server_error status code"""
+    res = Response()
+    res.status_code = 500
+    return res
+
+
+def not_found():
+    """Empty response with 404 not found status code"""
+    res = Response()
+    res.status_code = 404
+    return res
