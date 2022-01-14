@@ -80,7 +80,12 @@ def test_comment(client):
     # repository data
     repo_name = "repo_name"
     repo_owner = user.user_id
-    repo = DBRepo(name=repo_name, owner=user, description="foo")
+    repo = DBRepo(
+        name=repo_name,
+        owner=user,
+        description="foo",
+        html_url=f"{profile_url}/{repo_name}",
+    )
     repo.save()
 
     title = "Test issue"

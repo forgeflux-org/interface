@@ -52,6 +52,8 @@ def test_base_forge():
         RepositoryInfo(
             name="",
             owner="",
+            description="",
+            html_url="",
         ),
     )
 
@@ -87,6 +89,8 @@ def test_base_forge():
             repository=RepositoryInfo(
                 name="",
                 owner="",
+                html_url="",
+                description="",
             ),
         )
         forge.create_issue(issue)
@@ -126,3 +130,9 @@ def test_base_forge():
     with pytest.raises(NotImplementedError) as _:
         comment = CommentOnIssue(meta=meta, body="", repository=repo, issue_url="")
         forge.comment_on_issue(comment)
+
+    with pytest.raises(NotImplementedError) as _:
+        forge.get_notification_resolver()
+
+    with pytest.raises(NotImplementedError) as _:
+        forge.get_user("")

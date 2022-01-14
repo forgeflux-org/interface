@@ -21,7 +21,6 @@ import pytest
 from interface.utils import get_rand
 from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO
 from interface.forges.payload import (
-    RepositoryInfo,
     CreateIssue,
     Author,
     RepositoryInfo,
@@ -137,7 +136,12 @@ def test_create_issues(requests_mock):
         profile_url="https://example.com",
     )
     meta = MetaData(html_url="", author=author, interface_url="")
-    repo = RepositoryInfo(name=REPOSITORY_NAME, owner=REPOSITORY_OWNER)
+    repo = RepositoryInfo(
+        name=REPOSITORY_NAME,
+        owner=REPOSITORY_OWNER,
+        description="",
+        html_url=author.profile_url,
+    )
 
     payload = CreateIssue(
         title=CREATE_ISSUE_TITLE, repository=repo, body=CREATE_ISSUE_BODY, meta=meta

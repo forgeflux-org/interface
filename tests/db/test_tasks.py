@@ -92,7 +92,9 @@ def test_task(client):
     meta = MetaData(
         html_url="https://github.com/foo/bar/issues/4", interface_url=url, author=author
     )
-    repo = RepositoryInfo(name="foo", owner="bar")
+    repo = RepositoryInfo(
+        name="foo", owner="bar", description="foobar", html_url="dummyurl"
+    )
     comment = CommentOnIssue(
         meta=meta, body="test comment", repository=repo, issue_url=meta.html_url
     )

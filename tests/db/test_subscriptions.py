@@ -50,7 +50,12 @@ def test_interface(client):
     )
     owner.save()
 
-    repo = DBRepo(name="name", description="description", owner=owner)
+    repo = DBRepo(
+        name="name",
+        description="description",
+        owner=owner,
+        html_url=f"{owner.profile_url}/name",
+    )
     repo.save()
 
     subscriber = DBSubscribe(repository=repo, subscriber=interface)

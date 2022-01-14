@@ -12,6 +12,8 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import pytest
+
 from interface.db import DBRepo, DBUser, DBInterfaces
 from interface.auth import KeyPair
 
@@ -26,6 +28,7 @@ def cmp_repo(lhs: DBRepo, rhs: DBRepo) -> bool:
         [
             lhs.name == rhs.name,
             lhs.description == rhs.description,
+            lhs.html_url == rhs.html_url,
             cmp_user(lhs.owner, rhs.owner),
         ]
     )
@@ -60,6 +63,7 @@ def test_repo(client):
         owner=user,
         description="foo",
         id=None,
+        html_url=f"{profile_url}/{name}",
     )
     assert DBRepo.load(name, user.user_id) is None
     assert DBRepo.load_with_id(11) is None
@@ -94,3 +98,12 @@ def test_repo(client):
     assert actor["url"] == from_db.actor_url()
     assert actor["icon"]["url"] == from_db.owner.avatar_url
     assert actor["image"]["url"] == from_db.owner.avatar_url
+
+    with pytest.raises(ValueError) as _:
+        from_db.split_actor_name("foo")
+
+    (r_owner, r_repo_name) = from_db.split_actor_name(actor["name"])
+    assert r_owner == from_db.owner.user_id
+    assert r_repo_name == from_db.name
+
+    cmp_repo(from_db, from_db.from_actor_name(actor["name"]))

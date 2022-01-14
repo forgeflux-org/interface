@@ -130,7 +130,7 @@ class Forge:
         """Get notification resolver"""
         raise NotImplementedError
 
-    def get_user(name: str) -> ForgeUser:
+    def get_user(self, name: str) -> ForgeUser:
         """Get local user information"""
         raise NotImplementedError
 

@@ -128,6 +128,7 @@ class Gitea(Forge):
             description=data["description"],
             name=data["name"],
             owner=data["owner"]["login"],
+            html_url=data["html_url"],
         )
         return info
 

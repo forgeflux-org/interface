@@ -45,7 +45,8 @@ class RepositoryInfo:
 
     name: str
     owner: str
-    description: str = None
+    html_url: str
+    description: str
 
 
 @dataclass
