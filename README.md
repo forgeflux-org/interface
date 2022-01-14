@@ -1,11 +1,11 @@
 <div align="center">
 
-## ForgeFed Interface
+## ForgeFlux Interface
 
 **Enabling [software forge](https://en.wikipedia.org/wiki/Forge_(software)) federation in API-space federation**
 
-[![Build](https://github.com/forgefedv2/interface/actions/workflows/linux.yml/badge.svg)](https://github.com/forgefedv2/interface/actions/workflows/linux.yml)
-[![codecov](https://codecov.io/gh/forgefedv2/interface/branch/master/graph/badge.svg?token=0100H4ECG4)](https://codecov.io/gh/forgefedv2/interface)
+[![Build](https://github.com/forgeflux-org/interface/actions/workflows/linux.yml/badge.svg)](https://github.com/forgeflux-org/interface/actions/workflows/linux.yml)
+[![codecov](https://codecov.io/gh/forgeflux-org/interface/branch/master/graph/badge.svg?token=0100H4ECG4)](https://codecov.io/gh/forgeflux-org/interface)
 
 </div>
 
