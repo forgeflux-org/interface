@@ -27,7 +27,7 @@ from interface.forges.payload import (
     MetaData,
 )
 from interface.forges.utils import clean_url
-from interface.git import Git, get_forge
+from interface.git import Git, get_forge, get_user, get_repo_from_actor_name, get_repo
 from interface.forges.base import (
     F_D_REPOSITORY_NOT_FOUND,
     F_D_FORGE_FORBIDDEN_OPERATION,
@@ -247,3 +247,32 @@ def test_user(app, requests_mock):
     g = get_forge()
     data = g.forge.get_user(USER_INFO["username"])
     assert data.user_id == USER_INFO["username"]
+
+
+def test_git_cache_get_user(app, requests_mock):
+    data = get_user(USER_INFO["username"])
+    assert data.user_id == USER_INFO["username"]
+
+
+def test_git_cache_get_repo(app, requests_mock):
+    g = get_forge()
+    data = get_user(USER_INFO["username"])
+    assert data.user_id == USER_INFO["username"]
+
+    (owner, repo) = g.forge.get_owner_repo_from_url(REPOSITORY_URL)
+    resp = get_repo(owner, repo)
+    assert resp.description == REPOSITORY_DESCRIPTION
+    assert resp.owner.user_id == REPOSITORY_OWNER
+    assert resp.name == REPOSITORY_NAME
+
+
+def test_git_cache_get_repo_from_actor_url(app, requests_mock):
+    g = get_forge()
+    data = get_user(USER_INFO["username"])
+    assert data.user_id == USER_INFO["username"]
+
+    (owner, repo) = g.forge.get_owner_repo_from_url(REPOSITORY_URL)
+    resp = get_repo(owner, repo)
+    assert resp.description == REPOSITORY_DESCRIPTION
+    assert resp.owner.user_id == REPOSITORY_OWNER
+    assert resp.name == REPOSITORY_NAME

@@ -125,7 +125,7 @@ def register_get_issues_since(requests_mock):
     file = Path(__file__).parent / "get_issiues_since_2021-10-23T16-31-07+05-30.json"
     with file.open() as f:
         data = json.load(f)
-        path = f"{GITEA_HOST}/api/v1/repos/realaravinth/tmp/issues?since=2021-10-23T17%3A06%3A02%2B05%3A30"
+        path = f"{GITEA_HOST}/api/v1/repos/bot/tmp/issues?since=2021-10-23T17%3A06%3A02%2B05%3A30"
         requests_mock.get(
             path,
             json=data,
@@ -140,7 +140,7 @@ def register_get_issues(requests_mock):
     file = Path(__file__).parent / "get_issues.json"
     with file.open() as f:
         data = json.load(f)
-        path = f"{GITEA_HOST}/api/v1/repos/realaravinth/tmp/issues"
+        path = f"{GITEA_HOST}/api/v1/repos/bot/tmp/issues"
         requests_mock.get(
             path,
             json=data,
@@ -192,7 +192,7 @@ def register_create_issues(requests_mock):
             ctx.status_code = 500
             return {}
 
-    path = f"{GITEA_HOST}/api/v1/repos/realaravinth/tmp/issues"
+    path = f"{GITEA_HOST}/api/v1/repos/bot/tmp/issues"
     requests_mock.post(
         path,
         json=cb,
