@@ -28,6 +28,7 @@ steps = [
             name VARCHAR(250) NOT NULL,
             description TEXT NOT NULL,
             ID INTEGER PRIMARY KEY NOT NULL,
+            html_url TEXT NOT NULL UNIQUE,
             private_key TEXT UNIQUE NOT NULL,
             UNIQUE(owner_id, name)
         );

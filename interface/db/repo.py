@@ -29,6 +29,7 @@ class DBRepo:
     name: str
     owner: DBUser
     description: str
+    html_url: str
     id: int = None
     private_key: RSAKeyPair = None
 
@@ -52,14 +53,15 @@ class DBRepo:
                 cur.execute(
                     """
                     INSERT INTO gitea_forge_repositories
-                        (owner_id, name, private_key, description) VALUES
-                        (?, ?, ?, ?);
+                        (owner_id, name, private_key, description, html_url) VALUES
+                        (?, ?, ?, ?, ?);
                     """,
                     (
                         self.owner.id,
                         self.name,
                         self.private_key.private_key(),
                         self.description,
+                        self.html_url,
                     ),
                 )
                 conn.commit()
@@ -86,7 +88,7 @@ class DBRepo:
 
         data = cur.execute(
             """
-                SELECT ID, private_key, description from gitea_forge_repositories
+                SELECT ID, private_key, description, html_url FROM gitea_forge_repositories
                 WHERE name = ? AND owner_id = ?;
             """,
             (name, owner.id),
@@ -94,7 +96,7 @@ class DBRepo:
         print(data)
         if data is None:
             return None
-        resp = cls(name=name, owner=owner, description=data[2])
+        resp = cls(name=name, owner=owner, description=data[2], html_url=data[3])
         resp.id = data[0]
         resp.private_key = RSAKeyPair.load_private_from_str(data[1])
         return resp
@@ -109,7 +111,7 @@ class DBRepo:
         cur = conn.cursor()
         data = cur.execute(
             """
-                SELECT name, owner_id, private_key, description
+                SELECT name, owner_id, private_key, description, html_url
                 FROM gitea_forge_repositories
                 WHERE ID = ?;
             """,
@@ -118,17 +120,34 @@ class DBRepo:
         if data is None:
             return None
         owner = DBUser.load_with_db_id(data[1])
-        resp = cls(name=data[0], owner=owner, description=data[3])
+        resp = cls(name=data[0], owner=owner, description=data[3], html_url=data[4])
         resp.private_key = RSAKeyPair.load_private_from_str(data[2])
         resp.id = db_id
         return resp
 
     def actor_name(self) -> str:
-        name = f"!{self.owner}!{self.name}"
+        name = f"!{self.owner.user_id}!{self.name}"
         return name
 
+    @staticmethod
+    def split_actor_name(name) -> (str, str):
+        """return format: (owner, repository_name)"""
+        if "!" not in name:
+            raise ValueError("Invalid actor name")
+
+        name_parts = name.split("!")
+        owner = name_parts[1]
+        name = name_parts[2]
+        return (owner, name)
+
+    @classmethod
+    def from_actor_name(cls, name) -> "DBRepo":
+        (owner, name) = cls.split_actor_name(name)
+        repo = cls.load(name=name, owner=owner)
+        return repo
+
     def actor_url(self) -> str:
-        act_url = f"{INTERFACE_BASE_URL}/r/!{self.actor_name()}"
+        act_url = f"{INTERFACE_BASE_URL}/r/{self.actor_name()}"
         return act_url
 
     def to_actor(self):

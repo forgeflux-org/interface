@@ -82,7 +82,12 @@ def test_issue(client):
 
     # repository data
     repo_name = "repo_name"
-    repo = DBRepo(name=repo_name, description="foo", owner=user)
+    repo = DBRepo(
+        name=repo_name,
+        description="foo",
+        owner=user,
+        html_url=f"{profile_url}/{repo_name}",
+    )
 
     title = "Test issue"
     description = "foo bar"
