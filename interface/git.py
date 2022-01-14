@@ -24,10 +24,11 @@ from flask import g
 from libgit import InterfaceAdmin, Repo, Patch, System
 from dynaconf import settings
 
-from interface.db import get_db, get_git_system
+from interface.db import get_db, get_git_system, DBUser, DBRepo
 from interface.forges.utils import get_branch_name
 from interface.forges.base import Forge
 from interface.forges.gitea import Gitea
+from interface.forges.payload import RepositoryInfo
 
 
 class Git:
@@ -111,3 +112,55 @@ def get_forge() -> Git:
         forge = Gitea()
         g.git = Git(forge, settings.GITEA.username, settings.SYSTEM.admin_email)
     return g.git
+
+
+def get_user(username: str) -> DBUser:
+    """
+    Get user from database.
+    When user not available in DB, get from forge, store and return
+    """
+    user = DBUser.load(username)
+    if user is None:
+        git = get_forge()
+        print(f"gettings user: {username}")
+        user = git.forge.get_user(username).to_db_user()
+        user.save()
+    return user
+
+
+def __get_and_store_repo(owner: str, name: str) -> DBRepo:
+    git = get_forge()
+    repo_info = git.forge.get_repository(owner=owner, repo=name)
+    print(f" requesting data for user {owner}")
+    user = get_user(owner)
+    repo = DBRepo(
+        name=repo_info.name,
+        description=repo_info.description,
+        html_url=repo_info.html_url,
+        owner=user,
+    )
+    repo.save()
+    return repo
+
+
+def get_repo_from_actor_name(name: str) -> DBRepo:
+    """
+    Get repo from database.
+    When repo not available in DB, get from forge, store and return
+    """
+    repo = DBRepo.from_actor_name(name)
+    if repo is None:
+        (owner, repo_name) = DBRepo.split_actor_name(name)
+        repo = __get_and_store_repo(owner=owner, name=repo_name)
+    return repo
+
+
+def get_repo(owner: str, name: str) -> DBRepo:
+    """
+    Get repo from database.
+    When repo not available in DB, get from forge, store and return
+    """
+    repo = DBRepo.load(name=name, owner=owner)
+    if repo is None:
+        repo = __get_and_store_repo(owner=owner, name=name)
+    return repo
