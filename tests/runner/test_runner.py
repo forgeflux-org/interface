@@ -17,7 +17,6 @@ from datetime import datetime
 from dateutil.parser import parse as date_parse
 
 from interface.app import create_app
-from interface.meta import VERSIONS
 from interface.runner import runner
 
 from tests.test_utils import register_ns
