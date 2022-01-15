@@ -24,7 +24,7 @@ from dynaconf import settings
 import interface.settings
 from interface import db
 from interface import runner
-from interface.auth import keygen_bp, KeyPair
+from interface.webfinger import bp as webfinger_bp
 from interface.db import DBInterfaces
 from interface.forges.gitea.admin import get_db_user
 
@@ -33,7 +33,6 @@ def create_app(test_config=None):
     """Create flask application"""
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
-    app.register_blueprint(keygen_bp)
 
     app.config.from_mapping(
         DATABASE=os.path.join(app.instance_path, "interface.db"),

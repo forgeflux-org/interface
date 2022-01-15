@@ -15,42 +15,32 @@
 from dynaconf import settings
 
 from interface.db.interfaces import DBInterfaces
-from interface.auth import KeyPair
 from interface.app import app
 
 
 def cmp_interface(lhs: DBInterfaces, rhs: DBInterfaces) -> bool:
     """Compare two DBInterfaces objects"""
-    return all([lhs.public_key == rhs.public_key, lhs.url == rhs.url])
+    return all([lhs.url == rhs.url])
 
 
 def test_interface(client):
     """Test DBInterfaces database class"""
 
-    key = KeyPair()
     url = "https://test_interface.example.com"
-    data = DBInterfaces(url=url, public_key=key.to_base64_public())
+    data = DBInterfaces(url=url)
 
-    assert DBInterfaces.load_from_pk(key.to_base64_public()) is None
     assert DBInterfaces.load_from_url(url) is None
     assert DBInterfaces.load_from_database_id(11) is None
 
     data.save()
-    from_key = DBInterfaces.load_from_pk(key.to_base64_public())
     from_url = DBInterfaces.load_from_url(url)
 
     with_id = DBInterfaces.load_from_database_id(from_url.id)
 
-    assert cmp_interface(from_url, from_key) is True
     assert cmp_interface(from_url, data) is True
     assert cmp_interface(from_url, with_id) is True
-    assert from_url.id == from_key.id
 
 
 def test_interface_self_resgistration(app, client, requests_mock):
-    with app.app_context():
-        key = KeyPair.loadkey().to_base64_public()
-    from_key = DBInterfaces.load_from_pk(key)
     from_db = DBInterfaces.load_from_url(settings.SERVER.url)
-    assert from_key is not None
     assert from_db is not None

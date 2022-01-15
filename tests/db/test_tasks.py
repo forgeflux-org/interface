@@ -15,7 +15,6 @@
 import json
 from dataclasses import asdict
 
-from interface.auth import KeyPair
 from interface.forges.payload import MetaData, Author, CommentOnIssue, RepositoryInfo
 from interface.db import DBInterfaces, JobStatus, DBTask, save_message, DBTaskJson
 
@@ -50,9 +49,8 @@ def cmp_task_json(lhs: DBTaskJson, rhs: DBTaskJson) -> bool:
 def test_task(client):
     """Test DBTask database class"""
 
-    key = KeyPair()
     url = "https://test_interface.example.com"
-    interface = DBInterfaces(url=url, public_key=key.to_base64_public())
+    interface = DBInterfaces(url=url)
     interface.save()
 
     task = DBTask(

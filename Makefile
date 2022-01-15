@@ -63,9 +63,6 @@ help: ## Prints help for targets with comments
 i: ## Launch app.py in an interactive python shell
 	python -i ./interface/__init__.py
 
-keygen: ## Generate signing keys
-	@. ./venv/bin/activate && cd interface && FLASK_ENV=development flask keys generate
-
 lint: ## Run linter
 	@./venv/bin/black ./interface/*
 	@./venv/bin/black ./tests/*

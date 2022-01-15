@@ -16,7 +16,6 @@ from dataclasses import dataclass
 from dynaconf import settings
 from flask import g
 
-from interface.auth import KeyPair
 from .conn import get_db
 
 
@@ -25,17 +24,13 @@ class DBInterfaces:
     """Interface information as represented in database"""
 
     url: str
-    public_key: str
     id: int = None
 
     def save(self):
         """Save interface to database"""
         conn = get_db()
         cur = conn.cursor()
-        cur.execute(
-            "INSERT OR IGNORE INTO interfaces (url, public_key) VALUES (?, ?);",
-            (self.url, self.public_key),
-        )
+        cur.execute("INSERT OR IGNORE INTO interfaces (url) VALUES (?);", (self.url,))
         conn.commit()
 
     @classmethod
@@ -44,33 +39,14 @@ class DBInterfaces:
         conn = get_db()
         cur = conn.cursor()
         data = cur.execute(
-            "SELECT ID, public_key  FROM interfaces WHERE url = ?;",
+            "SELECT ID FROM interfaces WHERE url = ?;",
             (url,),
         ).fetchone()
         if data is None:
             return None
         return cls(
             id=data[0],
-            public_key=data[1],
             url=url,
-        )
-
-    @classmethod
-    def load_from_pk(cls, public_key: str) -> "DBInterfaces":
-        """Load interface from database"""
-        conn = get_db()
-        cur = conn.cursor()
-        data = cur.execute(
-            "SELECT ID, url  FROM interfaces WHERE public_key = ?;",
-            (public_key,),
-        ).fetchone()
-        if data is None:
-            return None
-
-        return cls(
-            id=data[0],
-            url=data[1],
-            public_key=public_key,
         )
 
     @classmethod
@@ -82,14 +58,13 @@ class DBInterfaces:
         conn = get_db()
         cur = conn.cursor()
         data = cur.execute(
-            "SELECT public_key, url  FROM interfaces WHERE ID = ?;",
+            "SELECT url  FROM interfaces WHERE ID = ?;",
             (db_id,),
         ).fetchone()
         if data is None:
             return None
         return cls(
-            public_key=data[0],
-            url=data[1],
+            url=data[0],
             id=db_id,
         )
 
@@ -97,8 +72,7 @@ class DBInterfaces:
 def get_db_interface() -> DBInterfaces:
     """Get DBInterfaces of this interface"""
     if "g.db_interface" not in g:
-        key = KeyPair.loadkey_fresh().to_base64_public()
-        interface = DBInterfaces(url=settings.SERVER.url, public_key=key)
+        interface = DBInterfaces(url=settings.SERVER.url)
         interface.save()
         g.db_interface = interface
     return g.db_interface

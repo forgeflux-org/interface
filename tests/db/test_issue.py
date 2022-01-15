@@ -22,8 +22,6 @@ from interface.db.repo import DBRepo
 from interface.db.issues import DBIssue, OPEN, MERGED, CLOSED
 from interface.db.users import DBUser
 
-from interface.auth import KeyPair
-
 from .test_interface import cmp_interface
 from .test_repo import cmp_repo
 from .test_user import cmp_user
@@ -55,14 +53,12 @@ def test_issue(client):
     """Test user route"""
 
     # first interface data
-    key1 = KeyPair()
     interface_url1 = "https://db-test-issue.example.com"
-    interface1 = DBInterfaces(url=interface_url1, public_key=key1.to_base64_public())
+    interface1 = DBInterfaces(url=interface_url1)
 
     # second interface data
-    key2 = KeyPair()
     interface_url2 = "https://db-test-issue2.example.com"
-    interface2 = DBInterfaces(url=interface_url2, public_key=key2.to_base64_public())
+    interface2 = DBInterfaces(url=interface_url2)
 
     # user data signed by interface1
     username = "db_test_user"
