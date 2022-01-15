@@ -125,8 +125,8 @@ class RSAKeyPair:
 
     def to_json_key(self) -> str:
         """new line characters are formatted to \\n"""
-        key = self.public_key().replace("\n", "\\n")
-        return key
+        #        key = self.public_key().replace("\n", "\\n")
+        return self.public_key()
 
     @staticmethod
     def from_json_key(key) -> str:
