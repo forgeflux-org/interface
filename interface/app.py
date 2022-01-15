@@ -24,7 +24,6 @@ from dynaconf import settings
 import interface.settings
 from interface import db
 from interface import runner
-from interface.meta import bp as meta_bp
 from interface.auth import keygen_bp, KeyPair
 from interface.db import DBInterfaces
 from interface.forges.gitea.admin import get_db_user
@@ -59,7 +58,6 @@ def create_app(test_config=None):
         response.headers["Permissions-Policy"] = "interest-cohort=()"
         return response
 
-    app.register_blueprint(meta_bp)
     return app
 
 

@@ -17,7 +17,7 @@ from urllib.parse import urlparse, urlunparse
 from dynaconf import settings
 
 from interface.app import create_app
-from interface.utils import clean_url, trim_url, verify_interface_online
+from interface.utils import clean_url, trim_url
 from interface.db import get_db
 
 
@@ -56,17 +56,3 @@ def register_ns(requests_mock):
 
     requests_mock.post(register, json={})
     requests_mock.post(query, json=[interface_url])
-
-
-def test_verify_instance_online(client, requests_mock):
-    interface_url = "https://interfac9.example.com/_ff/interface/versions"
-    version = "1"
-    resp = {"versions": [version]}
-    requests_mock.get(interface_url, json=resp)
-    assert verify_interface_online(clean_url(interface_url), version) is True
-    assert verify_interface_online(clean_url(interface_url), str(2)) is False
-
-
-def test_verify_instance_interface_unreachable():
-    interface_url = "https://nonexistent.example.com"
-    assert verify_interface_online(clean_url(interface_url), "1") is False

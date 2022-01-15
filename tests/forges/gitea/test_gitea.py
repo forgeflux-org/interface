@@ -19,7 +19,8 @@ from dynaconf import settings
 import pytest
 
 from interface.utils import get_rand
-from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO
+
+# from interface.client import GET_REPOSITORY, GET_REPOSITORY_INFO
 from interface.forges.payload import (
     CreateIssue,
     Author,

@@ -22,7 +22,6 @@ from requests import Request
 from requests_mock import CookieJar
 from dynaconf import settings
 
-from interface.client import GET_REPOSITORY_INFO
 from interface.utils import trim_url
 from interface.forges.payload import CreateIssue
 
