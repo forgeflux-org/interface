@@ -194,7 +194,7 @@ class DBRepo:
         return actor
 
     def webfinger_subject(self) -> str:
-        subject = f"acct:{self.actor_name()}:{INTERFACE_DOMAIN}"
+        subject = f"acct:{self.actor_name()}@{INTERFACE_DOMAIN}"
         return subject
 
     def webfinger(self):
