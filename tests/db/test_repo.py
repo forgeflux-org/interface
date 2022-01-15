@@ -15,7 +15,6 @@
 import pytest
 
 from interface.db import DBRepo, DBUser, DBInterfaces
-from interface.auth import KeyPair
 
 from .test_user import cmp_user
 
@@ -38,9 +37,8 @@ def test_repo(client):
     """Test repo"""
 
     # first interface data
-    key1 = KeyPair()
     interface_url1 = "https://db-test-issue.example.com"
-    interface1 = DBInterfaces(url=interface_url1, public_key=key1.to_base64_public())
+    interface1 = DBInterfaces(url=interface_url1)
 
     # user data signed by interface1
     username = "db_test_user"

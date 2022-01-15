@@ -1,6 +1,5 @@
 [default]
 forge = "gitea"
-#private_key = ""
 
 
 [default.gitea]
@@ -25,7 +24,6 @@ url = "http://localhost:7000" # URL at which this interface will run
 
 [testing]
 forge = "gitea"
-private_key = "KxEQO2gukWvI1UKBlHbqWXuoJEB/z1hAHWgzhTwlwSI"
 
 [testing.gitea]
 host = "https://git.batsense.net"

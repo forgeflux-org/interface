@@ -19,8 +19,6 @@ from interface.db.issues import DBIssue
 from interface.db.users import DBUser
 from interface.db.webfinger import INTERFACE_BASE_URL, INTERFACE_DOMAIN
 
-from interface.auth import KeyPair
-
 
 def cmp_user(lhs: DBUser, rhs: DBUser) -> bool:
     assert lhs is not None
@@ -41,9 +39,8 @@ def cmp_user(lhs: DBUser, rhs: DBUser) -> bool:
 def test_user(client):
     """Test user route"""
 
-    key = KeyPair()
     url = "https://db-test-user.example.com"
-    interface = DBInterfaces(url=url, public_key=key.to_base64_public())
+    interface = DBInterfaces(url=url)
     name = "db_test_user"
     user_id = name
     user = DBUser(
