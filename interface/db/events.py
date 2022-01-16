@@ -46,7 +46,7 @@ class JobStatus(Enum):
 class DBTask:
     """Task information in the database"""
 
-    signed_by: DBInterfaces
+    scheduled_by: DBInterfaces
     uuid: UUID = uuid4()
     status: JobStatus = JobStatus.QUEUED
     created: str = str(datetime.now())
@@ -95,7 +95,7 @@ class DBTask:
 
     def save(self):
         """Save message to database"""
-        self.signed_by.save()
+        self.scheduled_by.save()
 
         conn = get_db()
         cur = conn.cursor()
@@ -104,7 +104,7 @@ class DBTask:
                 cur.execute(
                     """
                     INSERT INTO tasks
-                        (job_id, status, created, signed_by)
+                        (job_id, status, created, scheduled_by)
                     VALUES
                         (?, ?, ?, (SELECT ID FROM interfaces WHERE url = ?));
                     """,
@@ -112,7 +112,7 @@ class DBTask:
                         str(self.uuid),
                         self.status.value,
                         self.created,
-                        self.signed_by.url,
+                        self.scheduled_by.url,
                     ),
                 )
                 conn.commit()
@@ -122,9 +122,9 @@ class DBTask:
                     WHERE
                         job_id = ?
                     AND
-                        signed_by = (SELECT ID FROM interfaces WHERE url = ?);
+                        scheduled_by = (SELECT ID FROM interfaces WHERE url = ?);
                     """,
-                    (str(self.uuid), self.signed_by.url),
+                    (str(self.uuid), self.scheduled_by.url),
                 ).fetchone()
                 self.id = data[0]
                 break
@@ -144,7 +144,7 @@ class DBTask:
                  status,
                  created,
                  updated,
-                 signed_by
+                 scheduled_by
              FROM
                  tasks
              WHERE
@@ -155,7 +155,7 @@ class DBTask:
         if data is None:
             return None
         val = cls(
-            signed_by=DBInterfaces.load_from_database_id(data[4]),
+            scheduled_by=DBInterfaces.load_from_database_id(data[4]),
         )
         val.uuid = job_id
         val.id = data[0]
@@ -176,7 +176,7 @@ class DBTask:
                  status,
                  created,
                  updated,
-                 signed_by
+                 scheduled_by
              FROM
                  tasks
              WHERE
@@ -186,7 +186,7 @@ class DBTask:
         ).fetchone()
         if data is None:
             return None
-        val = cls(signed_by=DBInterfaces.load_from_database_id(data[4]))
+        val = cls(scheduled_by=DBInterfaces.load_from_database_id(data[4]))
         val.id = db_id
         val.uuid = UUID(data[0])
         val.status = JobStatus(data[1])
@@ -305,7 +305,7 @@ def save_message(msg: Message) -> DBTask:
     if interface is None:
         # get and save interface
         raise NotImplementedError
-    task = DBTask(signed_by=interface)
+    task = DBTask(scheduled_by=interface)
     task.save()
 
     task_json = DBTaskJson(job_uuid=task.uuid, message=msg)

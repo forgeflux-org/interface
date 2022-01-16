@@ -30,7 +30,7 @@ def cmp_tasks(lhs: DBTask, rhs: DBTask) -> bool:
             lhs.created == rhs.created,
             lhs.updated == rhs.updated,
             lhs.id == rhs.id,
-            cmp_interface(lhs.signed_by, rhs.signed_by),
+            cmp_interface(lhs.scheduled_by, rhs.scheduled_by),
         ]
     )
 
@@ -54,7 +54,7 @@ def test_task(client):
     interface.save()
 
     task = DBTask(
-        signed_by=interface,
+        scheduled_by=interface,
     )
 
     assert DBTask.load_with_db_id(11) is None

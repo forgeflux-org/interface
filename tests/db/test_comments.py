@@ -15,7 +15,6 @@
 from datetime import datetime
 
 from interface.db import get_db
-from interface.db.interfaces import DBInterfaces
 from interface.db.repo import DBRepo
 from interface.db.issues import DBIssue
 from interface.db.users import DBUser
@@ -23,7 +22,6 @@ from interface.db.comments import DBComment
 
 from tests.db.test_user import cmp_user
 from tests.db.test_issue import cmp_issue
-from tests.db.test_interface import cmp_interface
 
 
 def cmp_comment(lhs: DBComment, rhs: DBComment) -> bool:
@@ -37,25 +35,15 @@ def cmp_comment(lhs: DBComment, rhs: DBComment) -> bool:
             lhs.updated == rhs.updated,
             lhs.is_native == rhs.is_native,
             cmp_user(lhs.user, rhs.user),
-            cmp_interface(lhs.signed_by, rhs.signed_by),
             cmp_issue(lhs.belongs_to_issue, rhs.belongs_to_issue),
             lhs.comment_id == rhs.comment_id,
             lhs.html_url == rhs.html_url,
-            lhs.signed_by.url == rhs.signed_by.url,
         ]
     )
 
 
 def test_comment(client):
     """Test user route"""
-
-    # first interface data
-    interface_url1 = "https://db-test-issue.example.com"
-    interface1 = DBInterfaces(url=interface_url1)
-
-    # second interface data
-    interface_url2 = "https://db-test-issue2.example.com"
-    interface2 = DBInterfaces(url=interface_url2)
 
     # user data signed by interface1
     username = "db_test_user"
@@ -67,7 +55,6 @@ def test_comment(client):
         profile_url=profile_url,
         avatar_url=profile_url,
         description="description",
-        signed_by=interface1,
         id=None,
     )
     user.save()
@@ -89,8 +76,6 @@ def test_comment(client):
     html_url = f"https://git.batsense/{repo_owner}/{repo_name}/issues/{repo_scope_id}"
     created = str(datetime.now())
     updated = str(datetime.now())
-    # repository= repo
-    # signed_by = interface2
     is_closed = False
     is_merged = None
     is_native = True
@@ -104,7 +89,6 @@ def test_comment(client):
         repo_scope_id=repo_scope_id,
         repository=repo,
         user=user,
-        signed_by=interface2,
         is_closed=is_closed,
         is_merged=is_merged,
         is_native=is_native,
@@ -119,7 +103,6 @@ def test_comment(client):
         created=str(datetime.now()),
         updated=str(datetime.now()),
         is_native=True,
-        signed_by=interface1,
         belongs_to_issue=issue,
         user=user,
         html_url=comment_url1,
@@ -138,7 +121,6 @@ def test_comment(client):
         created=str(datetime.now()),
         updated=str(datetime.now()),
         is_native=True,
-        signed_by=interface1,
         belongs_to_issue=issue,
         user=user,
         html_url=comment_url2,

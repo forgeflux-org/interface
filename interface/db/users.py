@@ -33,14 +33,11 @@ class DBUser:
     profile_url: str
     avatar_url: str
     description: str
-    signed_by: DBInterfaces
     id: int = None
     private_key: RSAKeyPair = None
 
     def save(self):
         """Save user to database"""
-        self.signed_by.save()
-
         user = self.load(self.user_id)
         if user is not None:
             self.private_key = user.private_key
@@ -58,11 +55,10 @@ class DBUser:
                     INSERT INTO gitea_users
                         (
                             name, user_id, profile_url,
-                            avatar_url, signed_by, private_key,
+                            avatar_url, private_key,
                             description
                         ) VALUES (
                             ?, ?, ?, ?, 
-                            (SELECT ID from interfaces WHERE url = ?),
                             ?, ?
                         );
                     """,
@@ -71,7 +67,6 @@ class DBUser:
                         self.user_id,
                         self.profile_url,
                         self.avatar_url,
-                        self.signed_by.url,
                         self.private_key.private_key(),
                         self.description,
                     ),
@@ -97,7 +92,6 @@ class DBUser:
                  profile_url,
                  private_key,
                  avatar_url,
-                 signed_by,
                  description
              FROM
                  gitea_users
@@ -109,15 +103,13 @@ class DBUser:
         if data is None:
             return None
 
-        signed_by = DBInterfaces.load_from_database_id(data[5])
         res = cls(
             id=data[0],
             name=data[1],
             user_id=user_id,
             profile_url=data[2],
             avatar_url=data[4],
-            signed_by=signed_by,
-            description=data[6],
+            description=data[5],
         )
         res.private_key = RSAKeyPair.load_private_from_str(data[3])
         return res
@@ -138,7 +130,6 @@ class DBUser:
                  profile_url,
                  private_key,
                  avatar_url,
-                 signed_by,
                  description
              FROM
                  gitea_users
@@ -149,16 +140,13 @@ class DBUser:
         if data is None:
             return None
 
-        signed_by = DBInterfaces.load_from_database_id(data[5])
-
         res = cls(
             user_id=data[0],
             name=data[1],
             id=db_id,
             profile_url=data[2],
             avatar_url=data[4],
-            signed_by=signed_by,
-            description=data[6],
+            description=data[5],
         )
         res.private_key = RSAKeyPair.load_private_from_str(data[3])
         return res

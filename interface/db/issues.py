@@ -42,7 +42,6 @@ class DBIssue:
     repo_scope_id: str
     repository: DBRepo
     user: DBUser
-    signed_by: DBInterfaces
     id: int = None
     is_closed: bool = False
     # is_merged only makes sense for PR, therefore it's absence(=None) is
@@ -139,8 +138,7 @@ class DBIssue:
                 description = ?,
                 updated = ?,
                 is_closed = ?,
-                is_merged = ?,
-                signed_by = (SELECT ID from interfaces WHERE url  = ?)
+                is_merged = ?
             WHERE
                 id = ?
             """,
@@ -150,7 +148,6 @@ class DBIssue:
                 self.updated,
                 self.is_closed,
                 self.is_merged,
-                self.signed_by.url,
                 self.id,
             ),
         )
@@ -169,7 +166,6 @@ class DBIssue:
             return
 
         self.user.save()
-        self.signed_by.save()
         self.repository.save()
 
         conn = get_db()
@@ -185,7 +181,7 @@ class DBIssue:
                         (
                             title, description, html_url, created,
                             updated, is_closed, is_merged, is_native,
-                            repo_scope_id, user_id, repository, signed_by, private_key
+                            repo_scope_id, user_id, repository, private_key
                         )
                         VALUES (
                             ?, ?, ?, ?,
@@ -193,7 +189,6 @@ class DBIssue:
                             ?,
                             (SELECT ID FROM gitea_users WHERE user_id  = ?),
                             ?,
-                            (SELECT ID FROM interfaces WHERE url  = ?),
                             ?
                         )
                     """,
@@ -209,7 +204,6 @@ class DBIssue:
                         self.repo_scope_id,
                         self.user.user_id,
                         self.repository.id,
-                        self.signed_by.url,
                         self.private_key.private_key(),
                     ),
                 )
@@ -252,8 +246,6 @@ class DBIssue:
              is_merged,
              is_native,
              user_id,
-             signed_by,
-             repository,
              private_key
         FROM
              gitea_forge_issues
@@ -268,7 +260,6 @@ class DBIssue:
             return None
 
         user = DBUser.load_with_db_id(data[9])
-        signed_by = DBInterfaces.load_from_database_id(data[10])
 
         issue = cls(
             id=data[0],
@@ -282,9 +273,8 @@ class DBIssue:
             is_native=data[8],
             repo_scope_id=repo_scope_id,
             user=user,
-            signed_by=signed_by,
             repository=repository,
-            private_key=RSAKeyPair.load_private_from_str(data[12]),
+            private_key=RSAKeyPair.load_private_from_str(data[10]),
         )
 
         issue.__set_sqlite_to_bools()
@@ -311,7 +301,6 @@ class DBIssue:
              is_native,
              repo_scope_id,
              user_id,
-             signed_by,
              repository,
              private_key
         FROM
@@ -325,8 +314,7 @@ class DBIssue:
             return None
 
         user = DBUser.load_with_db_id(data[9])
-        signed_by = DBInterfaces.load_from_database_id(data[10])
-        repository = DBRepo.load_with_id(data[11])
+        repository = DBRepo.load_with_id(data[10])
 
         issue = cls(
             id=db_id,
@@ -340,9 +328,8 @@ class DBIssue:
             is_native=data[7],
             repo_scope_id=data[8],
             user=user,
-            signed_by=signed_by,
             repository=repository,
-            private_key=RSAKeyPair.load_private_from_str(data[12]),
+            private_key=RSAKeyPair.load_private_from_str(data[11]),
         )
         issue.__set_sqlite_to_bools()
         return issue
@@ -367,7 +354,6 @@ class DBIssue:
              is_native,
              repo_scope_id,
              user_id,
-             signed_by,
              repository,
              private_key
         FROM
@@ -381,8 +367,7 @@ class DBIssue:
             return None
 
         user = DBUser.load_with_db_id(data[9])
-        signed_by = DBInterfaces.load_from_database_id(data[10])
-        repository = DBRepo.load_with_id(data[11])
+        repository = DBRepo.load_with_id(data[10])
 
         issue = cls(
             html_url=html_url,
@@ -396,9 +381,8 @@ class DBIssue:
             is_native=data[7],
             repo_scope_id=data[8],
             user=user,
-            signed_by=signed_by,
             repository=repository,
-            private_key=RSAKeyPair.load_private_from_str(data[12]),
+            private_key=RSAKeyPair.load_private_from_str(data[11]),
         )
         issue.__set_sqlite_to_bools()
         return issue
