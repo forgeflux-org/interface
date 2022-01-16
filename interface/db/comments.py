@@ -34,10 +34,8 @@ class DBComment:
     is_native: bool
     user: DBUser
     belongs_to_issue: DBIssue
-    signed_by: DBInterfaces
 
     __belongs_to_issue_id: int = None
-    __signed_by_interface_id: int = None
 
     def __set_sqlite_to_bools(self):
         """
@@ -71,7 +69,6 @@ class DBComment:
     def save(self):
         """Save COmment to database"""
         self.user.save()
-        self.signed_by.save()
         self.belongs_to_issue.save()
 
         conn = get_db()
@@ -83,15 +80,14 @@ class DBComment:
 
                     body, html_url, created, updated,
                     comment_id, is_native, user,
-                    belongs_to_issue, signed_by
+                    belongs_to_issue 
 
                 )
                 VALUES (
                     ?, ?, ?, ?,
                     ?, ?,
                     (SELECT ID from gitea_users WHERE user_id  = ?),
-                    (SELECT ID from gitea_forge_issues WHERE html_url  = ?),
-                    (SELECT ID from interfaces WHERE url  = ?)
+                    (SELECT ID from gitea_forge_issues WHERE html_url  = ?)
                 )
             """,
             (
@@ -103,7 +99,6 @@ class DBComment:
                 self.is_native,
                 self.user.user_id,
                 self.belongs_to_issue.html_url,
-                self.signed_by.url,
             ),
         )
         conn.commit()
@@ -123,8 +118,7 @@ class DBComment:
              updated,
              comment_id,
              is_native,
-             user,
-             signed_by
+             user
          FROM
              gitea_issue_comments
          WHERE
@@ -136,7 +130,6 @@ class DBComment:
             return None
 
         user = DBUser.load_with_db_id(data[6])
-        signed_by = DBInterfaces.load_from_database_id(data[7])
         belongs_to_issue = DBIssue.load_with_id(data[1])
         comment = cls(
             body=data[0],
@@ -146,7 +139,6 @@ class DBComment:
             comment_id=data[4],
             is_native=data[5],
             user=user,
-            signed_by=signed_by,
             belongs_to_issue=belongs_to_issue,
         )
         comment.__set_sqlite_to_bools()
@@ -166,8 +158,7 @@ class DBComment:
              updated,
              comment_id,
              is_native,
-             user,
-             signed_by
+             user
          FROM
              gitea_issue_comments
          WHERE
@@ -181,7 +172,6 @@ class DBComment:
         comments = []
         for comment in data:
             user = DBUser.load_with_db_id(comment[6])
-            signed_by = DBInterfaces.load_from_database_id(comment[7])
             comment = cls(
                 body=comment[0],
                 html_url=comment[1],
@@ -190,7 +180,6 @@ class DBComment:
                 comment_id=comment[4],
                 is_native=comment[5],
                 user=user,
-                signed_by=signed_by,
                 belongs_to_issue=issue,
             )
             comment.__set_sqlite_to_bools()

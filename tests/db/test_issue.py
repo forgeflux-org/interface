@@ -17,12 +17,10 @@ from datetime import datetime
 import pytest
 
 from interface.db import get_db
-from interface.db.interfaces import DBInterfaces
 from interface.db.repo import DBRepo
 from interface.db.issues import DBIssue, OPEN, MERGED, CLOSED
 from interface.db.users import DBUser
 
-from .test_interface import cmp_interface
 from .test_repo import cmp_repo
 from .test_user import cmp_user
 
@@ -44,21 +42,12 @@ def cmp_issue(lhs: DBIssue, rhs: DBIssue) -> bool:
             lhs.is_native == rhs.is_native,
             cmp_repo(lhs.repository, rhs.repository),
             cmp_user(lhs.user, rhs.user),
-            cmp_interface(lhs.signed_by, rhs.signed_by),
         ]
     )
 
 
 def test_issue(client):
     """Test user route"""
-
-    # first interface data
-    interface_url1 = "https://db-test-issue.example.com"
-    interface1 = DBInterfaces(url=interface_url1)
-
-    # second interface data
-    interface_url2 = "https://db-test-issue2.example.com"
-    interface2 = DBInterfaces(url=interface_url2)
 
     # user data signed by interface1
     username = "db_test_user"
@@ -70,7 +59,6 @@ def test_issue(client):
         profile_url=profile_url,
         avatar_url=profile_url,
         description="description",
-        signed_by=interface1,
         id=None,
     )
 
@@ -92,7 +80,6 @@ def test_issue(client):
     created = str(datetime.now())
     updated = str(datetime.now())
     # repository= repo
-    # signed_by = interface2
     is_closed = False
     is_merged = None
     is_native = True
@@ -106,7 +93,6 @@ def test_issue(client):
         repo_scope_id=repo_scope_id,
         repository=repo,
         user=user,
-        signed_by=interface2,
         is_closed=is_closed,
         is_merged=is_merged,
         is_native=is_native,
@@ -130,7 +116,6 @@ def test_issue(client):
         repo_scope_id=pr_repo_scope_id,
         repository=repo,
         user=user,
-        signed_by=interface2,
         is_closed=is_closed,
         is_merged=False,
         is_native=is_native,

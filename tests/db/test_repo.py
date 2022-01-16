@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 
-from interface.db import DBRepo, DBUser, DBInterfaces
+from interface.db import DBRepo, DBUser
 
 from .test_user import cmp_user
 
@@ -36,10 +36,6 @@ def cmp_repo(lhs: DBRepo, rhs: DBRepo) -> bool:
 def test_repo(client):
     """Test repo"""
 
-    # first interface data
-    interface_url1 = "https://db-test-issue.example.com"
-    interface1 = DBInterfaces(url=interface_url1)
-
     # user data signed by interface1
     username = "db_test_user"
     user_id = f"{username}@git.batsense.net"
@@ -50,7 +46,6 @@ def test_repo(client):
         profile_url=profile_url,
         avatar_url=profile_url,
         description="description",
-        signed_by=interface1,
         id=None,
     )
 

@@ -31,7 +31,6 @@ def get_db_user() -> DBInterfaces:
             name=username,
             user_id=username,
             profile_url=profile_url,
-            signed_by=interface,
             avatar_url="https://git.batsense.net/avatar/a4edc8a838d6e28ddc38ab12aeb9d9cd?size=1160",
             description="ForgeFlux bot",
         )

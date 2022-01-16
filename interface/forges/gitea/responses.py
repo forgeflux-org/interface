@@ -82,7 +82,6 @@ class GiteaOwner:
             name=self.full_name,
             user_id=self.username,
             profile_url=f"{trim_url(clean_url(settings.GITEA.host))}/{self.username}",
-            signed_by=get_db_interface(),
             description=self.description,
             avatar_url=self.avatar_url,
         )
@@ -210,7 +209,6 @@ class GiteaIssue:
             # TODO verify is issue is native
             is_native=True,
             user=self.user.to_db_user(),
-            signed_by=get_db_interface(),
         )
 
 
@@ -269,7 +267,6 @@ class GiteaComment:
             updated=self.updated_at,
             comment_id=self.id,
             is_native=None,
-            signed_by=get_db_interface(),
             belongs_to_issue=DBIssue.load_with_html_url(
                 self.issue_url if len(self.pull_request_url) == 0 else self.issue_url
             ),

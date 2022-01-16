@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from interface.db import get_db
-from interface.db.interfaces import DBInterfaces
 from interface.db.repo import DBRepo
 from interface.db.issues import DBIssue
 from interface.db.users import DBUser
@@ -31,7 +30,6 @@ def cmp_user(lhs: DBUser, rhs: DBUser) -> bool:
             lhs.profile_url == rhs.profile_url,
             lhs.avatar_url == rhs.avatar_url,
             lhs.description == rhs.description,
-            lhs.signed_by.url == rhs.signed_by.url,
         ]
     )
 
@@ -39,8 +37,6 @@ def cmp_user(lhs: DBUser, rhs: DBUser) -> bool:
 def test_user(client):
     """Test user route"""
 
-    url = "https://db-test-user.example.com"
-    interface = DBInterfaces(url=url)
     name = "db_test_user"
     user_id = name
     user = DBUser(
@@ -49,7 +45,6 @@ def test_user(client):
         profile_url=f"https://git.batsense.net/{user_id}",
         avatar_url=f"https://git.batsense.net/{user_id}",
         description="description",
-        signed_by=interface,
     )
 
     assert DBUser.load(user_id) is None

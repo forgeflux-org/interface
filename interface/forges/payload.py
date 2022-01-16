@@ -75,7 +75,6 @@ class ForgeUser:
             profile_url=self.profile_url,
             avatar_url=self.avatar_url,
             description=self.description,
-            signed_by=get_db_interface(),
         )
 
 
