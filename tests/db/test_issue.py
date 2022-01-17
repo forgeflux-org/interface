@@ -103,6 +103,8 @@ def test_issue(client):
 
     issue.save()
 
+    assert issue.id is not None
+
     pr_repo_scope_id = 2
     html_url_of_pr = (
         f"https://git.batsense/{user.user_id}/{repo_name}/issues/{pr_repo_scope_id}"
