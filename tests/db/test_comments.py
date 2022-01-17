@@ -19,6 +19,7 @@ from interface.db.repo import DBRepo
 from interface.db.issues import DBIssue
 from interface.db.users import DBUser
 from interface.db.comments import DBComment
+from interface.utils import since_epoch
 
 from tests.db.test_user import cmp_user
 from tests.db.test_issue import cmp_issue
@@ -74,8 +75,8 @@ def test_comment(client):
     description = "foo bar"
     repo_scope_id = 8
     html_url = f"https://git.batsense/{repo_owner}/{repo_name}/issues/{repo_scope_id}"
-    created = str(datetime.now())
-    updated = str(datetime.now())
+    created = since_epoch()
+    updated = since_epoch()
     is_closed = False
     is_merged = None
     is_native = True
@@ -100,8 +101,8 @@ def test_comment(client):
     comment_url1 = f"https://git.batsense.net/{repo_owner}/{repo_name}/issues/{repo_scope_id}/{comment_id1}"
     comment1 = DBComment(
         body=comment_body,
-        created=str(datetime.now()),
-        updated=str(datetime.now()),
+        created=since_epoch(),
+        updated=since_epoch(),
         is_native=True,
         belongs_to_issue=issue,
         user=user,
@@ -119,8 +120,8 @@ def test_comment(client):
 
     comment2 = DBComment(
         body=comment_body,
-        created=str(datetime.now()),
-        updated=str(datetime.now()),
+        created=since_epoch(),
+        updated=since_epoch(),
         is_native=True,
         belongs_to_issue=issue,
         user=user,

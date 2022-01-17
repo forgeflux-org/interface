@@ -26,6 +26,7 @@ from interface.forges.payload import (
     CreateIssue,
     CommentOnIssue,
 )
+from interface.utils import since_epoch
 from .conn import get_db
 from .interfaces import DBInterfaces
 
@@ -49,9 +50,18 @@ class DBTask:
     scheduled_by: DBInterfaces
     uuid: UUID = uuid4()
     status: JobStatus = JobStatus.QUEUED
-    created: str = str(datetime.now())
-    updated: str = None
+    created: int = None
+    updated: int = None
     id: int = None
+
+    def __sqlite_type_cast(self):
+        self.created = int(self.created)
+        if self.updated:
+            self.updated = int(self.updated)
+
+    def __post_init__(self):
+        if self.created is None:
+            self.created = since_epoch()
 
     def __update(self):
         """
@@ -59,7 +69,7 @@ class DBTask:
         Caller is advised to set self.updated to datetime.now()
         before calling this method, if job status is changed.
         """
-        self.updated = str(datetime.now())
+        self.updated = since_epoch()
         conn = get_db()
         cur = conn.cursor()
         cur.execute(
@@ -99,8 +109,11 @@ class DBTask:
 
         conn = get_db()
         cur = conn.cursor()
+        count = 1
         while True:
             try:
+                count += 1
+
                 cur.execute(
                     """
                     INSERT INTO tasks
@@ -128,8 +141,10 @@ class DBTask:
                 ).fetchone()
                 self.id = data[0]
                 break
-            except IntegrityError:
+            except Exception as e:
                 self.uuid = uuid4()
+                if count > 5:
+                    raise e
                 continue
 
     @classmethod
@@ -162,6 +177,7 @@ class DBTask:
         val.status = JobStatus(data[1])
         val.created = data[2]
         val.updated = data[3]
+        val.__sqlite_type_cast()
         return val
 
     @classmethod
@@ -192,6 +208,7 @@ class DBTask:
         val.status = JobStatus(data[1])
         val.created = data[2]
         val.updated = data[3]
+        val.__sqlite_type_cast()
         return val
 
 

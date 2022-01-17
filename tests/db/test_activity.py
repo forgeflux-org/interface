@@ -20,6 +20,7 @@ from interface.db import get_db, DBActivity, ActivityType, DBComment
 from interface.db.repo import DBRepo
 from interface.db.issues import DBIssue
 from interface.db.users import DBUser
+from interface.utils import since_epoch
 
 
 def cmp_activity(lhs: DBActivity, rhs: DBActivity) -> bool:
@@ -70,8 +71,8 @@ def test_acitivty(client):
     description = "foo bar"
     repo_scope_id = 8
     html_url = f"https://git.batsense/{user.user_id}/{repo_name}/issues/{repo_scope_id}"
-    created = str(datetime.now())
-    updated = str(datetime.now())
+    created = since_epoch()
+    updated = since_epoch()
     # repository= repo
     is_closed = False
     is_merged = None
@@ -108,8 +109,8 @@ def test_acitivty(client):
     comment_url1 = f"https://git.batsense.net/{repo.name}/{repo.owner.user_id}/issues/{repo_scope_id}/{comment_id1}"
     comment1 = DBComment(
         body=comment_body,
-        created=str(datetime.now()),
-        updated=str(datetime.now()),
+        created=since_epoch(),
+        updated=since_epoch(),
         is_native=True,
         belongs_to_issue=issue,
         user=user,

@@ -33,7 +33,7 @@ from dynaconf import settings
 # from interface.forges.gitea.utils import get_issue_index
 # from interface.utils import clean_url, trim_url
 from interface.db import DBRepo, DBIssue, DBUser, DBInterfaces, DBComment
-from interface.utils import clean_url, trim_url
+from interface.utils import clean_url, trim_url, date_from_string, since_epoch
 
 from .utils import get_issue_index
 from .admin import get_db_interface
@@ -135,7 +135,12 @@ class GiteaRepo:
     def to_db_repo(self) -> DBRepo:
         owner = self.owner.to_db_user()
         owner.save()
-        return DBRepo(name=self.name, owner=owner, description=self.description)
+        return DBRepo(
+            name=self.name,
+            owner=owner,
+            description=self.description,
+            html_url=self.html_url,
+        )
 
 
 class GiteaNotificationSubject:
@@ -195,14 +200,14 @@ class GiteaIssue:
         )
 
     def to_db_issue(self) -> DBIssue:
-        repo = DBRepo(name=self.repository.name, owner=self.repository.owner())
         is_closed = self.state == "closed"
+        repo = DBRepo.load(self.repository.name, self.repository.owner())
         DBIssue(
             title=self.title,
             description=self.body,
-            created=self.created_at,
+            created=since_epoch(date_from_string(self.created_at)),
             html_url=self.html_url,
-            updated=self.updated_at,
+            updated=since_epoch(date_from_string(self.updated_at)),
             repository=repo,
             repo_scope_id=get_issue_index(self.html_url),
             is_closed=is_closed,
@@ -263,8 +268,8 @@ class GiteaComment:
             body=self.body,
             html_url=self.html_url,
             user=self.user.to_db_user(),
-            created=self.created_at,
-            updated=self.updated_at,
+            created=since_epoch(date_from_string(self.created_at)),
+            updated=since_epoch(date_from_string(self.updated_at)),
             comment_id=self.id,
             is_native=None,
             belongs_to_issue=DBIssue.load_with_html_url(

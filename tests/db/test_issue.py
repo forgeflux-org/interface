@@ -19,6 +19,7 @@ import pytest
 from interface.db import get_db
 from interface.db.repo import DBRepo
 from interface.db.issues import DBIssue, OPEN, MERGED, CLOSED
+from interface.utils import since_epoch
 from interface.db.users import DBUser
 
 from .test_repo import cmp_repo
@@ -77,8 +78,8 @@ def test_issue(client):
     description = "foo bar"
     repo_scope_id = 8
     html_url = f"https://git.batsense/{user.user_id}/{repo_name}/issues/{repo_scope_id}"
-    created = str(datetime.now())
-    updated = str(datetime.now())
+    created = since_epoch()
+    updated = since_epoch()
     # repository= repo
     is_closed = False
     is_merged = None
@@ -140,14 +141,14 @@ def test_issue(client):
     issue = DBIssue.load_with_id(db_stored_id)
     assert issue.is_pr() is False
     with pytest.raises(TypeError) as e:
-        issue.set_merged(str(datetime.now()))
+        issue.set_merged(since_epoch())
 
     assert issue.state() == OPEN
     assert issue.is_closed is False
     assert issue.is_merged is None
 
     # test close issue
-    closed_at = str(datetime.now())
+    closed_at = since_epoch()
     issue.set_closed(closed_at)
     from_db = DBIssue.load_with_id(db_stored_id)
     assert from_db.state() == CLOSED
@@ -156,7 +157,7 @@ def test_issue(client):
     assert from_db.is_merged is None
 
     # test open issue
-    opened_at = str(datetime.now())
+    opened_at = since_epoch()
     issue.set_open(opened_at)
     from_db = DBIssue.load_with_id(db_stored_id)
     assert from_db.is_closed is False
@@ -170,7 +171,7 @@ def test_issue(client):
     assert pr.is_pr() is True
 
     # merge PR
-    merged_at = str(datetime.now())
+    merged_at = since_epoch()
     pr.set_merged(merged_at)
     assert pr.state() == MERGED
     assert pr.updated == merged_at
@@ -178,7 +179,7 @@ def test_issue(client):
     assert pr.is_merged is True
 
     # Re-open PR
-    opened_at = str(datetime.now())
+    opened_at = since_epoch()
     pr.set_open(opened_at)
     assert pr.state() == OPEN
     assert pr.updated == opened_at
@@ -186,7 +187,7 @@ def test_issue(client):
     assert pr.is_merged is False
 
     # Re-open PR
-    opened_at = str(datetime.now())
+    opened_at = since_epoch()
     pr.set_open(opened_at)
     assert pr.state() == OPEN
     assert pr.updated == opened_at

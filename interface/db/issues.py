@@ -18,12 +18,14 @@ from dateutil.parser import parse as date_parse
 from sqlite3 import IntegrityError
 
 from interface.auth import RSAKeyPair
+from interface.utils import date_from_string
 
 from .conn import get_db
 from .users import DBUser
 from .repo import DBRepo
 from .interfaces import DBInterfaces
 from .webfinger import INTERFACE_BASE_URL, INTERFACE_DOMAIN
+from .activity import ActivityType, DBActivity
 
 OPEN = "open"
 MERGED = "merged"
@@ -37,8 +39,8 @@ class DBIssue:
     title: str
     description: str
     html_url: str
-    created: str
-    updated: str
+    created: int
+    updated: int
     repo_scope_id: str
     repository: DBRepo
     user: DBUser
@@ -217,6 +219,13 @@ class DBIssue:
                 if data is None:
                     raise ValueError("Issue ID can't be none")
                 self.id = data[0]
+                DBActivity(
+                    user_id=self.user.id,
+                    activity=ActivityType.CREATE,
+                    created=self.created,
+                    issue_id=self.id,
+                ).save()
+
                 break
             except IntegrityError as e:
                 print(e)
