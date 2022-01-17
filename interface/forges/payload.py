@@ -21,7 +21,7 @@ from datetime import datetime
 from enum import Enum, unique
 
 from interface.db import DBUser, DBInterfaces, DBRepo, get_db_interface
-from interface.utils import clean_url, trim_url
+from interface.utils import clean_url, trim_url, since_epoch, from_epoch
 
 
 @unique
@@ -78,9 +78,6 @@ class ForgeUser:
         )
 
 
-EPOCH = datetime.utcfromtimestamp(0)
-
-
 @dataclass
 class MetaData:
     """
@@ -91,11 +88,15 @@ class MetaData:
     html_url: str
     author: Author
     interface_url: str
-    date: int = int((datetime.now() - EPOCH).total_seconds() * 1000)
+    date: int = None
+
+    def __post_init__(self):
+        if self.date is None:
+            self.date = since_epoch()
 
     def get_date(self) -> datetime:
         """Get date in human readable form"""
-        return datetime.utcfromtimestamp(self.date / 1000)
+        return from_epoch(self.date)
 
     def get_header(self, msg_type: MessageType) -> str:
         """
