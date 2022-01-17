@@ -112,6 +112,7 @@ def test_comment(client):
     assert DBComment.load_from_comment_url(comment1.html_url) is None
 
     comment1.save()
+    assert comment1.id is not None
 
     comment_id2 = 2
     comment_url2 = f"https://git.batsense.net/{repo_owner}/{repo_name}/issues/{repo_scope_id}/{comment_id2}"
