@@ -37,6 +37,7 @@ from interface.forges.base import (
 )
 from interface.error import F_D_FORGE_UNKNOWN_ERROR, Error
 from interface.forges.gitea import Gitea, HTMLClient
+from interface.forges.gitea.responses import GiteaComment
 
 from tests.test_utils import register_ns
 from tests.test_errors import expect_error, pytest_expect_errror
@@ -69,6 +70,11 @@ from tests.forges.gitea.test_utils import (
     CSRF_SUCCESSFUL_REDIRECTION,
     FORK_OWNER,
     USER_INFO,
+    ISSUE_URL,
+    ISSUE_HTML_URL,
+    SINGLE_ISSUE,
+    COMMENTS,
+    GET_COMMENTS_URL,
 )
 
 
@@ -126,6 +132,21 @@ def test_get_issues(requests_mock):
     with pytest.raises(Error) as error:
         g.get_issues(FORGE_ERROR["owner"], FORGE_ERROR["repo"])
     assert pytest_expect_errror(error, F_D_FORGE_UNKNOWN_ERROR)
+
+    signle_issue = g.get_issue(ISSUE_URL)
+    assert signle_issue.url == ISSUE_URL
+    assert signle_issue.id == SINGLE_ISSUE["id"]
+
+
+def test_get_comments(requests_mock):
+    g = Gitea()
+
+    comments = g.get_comments(ISSUE_HTML_URL)
+    assert len(comments) == 3
+    assert comments[2].id == 29
+    assert comments[2].user.id == USER_INFO["id"]
+    signle_issue = g.get_issue(ISSUE_URL)
+    assert GiteaComment.from_issue(signle_issue) == comments
 
 
 def test_create_issues(requests_mock):

@@ -132,18 +132,28 @@ def register_get_issues_since(requests_mock):
         print(f"Registered get issues: {path}")
 
 
+file = Path(__file__).parent / "get_issues.json"
+with file.open() as f:
+    GET_ISSUES = json.load(f)
+    SINGLE_ISSUE = GET_ISSUES[0]
+    ISSUE_URL = SINGLE_ISSUE["url"]
+    ISSUE_HTML_URL = SINGLE_ISSUE["html_url"]
+
+
 def register_get_issues(requests_mock):
     def _get_path(owner: str, repo: str) -> str:
         return f"{GITEA_HOST}/api/v1/repos/{owner}/{repo}/issues"
 
-    file = Path(__file__).parent / "get_issues.json"
-    with file.open() as f:
-        data = json.load(f)
-        path = f"{GITEA_HOST}/api/v1/repos/bot/tmp/issues"
-        requests_mock.get(
-            path,
-            json=data,
-        )
+    requests_mock.get(
+        ISSUE_URL,
+        json=SINGLE_ISSUE,
+    )
+    print(f"registered single issue URL {ISSUE_URL}")
+
+    requests_mock.get(
+        _get_path(REPOSITORY_OWNER, REPOSITORY_NAME),
+        json=GET_ISSUES,
+    )
 
     requests_mock.get(
         _get_path(NON_EXISTENT["owner"], NON_EXISTENT["repo"]),
@@ -158,6 +168,20 @@ def register_get_issues(requests_mock):
     )
 
     print("Registered get issues")
+
+
+file = Path(__file__).parent / "./get-comments.json"
+with file.open() as f:
+    COMMENTS = json.load(f)
+    GET_COMMENTS_URL = f"{trim_url(ISSUE_URL)}/comments"
+
+
+def register_get_comments(requests_mock):
+    requests_mock.get(
+        GET_COMMENTS_URL,
+        json=COMMENTS,
+    )
+    print(f"registered get comments URL {GET_COMMENTS_URL}")
 
 
 CREATE_ISSUE_TITLE = ""
@@ -473,3 +497,4 @@ def register_gitea(requests_mock):
     register_create_repository(requests_mock)
     register_create_fork(requests_mock)
     register_gitea_user_info(requests_mock)
+    register_get_comments(requests_mock)
