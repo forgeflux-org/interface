@@ -47,3 +47,11 @@ def get_issue_index(issue_url) -> int:
             raise F_D_INVALID_ISSUE_URL
 
     return int(index)
+
+
+def get_owner_repo_from_url(url: str) -> (str, str):
+    """Get (owner, repo) from repository URL"""
+    parsed = urlparse(url)
+    details = parsed.path.split("/")[1:3]
+    (owner, repo) = (details[0], details[1])
+    return (owner, repo)

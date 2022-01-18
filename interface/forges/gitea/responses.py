@@ -35,7 +35,7 @@ from dynaconf import settings
 from interface.db import DBRepo, DBIssue, DBUser, DBInterfaces, DBComment
 from interface.utils import clean_url, trim_url, date_from_string, since_epoch
 
-from .utils import get_issue_index
+from .utils import get_issue_index, get_owner_repo_from_url
 from .admin import get_db_interface
 
 
@@ -151,15 +151,15 @@ class GiteaNotificationSubject:
     state: str
 
 
+@dataclass
 class GiteaMinimalRepo:
     id: int
     name: str
+    owner: str
     full_name: str
 
-    def owner(self) -> str:
-        return self.full_name.split("/")[0]
 
-
+@dataclass
 class GiteaIssue:
     id: int
     url: str
@@ -174,11 +174,6 @@ class GiteaIssue:
     # TODO verify
     labels: [str]
     # TODO verify
-    milestone: [str] = None
-    # TODO verify
-    assignee: str = None
-    # TODO verify
-    assignees: [str] = None
     state: str
     is_locked: bool
     comments: int
@@ -188,6 +183,17 @@ class GiteaIssue:
     due_date: str
     pull_request: str
     repository: GiteaMinimalRepo
+    milestone: [str] = None
+    # TODO verify
+    assignee: str = None
+    # TODO verify
+    assignees: [str] = None
+
+    def __post_init__(self):
+        if not isinstance(self.user, GiteaOwner):
+            self.user = GiteaOwner(**self.user)
+        if not isinstance(self.repository, GiteaMinimalRepo):
+            self.repository = GiteaMinimalRepo(**self.repository)
 
     @classmethod
     def get_issue(cls, issue_url: str) -> "GiteaIssue":
@@ -223,6 +229,7 @@ class GiteaIssue:
 #
 
 
+@dataclass
 class GiteaComment:
     id: int
     html_url: str
@@ -235,26 +242,36 @@ class GiteaComment:
     created_at: str
     updated_at: str
 
+    def __post_init__(self):
+        if not isinstance(self.user, GiteaOwner):
+            self.user = GiteaOwner(**self.user)
+
     @classmethod
     def from_issue(cls, issue: GiteaIssue) -> "[GiteaComment]":
         if issue.comments == 0:
             return None
+        return cls.from_issue_url(issue.html_url)
 
+    @classmethod
+    def from_issue_url(cls, issue_html_url: str) -> "[GiteaComment]":
         comments = []
-        issue_index = get_issue_index(issue.html_url)
+        (owner, repo) = get_owner_repo_from_url(issue_html_url)
+        issue_index = get_issue_index(issue_html_url)
         # TODO use Gitea's(Forge subclass) url bulder
-        resp = requests.get(
-            "{trim_url(clean_url(settings.GITEA.host))}/api/v1/{issue.repository.full_name}/issues/{issue_index}/comments"
-        )
+        url = f"{trim_url(clean_url(settings.GITEA.host))}/api/v1/repos/{owner}/{repo}/issues/{issue_index}/comments"
+        resp = requests.get(url)
 
         if resp.status_code == 200:
             data = resp.json()
             ## TODO this doesn't take pagination into account
             for comment in data:
                 comments.append(cls(**comment))
+            if len(comments) == 0:
+                return None
             return comments
+
         raise Exception(
-            f"Error while fetching comments for issue: {issue.html_url} status_code {resp.status_code}"
+            f"Error while fetching comments for issue: {issue_html_url} status_code {resp.status_code}"
         )
 
     def belongs_to_pull_request(self) -> bool:

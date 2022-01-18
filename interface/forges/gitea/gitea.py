@@ -43,8 +43,8 @@ from interface.error import F_D_FORGE_UNKNOWN_ERROR, Error
 from interface.utils import trim_url, clean_url, get_rand
 
 from .html_client import HTMLClient
-from .utils import get_issue_index
-from .responses import GiteaIssue
+from .utils import get_issue_index, get_owner_repo_from_url
+from .responses import GiteaIssue, GiteaComment
 
 
 class Gitea(Forge):
@@ -72,6 +72,10 @@ class Gitea(Forge):
     def get_issue(issue_url: str) -> GiteaIssue:
         return GiteaIssue.get_issue(issue_url)
 
+    @staticmethod
+    def get_comments(issue_url: str) -> [GiteaComment]:
+        return GiteaComment.from_issue_url(issue_url)
+
     def get_issues(
         self, owner: str, repo: str, since: datetime.datetime = None, *args, **kwargs
     ):
@@ -94,13 +98,10 @@ class Gitea(Forge):
             raise F_D_REPOSITORY_NOT_FOUND
         raise F_D_FORGE_UNKNOWN_ERROR
 
-    def get_owner_repo_from_url(self, url: str) -> (str, str):
+    @staticmethod
+    def get_owner_repo_from_url(url: str) -> (str, str):
         """Get (owner, repo) from repository URL"""
-        url = self.get_fetch_remote(url)
-        parsed = urlparse(url)
-        details = parsed.path.split("/")[1:3]
-        (owner, repo) = (details[0], details[1])
-        return (owner, repo)
+        return get_owner_repo_from_url(url)
 
     def get_forge_url(self) -> str:
         return urlunparse((self.host.scheme, self.host.netloc, "", "", "", ""))
