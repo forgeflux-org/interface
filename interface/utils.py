@@ -16,7 +16,9 @@
 import random
 import string
 from urllib.parse import urlparse, urlunparse
-from datetime import datetime
+from datetime import datetime, timezone
+
+# from zoneinfo import ZoneInfo
 
 import requests
 
@@ -40,13 +42,14 @@ def get_rand(len: int) -> str:
     )
 
 
-EPOCH = datetime.utcfromtimestamp(0)
+EPOCH = datetime.utcfromtimestamp(0).astimezone(tz=timezone.utc)
 
 
 def since_epoch(date: datetime = None) -> int:
     """Get current time since Unix  epoch in seconds"""
     if not date:
-        date = datetime.now()
+        date = datetime.now(timezone.utc)
+    date.astimezone(tz=timezone.utc)
     return int((date - EPOCH).total_seconds())
 
 
@@ -55,7 +58,7 @@ _DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 def from_epoch(date: int) -> datetime:
     """Get time milliseconds from seconds since Unix epoch"""
-    return datetime.utcfromtimestamp(date)
+    return datetime.utcfromtimestamp(date).astimezone(tz=timezone.utc)
 
 
 def date_from_string(date: str) -> datetime:
