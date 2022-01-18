@@ -164,7 +164,6 @@ class DBIssue:
             self.user = issue.user
             self.repository = issue.repository
             self.id = issue.id
-            print("issue early exit")
             return
 
         self.user.save()
@@ -228,7 +227,6 @@ class DBIssue:
 
                 break
             except IntegrityError as e:
-                print(e)
                 count += 1
                 if count > 5:
                     raise e
@@ -395,15 +393,16 @@ class DBIssue:
         return issue
 
     def actor_name(self) -> str:
-        name = f"!{self.repository.actor_name()}!{self.repo_scope_id}"
+        name = f"{self.repository.actor_name()}!issue!{self.repo_scope_id}"
         return name
 
     def actor_url(self) -> str:
-        act_url = f"{INTERFACE_BASE_URL}/i/!{self.actor_name()}"
+        act_url = f"{INTERFACE_BASE_URL}/i/{self.actor_name()}"
         return act_url
 
     def to_actor(self):
         act_url = self.actor_url()
+        act_name = self.actor_name()
 
         actor = {
             "@context": [
@@ -412,7 +411,10 @@ class DBIssue:
             ],
             "id": act_url,
             "type": "Group",
-            "preferredUsername": self.actor_name(),
+            "preferredUsername": act_name,
+            "name": act_name,
+            "summary": f"<p>{self.description}</p>",
+            "url": act_url,
             "inbox": f"{act_url}/inbox",
             "outbox": f"{act_url}/outbox",
             "followers": f"{act_url}/followers",
@@ -422,11 +424,28 @@ class DBIssue:
                 "owner": act_url,
                 "publicKeyPem": self.private_key.to_json_key(),
             },
+            "manuallyApprovesFollowers": False,
+            "discoverable": True,
+            "published": "2016-03-16T00:00:00Z",
+            "alsoKnownAs": [act_url],
+            "tag": [],
+            "endpoints": {"sharedInbox": f"{act_url}/inbox"},
+            "icon": {
+                "type": "Image",
+                "mediaType": "image/png",
+                "url": self.repository.owner.avatar_url,
+            },
+            "image": {
+                "type": "Image",
+                "mediaType": "image/png",
+                "url": self.repository.owner.avatar_url,
+            },
         }
+
         return actor
 
     def webfinger_subject(self) -> str:
-        subject = f"acct:{self.actor_name()}:{INTERFACE_DOMAIN}"
+        subject = f"acct:{self.actor_name()}@{INTERFACE_DOMAIN}"
         return subject
 
     def webfinger(self):
@@ -447,3 +466,22 @@ class DBIssue:
             ],
         }
         return resp
+
+    @staticmethod
+    def split_actor_name(name) -> (str, str):
+        """return format: (owner, repository_name, issue_id)"""
+        if "!" not in name:
+            raise ValueError("Invalid actor name")
+
+        name_parts = name.split("!")
+        owner = name_parts[1]
+        name = name_parts[2]
+        issue_id = name_parts[4]
+        return (owner, name, issue_id)
+
+    @classmethod
+    def from_actor_name(cls, name) -> "DBIssue":
+        (owner, name, repo_scope_id) = cls.split_actor_name(name)
+        repo = DBRepo.load(name=name, owner=owner)
+        issue = cls.load(repo, repo_scope_id=repo_scope_id)
+        return issue
