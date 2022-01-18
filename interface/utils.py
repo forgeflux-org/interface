@@ -50,6 +50,14 @@ def since_epoch(date: datetime = None) -> int:
     return int((date - EPOCH).total_seconds())
 
 
+_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
+
+
 def from_epoch(date: int) -> datetime:
     """Get time milliseconds from seconds since Unix epoch"""
     return datetime.utcfromtimestamp(date)
+
+
+def date_from_string(date: str) -> datetime:
+    """get datetime from string"""
+    return datetime.strptime(date, _DATE_FORMAT)

@@ -28,8 +28,8 @@ from .interfaces import DBInterfaces
 class DBComment:
     body: str
     html_url: str
-    created: str
-    updated: str
+    created: int
+    updated: int
     comment_id: int  # comment ID
     is_native: bool
     user: DBUser
