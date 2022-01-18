@@ -16,6 +16,8 @@
 import random
 import string
 from urllib.parse import urlparse, urlunparse
+from datetime import datetime
+
 import requests
 
 
@@ -36,3 +38,18 @@ def get_rand(len: int) -> str:
     return "".join(
         random.choice(string.ascii_uppercase + string.digits) for _ in range(len)
     )
+
+
+EPOCH = datetime.utcfromtimestamp(0)
+
+
+def since_epoch(date: datetime = None) -> int:
+    """Get current time since Unix  epoch in seconds"""
+    if not date:
+        date = datetime.now()
+    return int((date - EPOCH).total_seconds())
+
+
+def from_epoch(date: int) -> datetime:
+    """Get time milliseconds from seconds since Unix epoch"""
+    return datetime.utcfromtimestamp(date)

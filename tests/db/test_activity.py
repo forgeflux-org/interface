@@ -14,38 +14,35 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from datetime import datetime
 
-from interface.db import get_db
+import pytest
+
+from interface.db import get_db, DBActivity, ActivityType, DBComment
 from interface.db.repo import DBRepo
 from interface.db.issues import DBIssue
 from interface.db.users import DBUser
-from interface.db.comments import DBComment
-
-from tests.db.test_user import cmp_user
-from tests.db.test_issue import cmp_issue
 
 
-def cmp_comment(lhs: DBComment, rhs: DBComment) -> bool:
+def cmp_activity(lhs: DBActivity, rhs: DBActivity) -> bool:
     assert lhs is not None
     assert rhs is not None
 
     return all(
         [
-            lhs.body == rhs.body,
-            lhs.created == rhs.created,
-            lhs.updated == rhs.updated,
-            lhs.is_native == rhs.is_native,
-            cmp_user(lhs.user, rhs.user),
-            cmp_issue(lhs.belongs_to_issue, rhs.belongs_to_issue),
+            lhs.user_id == rhs.user_id,
             lhs.comment_id == rhs.comment_id,
-            lhs.html_url == rhs.html_url,
+            lhs.issue_id == rhs.issue_id,
+            lhs.activity == rhs.activity,
+            lhs.id == rhs.id,
+            lhs.created == rhs.created,
         ]
     )
 
 
-def test_comment(client):
-    """Test user route"""
+def test_acitivty(client):
+    """Test DBActivity"""
 
-    # user data signed by interface1
+    assert DBActivity.load_with_db_id(db_id=100) is None
+
     username = "db_test_user"
     user_id = f"{username}@git.batsense.net"
     profile_url = f"https://git.batsense.net/{username}"
@@ -57,25 +54,25 @@ def test_comment(client):
         description="description",
         id=None,
     )
+
     user.save()
 
     # repository data
     repo_name = "repo_name"
-    repo_owner = user.user_id
     repo = DBRepo(
         name=repo_name,
-        owner=user,
         description="foo",
+        owner=user,
         html_url=f"{profile_url}/{repo_name}",
     )
-    repo.save()
 
     title = "Test issue"
     description = "foo bar"
     repo_scope_id = 8
-    html_url = f"https://git.batsense/{repo_owner}/{repo_name}/issues/{repo_scope_id}"
+    html_url = f"https://git.batsense/{user.user_id}/{repo_name}/issues/{repo_scope_id}"
     created = str(datetime.now())
     updated = str(datetime.now())
+    # repository= repo
     is_closed = False
     is_merged = None
     is_native = True
@@ -93,11 +90,22 @@ def test_comment(client):
         is_merged=is_merged,
         is_native=is_native,
     )
+
     issue.save()
+
+    with pytest.raises(ValueError):
+        DBActivity(user_id=user.id, activity=ActivityType.CREATE)
+
+    print(f"issue id: {issue.id}")
+    activity = DBActivity(
+        user_id=user.id, activity=ActivityType.CREATE, issue_id=issue.id
+    )
+    activity.save()
+    assert cmp_activity(activity, DBActivity.load_with_db_id(db_id=activity.id))
 
     comment_body = "test comment"
     comment_id1 = 1
-    comment_url1 = f"https://git.batsense.net/{repo_owner}/{repo_name}/issues/{repo_scope_id}/{comment_id1}"
+    comment_url1 = f"https://git.batsense.net/{repo.name}/{repo.owner.user_id}/issues/{repo_scope_id}/{comment_id1}"
     comment1 = DBComment(
         body=comment_body,
         created=str(datetime.now()),
@@ -108,32 +116,10 @@ def test_comment(client):
         html_url=comment_url1,
         comment_id=comment_id1,
     )
-    assert DBComment.load_issue_comments(issue) is None
-    assert DBComment.load_from_comment_url(comment1.html_url) is None
 
     comment1.save()
-    assert comment1.id is not None
-
-    comment_id2 = 2
-    comment_url2 = f"https://git.batsense.net/{repo_owner}/{repo_name}/issues/{repo_scope_id}/{comment_id2}"
-
-    comment2 = DBComment(
-        body=comment_body,
-        created=str(datetime.now()),
-        updated=str(datetime.now()),
-        is_native=True,
-        belongs_to_issue=issue,
-        user=user,
-        html_url=comment_url2,
-        comment_id=comment_id2,
+    activity1 = DBActivity(
+        user_id=user.id, activity=ActivityType.CREATE, comment_id=comment1.id
     )
-
-    comment2.save()
-
-    for comment in DBComment.load_issue_comments(issue):
-        from_url = DBComment.load_from_comment_url(comment.html_url)
-        assert cmp_comment(comment, from_url)
-        if comment.comment_id == comment1.comment_id:
-            assert cmp_comment(comment1, comment)
-        else:
-            assert cmp_comment(comment2, comment)
+    activity1.save()
+    assert cmp_activity(activity1, DBActivity.load_with_db_id(db_id=activity1.id))

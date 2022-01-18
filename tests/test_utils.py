@@ -14,10 +14,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from urllib.parse import urlparse, urlunparse
+from datetime import datetime
 from dynaconf import settings
 
 from interface.app import create_app
-from interface.utils import clean_url, trim_url
+from interface.utils import clean_url, trim_url, since_epoch, from_epoch
 from interface.db import get_db
 
 
@@ -56,3 +57,11 @@ def register_ns(requests_mock):
 
     requests_mock.post(register, json={})
     requests_mock.post(query, json=[interface_url])
+
+
+def test_utils():
+    date = datetime(1980, 4, 23, 14, 12, 34)
+    epoch = since_epoch(date=date)
+    print(epoch)
+    assert from_epoch(epoch) == date
+    assert from_epoch(since_epoch()) > date

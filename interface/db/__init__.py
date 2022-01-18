@@ -21,3 +21,4 @@ from .users import DBUser
 from .comments import DBComment
 from .events import DBTask, JobStatus, DBTaskJson, save_message
 from .webfinger import INTERFACE_BASE_URL, INTERFACE_DOMAIN
+from .activity import DBActivity, ActivityType

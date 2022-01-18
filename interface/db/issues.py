@@ -189,8 +189,7 @@ class DBIssue:
                             ?,
                             (SELECT ID FROM gitea_users WHERE user_id  = ?),
                             ?,
-                            ?
-                        )
+                            ?)
                     """,
                     (
                         self.title,
@@ -208,6 +207,16 @@ class DBIssue:
                     ),
                 )
                 conn.commit()
+                data = cur.execute(
+                    """
+                    SELECT ID FROM gitea_forge_issues
+                    WHERE html_url = ?
+                    """,
+                    (self.html_url,),
+                ).fetchone()
+                if data is None:
+                    raise ValueError("Issue ID can't be none")
+                self.id = data[0]
                 break
             except IntegrityError as e:
                 print(e)
@@ -215,17 +224,6 @@ class DBIssue:
                 if count > 5:
                     raise e
                 continue
-            self.id = cur.execute(
-                """
-                SELECT id FROM gitea_forge_issues
-                WHERE repo_scope_id = ? AND html_url = ?
-                """,
-                (self.repo_scope_id, self.html_url),
-            ).fetchone()[
-                0
-            ]  # If sqlite result doesn't contain anything at [0]
-        # pos then save wasn't successful or some other
-        # error occurred
         self.__update()
 
     @classmethod

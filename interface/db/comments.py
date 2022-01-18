@@ -102,6 +102,14 @@ class DBComment:
             ),
         )
         conn.commit()
+        data = cur.execute(
+            """
+                    SELECT ID from gitea_issue_comments WHERE html_url = ?
+
+                    """,
+            (self.html_url,),
+        ).fetchone()
+        self.id = data[0]
         self.__update()
 
     @classmethod
