@@ -18,6 +18,8 @@ Gitea-specific utilities
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from urllib.parse import urlparse
 
+from dynaconf import settings
+
 from interface.utils import trim_url
 from interface.forges.base import F_D_INVALID_ISSUE_URL
 
@@ -55,3 +57,8 @@ def get_owner_repo_from_url(url: str) -> (str, str):
     details = parsed.path.split("/")[1:3]
     (owner, repo) = (details[0], details[1])
     return (owner, repo)
+
+
+def get_issue_html_url(owner: str, repo: str, issue_id) -> str:
+    """issue HTML URL from compoenents"""
+    return f"{settings.GITEA.host}/{owner}/{repo}/issues/{issue_id}"

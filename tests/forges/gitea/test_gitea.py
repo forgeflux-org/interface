@@ -38,6 +38,7 @@ from interface.forges.base import (
 from interface.error import F_D_FORGE_UNKNOWN_ERROR, Error
 from interface.forges.gitea import Gitea, HTMLClient
 from interface.forges.gitea.responses import GiteaComment
+from interface.forges.gitea.utils import get_issue_index, get_owner_repo_from_url
 
 from tests.test_utils import register_ns
 from tests.test_errors import expect_error, pytest_expect_errror
@@ -298,3 +299,10 @@ def test_git_cache_get_repo_from_actor_url(app, requests_mock):
     assert resp.description == REPOSITORY_DESCRIPTION
     assert resp.owner.user_id == REPOSITORY_OWNER
     assert resp.name == REPOSITORY_NAME
+
+
+def test_get_issue_url(app, requests_mock):
+    g = get_forge()
+    (owner, repo) = g.forge.get_owner_repo_from_url(ISSUE_HTML_URL)
+    issue_id = g.forge.get_issue_index(ISSUE_HTML_URL)
+    assert g.forge.get_issue_html_url(owner=owner, repo=repo, issue_id=issue_id)
