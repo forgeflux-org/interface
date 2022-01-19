@@ -24,7 +24,7 @@ from flask import g
 from libgit import InterfaceAdmin, Repo, Patch, System
 from dynaconf import settings
 
-from interface.db import get_db, get_git_system, DBUser, DBRepo
+from interface.db import get_db, get_git_system, DBUser, DBRepo, DBIssue
 from interface.forges.utils import get_branch_name
 from interface.forges.base import Forge
 from interface.forges.gitea import Gitea
@@ -130,9 +130,10 @@ def get_user(username: str) -> DBUser:
 
 def __get_and_store_repo(owner: str, name: str) -> DBRepo:
     git = get_forge()
-    repo_info = git.forge.get_repository(owner=owner, repo=name)
     print(f" requesting data for user {owner}")
     user = get_user(owner)
+    user.save()
+    repo_info = git.forge.get_repository(owner=owner, repo=name)
     repo = DBRepo(
         name=repo_info.name,
         description=repo_info.description,
@@ -164,3 +165,49 @@ def get_repo(owner: str, name: str) -> DBRepo:
     if repo is None:
         repo = __get_and_store_repo(owner=owner, name=name)
     return repo
+
+
+def __get_and_store_issue(owner: str, repo: str, issue_id: int) -> DBRepo:
+    git = get_forge()
+    issue_url = git.forge.get_issue_html_url(owner=owner, repo=repo, issue_id=issue_id)
+    issue = DBIssue.load_with_html_url(issue_url)
+    if issue is None:
+        issue = git.forge.get_issue(owner=owner, repo=repo, issue_id=issue_id)
+        is_closed = issue.state == "closed"
+        user = issue.user.to_db_user()
+        user.save()
+        repo = get_repo(name=issue.repository.name, owner=issue.repository.owner)
+        issue = DBIssue(
+            title=issue.title,
+            description=issue.body,
+            created=issue.get_created_epoch(),
+            html_url=issue.html_url,
+            updated=issue.get_updated_epoch(),
+            repository=repo,
+            repo_scope_id=issue.repo_scope_id(),
+            is_closed=is_closed,
+            # TODO verify is issue is native
+            is_native=True,
+            user=user,
+        )
+        issue.save()
+    return issue
+
+
+def get_issue_from_actor_name(name: str) -> DBRepo:
+    """
+    Get issue from database.
+    When issue not available in DB, get from forge, store and return
+    """
+    (owner, repo, issue_id) = DBIssue.split_actor_name(name)
+    issue = __get_and_store_issue(owner=owner, repo=repo, issue_id=issue_id)
+    return issue
+
+
+def get_issue(owner: str, repo: str, issue_id: int) -> DBRepo:
+    """
+    Get issue from database.
+    When issue not available in DB, get from forge, store and return
+    """
+    issue = __get_and_store_issue(owner=owner, repo=repo, issue_id=issue_id)
+    return issue

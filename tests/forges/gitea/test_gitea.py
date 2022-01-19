@@ -28,7 +28,15 @@ from interface.forges.payload import (
     MetaData,
 )
 from interface.forges.utils import clean_url
-from interface.git import Git, get_forge, get_user, get_repo_from_actor_name, get_repo
+from interface.git import (
+    Git,
+    get_forge,
+    get_user,
+    get_repo_from_actor_name,
+    get_repo,
+    get_issue_from_actor_name,
+    get_issue,
+)
 from interface.forges.base import (
     F_D_REPOSITORY_NOT_FOUND,
     F_D_FORGE_FORBIDDEN_OPERATION,
@@ -123,8 +131,8 @@ def test_get_issues(requests_mock):
 
     data = g.get_issues(REPOSITORY_OWNER, REPOSITORY_NAME)
     assert len(data) == 2
-    assert data[0]["id"] == 5
-    assert data[1]["id"] == 4
+    assert data[0]["id"] == 19
+    assert data[1]["id"] == 18
 
     with pytest.raises(Error) as error:
         g.get_issues(NON_EXISTENT["owner"], NON_EXISTENT["repo"])
@@ -150,9 +158,9 @@ def test_get_comments(requests_mock):
     g = Gitea()
 
     comments = g.get_comments(ISSUE_HTML_URL)
-    assert len(comments) == 3
-    assert comments[2].id == 29
-    assert comments[2].user.id == USER_INFO["id"]
+    assert len(comments) == 2
+    assert comments[1].id == 31
+    assert comments[1].user.id == USER_INFO["id"]
     signle_issue = g.get_issue(
         owner=SINGLE_ISSUE["repository"]["owner"],
         repo=SINGLE_ISSUE["repository"]["name"],
@@ -286,6 +294,7 @@ def test_user(app, requests_mock):
 def test_git_cache_get_user(app, requests_mock):
     data = get_user(USER_INFO["username"])
     assert data.user_id == USER_INFO["username"]
+    assert data.id == get_user(USER_INFO["username"]).id
 
 
 def test_git_cache_get_repo(app, requests_mock):
@@ -306,7 +315,7 @@ def test_git_cache_get_repo_from_actor_url(app, requests_mock):
     assert data.user_id == USER_INFO["username"]
 
     (owner, repo) = g.forge.get_owner_repo_from_url(REPOSITORY_URL)
-    resp = get_repo(owner, repo)
+    resp = get_repo_from_actor_name(f"!{owner}!{repo}")
     assert resp.description == REPOSITORY_DESCRIPTION
     assert resp.owner.user_id == REPOSITORY_OWNER
     assert resp.name == REPOSITORY_NAME
@@ -317,3 +326,55 @@ def test_get_issue_url(app, requests_mock):
     (owner, repo) = g.forge.get_owner_repo_from_url(ISSUE_HTML_URL)
     issue_id = g.forge.get_issue_index(ISSUE_HTML_URL)
     assert g.forge.get_issue_html_url(owner=owner, repo=repo, issue_id=issue_id)
+
+
+def test_git_cache_get_issue_from_actorname(app, requests_mock):
+    owner = SINGLE_ISSUE["repository"]["owner"]
+    repo = SINGLE_ISSUE["repository"]["name"]
+    issue_id = SINGLE_ISSUE["number"]
+
+    resp = get_issue_from_actor_name(f"!{owner}!{repo}!issue!{issue_id}")
+
+    g = Gitea()
+
+    signle_issue = g.get_issue(
+        owner,
+        repo,
+        issue_id,
+    )
+    assert signle_issue.html_url == resp.html_url
+    assert signle_issue.body == resp.description
+    assert signle_issue.title == resp.title
+    assert resp.id == get_issue_from_actor_name(f"!{owner}!{repo}!issue!{issue_id}").id
+
+
+def test_git_cache_get_issue(app, requests_mock):
+    owner = SINGLE_ISSUE["repository"]["owner"]
+    repo = SINGLE_ISSUE["repository"]["name"]
+    issue_id = SINGLE_ISSUE["number"]
+
+    resp = get_issue(
+        owner,
+        repo,
+        issue_id,
+    )
+
+    g = Gitea()
+
+    signle_issue = g.get_issue(
+        owner,
+        repo,
+        issue_id,
+    )
+    assert signle_issue.html_url == resp.html_url
+    assert signle_issue.body == resp.description
+    assert signle_issue.title == resp.title
+
+    assert (
+        resp.id
+        == get_issue(
+            owner,
+            repo,
+            issue_id,
+        ).id
+    )
