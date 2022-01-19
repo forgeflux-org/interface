@@ -62,3 +62,8 @@ def get_owner_repo_from_url(url: str) -> (str, str):
 def get_issue_html_url(owner: str, repo: str, issue_id) -> str:
     """issue HTML URL from compoenents"""
     return f"{settings.GITEA.host}/{owner}/{repo}/issues/{issue_id}"
+
+
+def get_issue_api_url(owner: str, repo: str, issue_id) -> str:
+    """issue API URL from compoenents"""
+    return f"{settings.GITEA.host}/api/v1/repos/{owner}/{repo}/issues/{issue_id}"

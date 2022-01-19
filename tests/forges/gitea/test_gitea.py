@@ -134,9 +134,16 @@ def test_get_issues(requests_mock):
         g.get_issues(FORGE_ERROR["owner"], FORGE_ERROR["repo"])
     assert pytest_expect_errror(error, F_D_FORGE_UNKNOWN_ERROR)
 
-    signle_issue = g.get_issue(ISSUE_URL)
+    signle_issue = g.get_issue(
+        owner=SINGLE_ISSUE["repository"]["owner"],
+        repo=SINGLE_ISSUE["repository"]["name"],
+        issue_id=SINGLE_ISSUE["number"],
+    )
     assert signle_issue.url == ISSUE_URL
     assert signle_issue.id == SINGLE_ISSUE["id"]
+    signle_issue.get_created_epoch()
+    signle_issue.get_updated_epoch()
+    signle_issue.repo_scope_id()
 
 
 def test_get_comments(requests_mock):
@@ -146,7 +153,11 @@ def test_get_comments(requests_mock):
     assert len(comments) == 3
     assert comments[2].id == 29
     assert comments[2].user.id == USER_INFO["id"]
-    signle_issue = g.get_issue(ISSUE_URL)
+    signle_issue = g.get_issue(
+        owner=SINGLE_ISSUE["repository"]["owner"],
+        repo=SINGLE_ISSUE["repository"]["name"],
+        issue_id=SINGLE_ISSUE["number"],
+    )
     assert GiteaComment.from_issue(signle_issue) == comments
 
 

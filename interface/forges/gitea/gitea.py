@@ -69,8 +69,8 @@ class Gitea(Forge):
         return url
 
     @staticmethod
-    def get_issue(issue_url: str) -> GiteaIssue:
-        return GiteaIssue.get_issue(issue_url)
+    def get_issue(owner: str, repo: str, issue_id) -> GiteaIssue:
+        return GiteaIssue.get_issue(owner=owner, repo=repo, issue_id=issue_id)
 
     @staticmethod
     def get_issue_html_url(owner: str, repo: str, issue_id: str) -> GiteaIssue:

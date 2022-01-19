@@ -35,7 +35,7 @@ from dynaconf import settings
 from interface.db import DBRepo, DBIssue, DBUser, DBInterfaces, DBComment
 from interface.utils import clean_url, trim_url, date_from_string, since_epoch
 
-from .utils import get_issue_index, get_owner_repo_from_url
+from .utils import get_issue_index, get_owner_repo_from_url, get_issue_api_url
 from .admin import get_db_interface
 
 
@@ -196,31 +196,28 @@ class GiteaIssue:
             self.repository = GiteaMinimalRepo(**self.repository)
 
     @classmethod
-    def get_issue(cls, issue_url: str) -> "GiteaIssue":
-        response = requests.get(issue_url)
+    def get_issue(cls, owner: str, repo: str, issue_id) -> "GiteaIssue":
+        url = get_issue_api_url(owner=owner, repo=repo, issue_id=issue_id)
+        response = requests.get(url)
         if response.status_code == 200:
             return cls(**response.json())
 
         raise Exception(
-            f"UNKNOWN ERROR while getting issue. Status code {response.status_code}, issue_url {issue_url}"
+            f"UNKNOWN ERROR while getting issue. Status code {response.status_code}, issue_url {url}"
         )
 
-    def to_db_issue(self) -> DBIssue:
-        is_closed = self.state == "closed"
-        repo = DBRepo.load(self.repository.name, self.repository.owner())
-        DBIssue(
-            title=self.title,
-            description=self.body,
-            created=since_epoch(date_from_string(self.created_at)),
-            html_url=self.html_url,
-            updated=since_epoch(date_from_string(self.updated_at)),
-            repository=repo,
-            repo_scope_id=get_issue_index(self.html_url),
-            is_closed=is_closed,
-            # TODO verify is issue is native
-            is_native=True,
-            user=self.user.to_db_user(),
-        )
+    def repo_scope_id(self) -> int:
+        return get_issue_index(self.html_url)
+
+    def get_updated_epoch(self) -> int:
+        print(self.updated_at)
+        print(f"foo {since_epoch(date_from_string(self.updated_at))}")
+        return since_epoch(date_from_string(self.updated_at))
+
+    def get_created_epoch(self) -> int:
+        print(self.created_at)
+        print(f"foo {since_epoch(date_from_string(self.created_at))}")
+        return since_epoch(date_from_string(self.created_at))
 
 
 #    def self_get_comments(self):
