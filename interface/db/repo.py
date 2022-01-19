@@ -39,7 +39,6 @@ class DBRepo:
         if repo is not None:
             self.private_key = repo.private_key
             self.id = repo.id
-            print("repo early exit")
             return
 
         self.owner.save()
@@ -69,7 +68,6 @@ class DBRepo:
                 self.id = repo.id
                 break
             except IntegrityError as e:
-                print(e)
                 count += 1
                 if count > 5:
                     raise e
@@ -80,7 +78,6 @@ class DBRepo:
         """Load repository from database"""
         owner = DBUser.load(owner)
         if owner is None:
-            print("owner is none")
             return None
 
         conn = get_db()
@@ -93,7 +90,6 @@ class DBRepo:
             """,
             (name, owner.id),
         ).fetchone()
-        print(data)
         if data is None:
             return None
         resp = cls(name=name, owner=owner, description=data[2], html_url=data[3])

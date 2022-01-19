@@ -52,7 +52,7 @@ def test_issue(client):
 
     # user data signed by interface1
     username = "db_test_user"
-    user_id = f"{username}@git.batsense.net"
+    user_id = username
     profile_url = f"https://git.batsense.net/{username}"
     user = DBUser(
         name=username,
@@ -66,7 +66,7 @@ def test_issue(client):
     user.save()
 
     # repository data
-    repo_name = "repo_name"
+    repo_name = "foo"
     repo = DBRepo(
         name=repo_name,
         description="foo",
@@ -191,3 +191,26 @@ def test_issue(client):
     pr.set_open(opened_at)
     assert pr.state() == OPEN
     assert pr.updated == opened_at
+
+    actor = from_db.to_actor()
+    assert actor["preferredUsername"] == from_db.actor_name()
+    assert actor["name"] == from_db.actor_name()
+    assert actor["id"] == from_db.actor_url()
+    assert actor["inbox"] == f"{from_db.actor_url()}/inbox"
+    assert actor["outbox"] == f"{from_db.actor_url()}/outbox"
+    assert actor["followers"] == f"{from_db.actor_url()}/followers"
+    assert actor["following"] == f"{from_db.actor_url()}/following"
+    assert from_db.description in actor["summary"]
+    assert actor["url"] == from_db.actor_url()
+    assert actor["icon"]["url"] == from_db.repository.owner.avatar_url
+    assert actor["image"]["url"] == from_db.repository.owner.avatar_url
+
+    with pytest.raises(ValueError) as _:
+        from_db.split_actor_name("foo")
+
+    (r_owner, r_repo_name, r_issue_id) = from_db.split_actor_name(actor["name"])
+    assert r_owner == from_db.repository.owner.user_id
+    assert r_repo_name == from_db.repository.name
+    assert int(r_issue_id) == from_db.repo_scope_id
+
+    cmp_issue(from_db, from_db.from_actor_name(actor["name"]))
