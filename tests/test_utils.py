@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from urllib.parse import urlparse, urlunparse
-from datetime import datetime
+from datetime import datetime, timezone
 from dynaconf import settings
 
 from interface.app import create_app
@@ -60,8 +60,7 @@ def register_ns(requests_mock):
 
 
 def test_utils():
-    date = datetime(1980, 4, 23, 14, 12, 34)
+    date = datetime(2022, 1, 18, 16, 27, 18, tzinfo=timezone.utc)
     epoch = since_epoch(date=date)
-    print(epoch)
     assert from_epoch(epoch) == date
     assert from_epoch(since_epoch()) > date
