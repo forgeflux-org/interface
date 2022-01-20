@@ -19,13 +19,9 @@ Flask application
 import os
 
 from flask import Flask
-from dynaconf import settings
 
-import interface.settings
 from interface import db
-from interface import runner
 from interface.webfinger import bp as webfinger_bp
-from interface.db import DBInterfaces
 from interface.forges.gitea.admin import get_db_user
 
 
@@ -56,6 +52,9 @@ def create_app(test_config=None):
     def flock_google(response):
         response.headers["Permissions-Policy"] = "interest-cohort=()"
         return response
+
+    for bp in [webfinger_bp]:
+        app.register_blueprint(bp)
 
     return app
 
