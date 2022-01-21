@@ -16,36 +16,21 @@ Webfinger route
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from urllib.parse import urlparse
+from flask import Blueprint, jsonify, request
 
-from flask import Blueprint, jsonify, Response, request
-from dynaconf import settings
-
-from interface.db import DBIssue, DBUser, DBRepo
-from interface.git import get_forge
+from interface.db import INTERFACE_DOMAIN
+from interface.git import get_issue, get_user, get_repo
+from interface.error import Error, bad_req, internal_server_error
 
 bp = Blueprint("WELL-KNOWN", __name__, url_prefix="/.well-known/")
 
 
-def bad_req():
-    res = Response()
-    res.status_code = 400
-    return res
-
-
-def internal_server_error():
-    res = Response()
-    res.status_code = 500
-    return res
-
-
-interface_domain = urlparse(settings.SERVER.url).netloc
 JRD_JSON = "application/jrd+json; charset=utf-8"
 
 
 def set_jrd_json(data):
     resp = jsonify(data)
-    resp.headers["Content-Type"] = JDR_JSON
+    resp.headers["Content-Type"] = JRD_JSON
     return resp
 
 
@@ -57,73 +42,38 @@ def webfinger():
         return bad_req()
     if any(["acct:" not in resource, "@" not in resource]):
         return bad_req()
-
-    print(resource)
     try:
         parts = resource.split("acct:")
         parts = parts[1].split("@")
         username = parts[0]
         domain = parts[1]
-        if domain != interface_domain:
-            print(f"this domain: {interface_domain} recv {domain}")
+        if domain != INTERFACE_DOMAIN:
             return bad_req()
         if "!" not in username:
-            user = DBUser.load(username)
-            if user is None:
-                git = get_forge()
-                user = git.forge.get_user(username).to_db_user()
-                user.save()
-                return set_jrd_json(user.webfinger())
+            user = get_user(username)
+            return set_jrd_json(user.webfinger())
 
-        if "!" in username:
-            username_parts = username.split("!")
-            owner = username_parts[1]
-            name = username_parts[2]
-            repo = DBRepo.load(name=name, owner=owner)
-            git = get_forge()
+        username_parts = username.split("!")
+        owner = username_parts[1]
+        name = username_parts[2]
+        repo = get_repo(name=name, owner=owner)
 
-            if repo is None:
-                repo_info = git.forge.get_repository(owner=owner, repo=name)
-                repo = repo_info.to_db_repo()
-                repo.save()
+        if len(username_parts) == 3:
+            return set_jrd_json(repo.webfinger())
 
-            if len(username_parts) == 3:
-                # "!owner!repo"
-                return set_jrd_json(repo.webfinger())
+        if len(username_parts) == 5:
+            repo_scope_id = username_parts[4]
+            # "!owner!repo!<issue/pull>!id"
+            if username_parts[3] == "issue":
+                issue = get_issue(owner=owner, repo=name, issue_id=repo_scope_id)
+                return set_jrd_json(issue.webfinger())
 
-            if len(username_parts) == 5:
-                repo_scope_id = username_parts[4]
-                print(f"owner: {owner} name: {name} scoped_id: {repo_scope_id}")
-                # "!owner!repo!<issue/pull>!id"
-                if username_parts[3] == "issue":
-                    print("issue")
-                    issue = DBIssue.load(repo, repo_scope_id)
-                    if issue is None:
-                        # fetch info from forge and save
-                        raise NotImplementedError
-                    return set_jrd_json(issue.webfinger())
-
-                    raise NotImplementedError
-
-                if username_parts[3] == "pull":
-                    print("pull")
-                    issue = DBIssue.load(repo, repo_scope_id)
-                    if issue is None:
-                        # fetch info from forge and save
-                        raise NotImplementedError
-                    return set_jrd_json(issue.webfinger())
-
-                    raise NotImplementedError
-                return bad_req()
-
-            # acct:!owner!repo!issue!id@domain.com
-            raise NotImplementedError
-        print(username)
-        print(domain)
-        return Response()
-    except NotImplementedError as e:
-        return internal_server_error()
-    except Exception as e:
+            if username_parts[3] == "pull":
+                print("pull")
+                raise NotImplementedError
         return bad_req()
-    else:
+    except Exception as e:
+        print("caught exception {e}")
+        if isinstance(e, Error):
+            return e.get_error_resp()
         return internal_server_error()
