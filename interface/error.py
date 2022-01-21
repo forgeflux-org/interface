@@ -18,7 +18,7 @@ Errors
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from dataclasses import dataclass
 
-from flask import jsonify
+from flask import jsonify, Response as FlaskResponse
 from requests import Response
 
 
@@ -75,20 +75,20 @@ F_D_FORGE_UNKNOWN_ERROR = Error(
 
 def bad_req():
     """Empty response with 400 bad request status code"""
-    res = Response()
+    res = FlaskResponse()
     res.status_code = 400
     return res
 
 
 def internal_server_error():
     """Empty response with 500 internal_server_error status code"""
-    res = Response()
+    res = FlaskResponse()
     res.status_code = 500
     return res
 
 
 def not_found():
     """Empty response with 404 not found status code"""
-    res = Response()
+    res = FlaskResponse()
     res.status_code = 404
     return res
