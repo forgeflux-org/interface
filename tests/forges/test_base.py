@@ -63,11 +63,14 @@ def test_base_forge():
     with pytest.raises(Exception) as _:
         Forge("https://git.batsense.net")
 
-    with pytest.raises(Exception) as _:
-        f = Forge("https://git.batsense.net")
-        f.get_fetch_remote("ftp://example.com")
-
     forge = BasicForge()
+    with pytest.raises(Exception) as e:
+        forge.get_fetch_remote("ftp://example.com")
+
+    with pytest.raises(Exception) as _:
+        forge.get_fetch_remote("https://example.com")
+    repo = f"{forge.host.scheme}://{forge.host.netloc}/repo/owner"
+    assert forge.get_fetch_remote(repo) == repo
 
     with pytest.raises(NotImplementedError) as _:
         forge.get_owner_repo_from_url("")
