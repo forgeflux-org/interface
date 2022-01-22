@@ -42,7 +42,6 @@ class Forge:
     def __init__(self, host):  # self, base_url: str, admin_user: str, admin_email):
         self.host = urlparse(clean_url(host))
         if all([self.host.scheme != "http", self.host.scheme != "https"]):
-            print(self.host.scheme)
             raise Exception("scheme should be either http or https")
         self.ns = NameService(self.get_forge_url())
 
@@ -54,7 +53,7 @@ class Forge:
         if parsed.netloc != self.host.netloc:
             raise Exception("Unsupported forge")
         repo = parsed.path.split("/")[1:3]
-        path = format("/%s/%s" % (repo[0], repo[1]))
+        path = f"{repo[0]}/{repo[1]}"
         return urlunparse((self.host.scheme, self.host.netloc, path, "", "", ""))
 
     def get_owner_repo_from_url(self, url: str) -> (str, str):

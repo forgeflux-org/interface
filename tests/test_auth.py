@@ -1,3 +1,4 @@
+""" Test authentiacation"""
 # Interface ---  API-space federation for software forges
 # Copyright © 2022 Aravinth Manivannan <realaravinth@batsense.net>
 #
@@ -12,21 +13,17 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import time
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
 
-from dynaconf import settings
-from interface.ns import NameService
-from interface.git import get_forge
-from interface.utils import clean_url
-
-from tests.test_utils import register_ns
+from interface.auth import RSAKeyPair
 
 
-def test_ns(app, requests_mock):
-    """Test ns"""
-    clean_interface_url = clean_url(settings.SERVER.url)
-    forge = get_forge().forge.get_forge_url()
-    ns = NameService(forge)
-    assert clean_interface_url in ns.query(forge)
-    time.sleep(ns.get_cache_ttl() * 2)
-    assert clean_interface_url in ns.query(forge)
+def test_auth():
+    """Test auth"""
+    keypair = RSAKeyPair()
+    assert keypair.public_key() == RSAKeyPair.from_json_key(keypair.to_json_key())
+    assert (
+        keypair.private_key()
+        == RSAKeyPair.load_private_from_str(keypair.private_key()).private_key()
+    )
