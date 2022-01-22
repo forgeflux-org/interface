@@ -16,54 +16,32 @@ Name service: find interfaces that can work with forges
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import requests
 from urllib.parse import urlunparse, urlparse
+from functools import lru_cache
+
+import requests
 
 from dynaconf import settings
-from interface.utils import clean_url
+from interface.utils import clean_url, since_epoch, trim_url
 from interface.error import Error
 
 
-class NSCache:
-    # TODO implement clean up routine to invalidate cache after certain TTL
-    def __init__(self):
-        self.__cache = {}
-
-    def search(self, forge_url: str) -> [str]:
-        forge_url = clean_url(forge_url)
-        if forge_url in self.__cache:
-            return self.__cache["forge_url"]
-        return None
-
-    def add(self, forge_url: str, interfaces: [str]):
-        forge_url = clean_url(forge_url)
-        cleaned_interfaces = []
-        for i in interfaces:
-            cleaned_interfaces.append(clean_url(i))
-
-        if forge_url not in self.__cache:
-            self.__cache[forge_url] = cleaned_interfaces
-        else:
-            interfaces: [str] = self.__cache[forge_url]
-            for ci in cleaned_interfaces:
-                if ci not in interfaces:
-                    interfaces.append(ci)
-            self.__cache[forge_url] = interfaces
-
-
 class NameService:
+    __CACHE_TTL = settings.SYSTEM.cache_ttl  # in seconds
+    __CACHE_TTL = __CACHE_TTL if __CACHE_TTL is not None else 3660  # in seconds
+
+    @classmethod
+    def get_cache_ttl(cls) -> int:
+        return cls.__CACHE_TTL
+
     def __init__(self, forge_url: str):
         self.ns = urlparse(clean_url(settings.SYSTEM.northstar))
         self.forge_url = clean_url(forge_url)
         self._register()
-        self.cache = NSCache()
 
     def _get_url(self, path: str) -> str:
         prefix = "/api/v1/"
-        if path.startswith("/"):
-            path = path[1:]
-
-        path = f"{prefix}{path}"
+        path = f"{prefix}{trim_url(path)}"
         url = urlunparse((self.ns.scheme, self.ns.netloc, path, "", "", ""))
         return url
 
@@ -78,16 +56,21 @@ class NameService:
         if resp.status_code == 200:
             print("registered interface")
 
-    def query(self, forge_url: str) -> [str]:
-        """Get interfaces that service a forge"""
+    @lru_cache(maxsize=30)
+    def __query_wrapped(self, forge_url: str) -> ([str], int):
         url = "forge/interfaces"
         url = self._get_url(url)
+        payload = {"forge_url": forge_url}
+        resp = requests.post(url, json=payload)
+        interfaces = resp.json()
+        return (interfaces, since_epoch())
 
-        cached = self.cache.search(forge_url)
-        if cached is None:
-            payload = {"forge_url": forge_url}
-            resp = requests.post(url, json=payload)
-            interfaces = resp.json()
-            self.cache.add(forge_url, interfaces)
-            return interfaces
-        return cached
+    def query(self, forge_url: str) -> [str]:
+        """Get interfaces that service a forge"""
+        (interfaces, created_at) = self.__query_wrapped(forge_url)
+        if since_epoch() - created_at > self.__CACHE_TTL:
+            self.__query_wrapped.cache_clear()
+            print("purging cache")
+            (interfaces, _) = self.__query_wrapped(forge_url)
+
+        return interfaces

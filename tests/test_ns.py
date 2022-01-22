@@ -12,22 +12,21 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import time
+
 from dynaconf import settings
-from interface.app import create_app
 from interface.ns import NameService
 from interface.git import get_forge
 from interface.utils import clean_url
 
 from tests.test_utils import register_ns
-from tests.forges.gitea.test_utils import register_gitea
 
 
 def test_ns(app, requests_mock):
     """Test ns"""
+    clean_interface_url = clean_url(settings.SERVER.url)
     forge = get_forge().forge.get_forge_url()
-    config_interface_url = settings.SERVER.url
-
-    print(forge)
     ns = NameService(forge)
-    interface_url = ns.query(forge)
-    assert clean_url(config_interface_url) in interface_url
+    assert clean_interface_url in ns.query(forge)
+    time.sleep(ns.get_cache_ttl() * 2)
+    assert clean_interface_url in ns.query(forge)
