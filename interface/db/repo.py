@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from sqlite3 import IntegrityError
 
 from interface.auth import RSAKeyPair
+from interface.utils import CONTENT_TYPE_ACTIVITY_JSON
 
 from .conn import get_db
 from .webfinger import INTERFACE_BASE_URL, INTERFACE_DOMAIN
@@ -201,7 +202,7 @@ class DBRepo:
             "links": [
                 {
                     "rel": "self",
-                    "type": "application/activity+json",
+                    "type": CONTENT_TYPE_ACTIVITY_JSON,
                     "href": act_url,
                 },
                 {

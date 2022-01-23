@@ -18,7 +18,7 @@ from dateutil.parser import parse as date_parse
 from sqlite3 import IntegrityError
 
 from interface.auth import RSAKeyPair
-from interface.utils import date_from_string
+from interface.utils import date_from_string, CONTENT_TYPE_ACTIVITY_JSON
 
 from .conn import get_db
 from .users import DBUser
@@ -455,7 +455,7 @@ class DBIssue:
             "links": [
                 {
                     "rel": "self",
-                    "type": "application/activity+json",
+                    "type": CONTENT_TYPE_ACTIVITY_JSON,
                     "href": act_url,
                 },
                 {
