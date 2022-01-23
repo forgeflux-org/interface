@@ -22,6 +22,7 @@ from flask import Flask
 
 from interface import db
 from interface.webfinger import bp as webfinger_bp
+from interface.user import bp as user_bp
 from interface.forges.gitea.admin import get_db_user
 
 
@@ -53,7 +54,7 @@ def create_app(test_config=None):
         response.headers["Permissions-Policy"] = "interest-cohort=()"
         return response
 
-    for bp in [webfinger_bp]:
+    for bp in [webfinger_bp, user_bp]:
         app.register_blueprint(bp)
 
     return app

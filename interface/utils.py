@@ -15,8 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import random
 import string
+import json
 from urllib.parse import urlparse, urlunparse
 from datetime import datetime, timezone
+
+from flask import Response as FlaskResponse
 
 # from zoneinfo import ZoneInfo
 
@@ -64,3 +67,13 @@ def from_epoch(date: int) -> datetime:
 def date_from_string(date: str) -> datetime:
     """get datetime from string"""
     return datetime.strptime(date, _DATE_FORMAT)
+
+
+CONTENT_TYPE_ACTIVITY_JSON = "application/activity+json"
+
+
+def activity_json(data):
+    resp = FlaskResponse()
+    resp.data = json.dumps(data)
+    resp.headers["Content-Type"] = CONTENT_TYPE_ACTIVITY_JSON
+    return resp
