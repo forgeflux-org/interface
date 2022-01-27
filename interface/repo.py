@@ -1,5 +1,5 @@
 """
-User activity pub routes
+Repository activity pub routes
 """
 # Bridges software forges to create a distributed software development environment
 # Copyright © 2022 Aravinth Manivannan <realaravinth@batsense.net>
@@ -16,41 +16,35 @@ User activity pub routes
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from urllib.parse import urlparse
-from dataclasses import asdict
-import json
+from flask import Blueprint, request, redirect
 
-from flask import Blueprint, jsonify, Response, request, redirect
-from dynaconf import settings
+from interface.error import internal_server_error
+from interface.git import get_repo_from_actor_name
+from interface.utils import CONTENT_TYPE_ACTIVITY_JSON, activity_json
 
-from interface.db import DBIssue, DBUser, DBRepo, INTERFACE_DOMAIN
-from interface.git import get_forge, get_user
-from interface.error import bad_req, internal_server_error
-from interface.utils import activity_json, CONTENT_TYPE_ACTIVITY_JSON
-
-bp = Blueprint("activity-pub-user", __name__, url_prefix="/u/")
+bp = Blueprint("activity-pub-repo", __name__, url_prefix="/r/")
 
 
-@bp.route("<username>", methods=["GET"])
-def actor(username):
+@bp.route("<repo_id>", methods=["GET"])
+def actor(repo_id):
     """get actor data"""
-    user = get_user(username)
+    repo = get_repo_from_actor_name(repo_id)
     if "Accept" in request.headers:
         if CONTENT_TYPE_ACTIVITY_JSON in request.headers["Accept"]:
-            return activity_json(user.to_actor())
-    return redirect(user.profile_url)
+            return activity_json(repo.to_actor())
+    return redirect(repo.html_url)
 
 
-@bp.route("<username>/inbox", methods=["POST"])
-def inbox(username):
-    """stub for user actor  inbox"""
+@bp.route("<repo_id>/inbox", methods=["POST"])
+def inbox(repo_id):
+    """get actor inbox"""
 
     print(f"headers:{request.headers}\npayload: {request.json}")
     return internal_server_error()
 
 
-@bp.route("<username>/outbox", methods=["GET"])
-def outbox(username):
-    """stub for user actor outbox"""
+@bp.route("<repo_id>/outbox", methods=["GET"])
+def outbox(repo_id):
+    """get actor outbox"""
     print(f"headers:{request.headers}\npayload: {request.json}")
     return internal_server_error()

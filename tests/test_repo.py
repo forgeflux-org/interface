@@ -15,30 +15,29 @@
 from urllib.parse import urlparse
 
 from interface.db import INTERFACE_DOMAIN
-from interface.git import get_user
+from interface.git import get_repo
 from interface.utils import CONTENT_TYPE_ACTIVITY_JSON
 
-from .forges.gitea.test_utils import REPOSITORY_OWNER
+from .forges.gitea.test_utils import REPOSITORY_OWNER, REPOSITORY_NAME
 
 
-def test_user_actor(client, requests_mock):
-    """Test user actor info route"""
+def test_repo_actor(client, requests_mock):
+    """Test repo actor info route"""
     assert INTERFACE_DOMAIN != "example.com"  # Please change domain settings
-    user = get_user(REPOSITORY_OWNER)
+    repo = get_repo(owner=REPOSITORY_OWNER, name=REPOSITORY_NAME)
     item = [
         item
-        for item in user.webfinger()["links"]
+        for item in repo.webfinger()["links"]
         if item["type"] == CONTENT_TYPE_ACTIVITY_JSON
     ][0]
     path = urlparse(item["href"]).path
-    print(path)
     headers = {
         "Accept": CONTENT_TYPE_ACTIVITY_JSON,
     }
     resp = client.get(path, headers=headers)
     assert resp.status_code == 200
-    assert resp.json == user.to_actor()
+    assert resp.json == repo.to_actor()
     client.allow_subdomain_redirects = False
     resp = client.get(path, follow_redirects=False, headers={})
     assert resp.status_code == 302
-    assert resp.headers["Location"] == user.profile_url
+    assert resp.headers["Location"] == repo.html_url
