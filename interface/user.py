@@ -52,16 +52,5 @@ def inbox(username):
 @bp.route("<username>/outbox", methods=["GET"])
 def outbox(username):
     """stub for user actor outbox"""
-    user = DBUser.load(username)
-    if user is None:
-        git = get_forge()
-        user = git.forge.get_user(username).to_db_user()
-        user.save()
-    resp = {
-        "@context": "https://www.w3.org/ns/activitystreams",
-        "id": user.actor_url(),
-        "type": "OrderedCollection",
-        "totalItems": 0,
-    }
-
-    return activity_json(resp)
+    print(f"headers:{request.headers}\npayload: {request.json}")
+    return internal_server_error()

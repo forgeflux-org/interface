@@ -18,12 +18,11 @@ from interface.db import INTERFACE_DOMAIN
 from interface.git import get_user
 from interface.utils import CONTENT_TYPE_ACTIVITY_JSON
 
-
 from .forges.gitea.test_utils import REPOSITORY_OWNER
 
 
 def test_user_actor(client, requests_mock):
-    """Test webfinger route"""
+    """Test user actor info route"""
     assert INTERFACE_DOMAIN != "example.com"  # Please change domain settings
     user = get_user(REPOSITORY_OWNER)
     item = [
