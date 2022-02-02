@@ -15,10 +15,10 @@
 import json
 from interface.app import create_app
 from interface.db import INTERFACE_DOMAIN, DBUser, DBRepo
-from interface.webfinger import JRD_JSON
+from interface.well_known.webfinger import JRD_JSON
 from interface.git import get_issue, get_user, get_repo
 
-from .forges.gitea.test_utils import (
+from tests.forges.gitea.test_utils import (
     REPOSITORY_NAME,
     REPOSITORY_OWNER,
     ISSUE_URL,

@@ -21,7 +21,7 @@ import os
 from flask import Flask
 
 from interface import db
-from interface.webfinger import bp as webfinger_bp
+from interface.well_known import bp as well_known_bp
 from interface.user import bp as user_bp
 from interface.repo import bp as repo_bp
 from interface.issue import bp as issue_bp
@@ -56,7 +56,7 @@ def create_app(test_config=None):
         response.headers["Permissions-Policy"] = "interest-cohort=()"
         return response
 
-    for bp in [webfinger_bp, user_bp, repo_bp, issue_bp]:
+    for bp in [well_known_bp, user_bp, repo_bp, issue_bp]:
         app.register_blueprint(bp)
 
     return app

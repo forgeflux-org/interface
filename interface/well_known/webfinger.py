@@ -22,7 +22,7 @@ from interface.db import INTERFACE_DOMAIN
 from interface.git import get_issue, get_user, get_repo
 from interface.error import Error, bad_req, internal_server_error
 
-bp = Blueprint("WELL-KNOWN", __name__, url_prefix="/.well-known/")
+bp = Blueprint("webfinger", __name__, url_prefix="/webfinger")
 
 
 JRD_JSON = "application/jrd+json; charset=utf-8"
@@ -34,7 +34,7 @@ def set_jrd_json(data):
     return resp
 
 
-@bp.route("webfinger", methods=["GET"])
+@bp.route("", methods=["GET"])
 def webfinger():
     """get webfinger data"""
     resource = request.args.get("resource")
