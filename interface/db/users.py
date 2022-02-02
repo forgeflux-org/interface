@@ -21,6 +21,7 @@ from interface.utils import CONTENT_TYPE_ACTIVITY_JSON
 from .conn import get_db
 from .interfaces import DBInterfaces
 from .webfinger import INTERFACE_BASE_URL, INTERFACE_DOMAIN
+from .cache import RecordCount
 
 
 @dataclass
@@ -36,6 +37,8 @@ class DBUser:
     description: str
     id: int = None
     private_key: RSAKeyPair = None
+
+    count = RecordCount("gitea_users")
 
     def save(self):
         """Save user to database"""

@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from urllib.parse import urlparse
 
-from interface.db import INTERFACE_DOMAIN
+from interface.db import INTERFACE_DOMAIN, DBUser, get_db
 from interface.git import get_user
 from interface.utils import CONTENT_TYPE_ACTIVITY_JSON
 
@@ -24,7 +24,9 @@ from .forges.gitea.test_utils import REPOSITORY_OWNER
 def test_user_actor(client, requests_mock):
     """Test user actor info route"""
     assert INTERFACE_DOMAIN != "example.com"  # Please change domain settings
+
     user = get_user(REPOSITORY_OWNER)
+
     item = [
         item
         for item in user.webfinger()["links"]
