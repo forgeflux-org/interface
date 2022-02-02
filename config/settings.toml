@@ -18,7 +18,7 @@ base_dir = "/tmp/" # Location where git repositories will be cloned into
 admin_email = "foo@a.com" # Committing email
 job_runner_delay = 1  ## in seconds
 northstar = "https://northstar.forgefed.io" # Default discovery service URL
-cache_ttl = 3600 # in minutes
+cache_ttl = 3600 # in seconds
 
 [default.server]
 url = "http://localhost:7000" # URL at which this interface will run
@@ -42,7 +42,7 @@ base_dir = "/tmp/" # Location where git repositories will be cloned into
 admin_email = "foo@a.com" # Committing email
 job_runner_delay = 1  ## in seconds
 northstar = "https://northstar.forgeflux.org" # Default discovery service URL
-cache_ttl = 1 # in minutes
+cache_ttl = 1 # in seconds
 
 [testing.server]
 url = "http://localhost:7000" # URL at which this interface will run
