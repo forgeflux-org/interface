@@ -1,8 +1,8 @@
 #!/bin/bash
-readonly GRCOV_DOWNLOAD="https://github.com/mozilla/grcov/releases/download/v0.8.2/grcov-linux-x86_64.tar.bz2"
+readonly GRCOV_DOWNLOAD="https://github.com/mozilla/grcov/releases/download/v0.8.6/grcov-v0.8.6-aarch64-unknown-linux-gnu.tar.gz"
 readonly TMP_DIR=$(pwd)/tmp
 readonly PROJECT_ROOT=$(pwd)/libgit
-readonly GRCOV_TARBAL="$TMP_DIR/grcov.tar.bz2"
+readonly GRCOV_TARBAL="$TMP_DIR/grcov.tar.gz"
 readonly GRCOV="$TMP_DIR/grcov"
 
 source $(pwd)/scripts/lib.sh
@@ -13,7 +13,7 @@ download() {
 		echo "[*] Downloading grcov"
 		wget --quiet  --output-doc=$GRCOV_TARBAL $GRCOV_DOWNLOAD;
 		cd $TMP_DIR
-		tar -xf $GRCOV_TARBAL;
+		tar -xvzf $GRCOV_TARBAL;
 		cd $PROJECT_ROOT
 	fi
 }
