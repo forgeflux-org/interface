@@ -12,6 +12,7 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import time
 from datetime import datetime
 
 from interface.db import get_db
@@ -19,6 +20,7 @@ from interface.db.repo import DBRepo
 from interface.db.issues import DBIssue
 from interface.db.users import DBUser
 from interface.db.comments import DBComment
+from interface.db.cache import CACHE_TTL
 from interface.utils import since_epoch
 
 from tests.db.test_user import cmp_user
@@ -111,8 +113,12 @@ def test_comment(client):
     )
     assert DBComment.load_issue_comments(issue) is None
     assert DBComment.load_from_comment_url(comment1.html_url) is None
+    assert DBComment.count.count() == 0
 
     comment1.save()
+    assert DBComment.count.count() == 0
+    time.sleep(CACHE_TTL * 2)
+    assert DBComment.count.count() == 1
     assert comment1.id is not None
 
     comment_id2 = 2
