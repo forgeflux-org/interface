@@ -14,10 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from enum import Enum, unique
 from dataclasses import dataclass
+from functools import lru_cache
 
+from dynaconf import settings
 
-from .conn import get_db
 from interface.utils import since_epoch
+from .conn import get_db
+from .cache import RecordCount, CACHE_TTL
 
 
 @unique
@@ -34,6 +37,37 @@ class ActivityType(Enum):
         return self.name
 
 
+class ActiveUsersinPeriod:
+    def __init__(self, since: int):
+        self.since = since
+
+    @lru_cache(maxsize=1)
+    def __count(self) -> (int, int):
+        conn = get_db()
+        cur = conn.cursor()
+        since = since_epoch() - self.since
+        count = cur.execute(
+            """
+             SELECT
+                COUNT(DISTINCT user_id)
+             FROM
+                 activities
+             WHERE
+                 created >= ?;
+            """,
+            (since,),
+        ).fetchone()[0]
+        return (int(count), since_epoch())
+
+    def count(self) -> int:
+        """Get total number of records stored"""
+        (num, created_at) = self.__count()
+        if since_epoch() - created_at > CACHE_TTL:
+            self.__count.cache_clear()
+            (num, _) = self.__count()
+        return num
+
+
 @dataclass
 class DBActivity:
     """Activity information in the database"""
@@ -44,6 +78,10 @@ class DBActivity:
     comment_id: int = None
     issue_id: int = None
     id: int = None
+
+    count = RecordCount("activities")
+    monthly_active_users = ActiveUsersinPeriod(since=60 * 60 * 24 * 30)
+    six_month_active_users = ActiveUsersinPeriod(since=60 * 60 * 24 * 30 * 6)
 
     def __post_init__(self):
         if all([self.issue_id is None, self.comment_id is None]):
