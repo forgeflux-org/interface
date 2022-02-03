@@ -22,11 +22,10 @@ from .conn import get_db
 CACHE_TTL = settings.SYSTEM.cache_ttl  # in seconds
 CACHE_TTL = CACHE_TTL if CACHE_TTL is not None else 1800  # in seconds
 
-class RecordCount:
 
+class RecordCount:
     def __init__(self, table_name: str):
         self.table_name = table_name
-
 
     @lru_cache(maxsize=1)
     def __count(self) -> (int, int):
