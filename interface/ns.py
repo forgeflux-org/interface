@@ -28,7 +28,7 @@ from interface.error import Error
 
 class NameService:
     __CACHE_TTL = settings.SYSTEM.cache_ttl  # in seconds
-    __CACHE_TTL = __CACHE_TTL if __CACHE_TTL is not None else 3660  # in seconds
+    __CACHE_TTL = __CACHE_TTL if __CACHE_TTL is not None else 3600  # in seconds
 
     @classmethod
     def get_cache_ttl(cls) -> int:
