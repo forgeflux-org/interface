@@ -22,6 +22,7 @@ from .users import DBUser
 from .repo import DBRepo
 from .issues import DBIssue
 from .interfaces import DBInterfaces
+from .cache import RecordCount
 
 
 @dataclass
@@ -34,6 +35,7 @@ class DBComment:
     is_native: bool
     user: DBUser
     belongs_to_issue: DBIssue
+    count = RecordCount("gitea_issue_comments")
 
     __belongs_to_issue_id: int = None
 
