@@ -19,6 +19,7 @@ Run ForgeFed Interface flask application
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import time
 from threading import Thread
+from dynaconf import settings
 
 from interface.app import create_app
 from interface.runner import runner
@@ -40,5 +41,6 @@ if __name__ == "__main__":
 
     Init(app=app)
     # worker = runner.init_app(app)
-    app.run(threaded=True, host="0.0.0.0", port=8000)
+    port = int(settings.SERVER.url.split(":").pop())
+    app.run(threaded=True, host="0.0.0.0", port=port)
     # worker.kill()
