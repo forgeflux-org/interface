@@ -22,7 +22,6 @@ cache_ttl = 3600 # in seconds
 
 [default.server]
 url = "http://localhost:2000" # URL at which this interface will run
-port = 2000
 
 [testing]
 forge = "gitea"

@@ -41,5 +41,6 @@ if __name__ == "__main__":
 
     Init(app=app)
     # worker = runner.init_app(app)
-    app.run(threaded=True, host="0.0.0.0", port=settings.SERVER.port)
+    port = int(settings.SERVER.url.split(":").pop())
+    app.run(threaded=True, host="0.0.0.0", port=port)
     # worker.kill()
