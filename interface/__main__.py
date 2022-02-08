@@ -17,13 +17,28 @@ Run ForgeFed Interface flask application
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from dynaconf import settings
+import time
+from threading import Thread
+
 from interface.app import create_app
 from interface.runner import runner
+from interface.git import get_forge
+
+
+class Init:
+    def __init__(self, app):
+        self.app = app
+        Thread(target=self.__run).start()
+
+    def __run(self):
+        with self.app.app_context():
+            time.sleep(3)
+            get_forge()
 
 if __name__ == "__main__":
     app = create_app()
-    worker = runner.init_app(app)
-    port = int(settings.SERVER.url.split(":").pop())
-    app.run(threaded=True, host=settings.SERVER.ip, port=port)
-    worker.kill()
+
+    Init(app=app)
+    # worker = runner.init_app(app)
+    app.run(threaded=True, host="0.0.0.0", port=8000)
+    # worker.kill()
