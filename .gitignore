@@ -154,4 +154,3 @@ grcov.tar.bz2
 lcov.info
 *.profraw
 lcov.info
-config/.secrets.toml
