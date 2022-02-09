@@ -17,7 +17,7 @@ from datetime import datetime
 
 import pytest
 from rfc3339 import rfc3339
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.app import create_app
 from interface.forges.notifications import ISSUE, PULL, Notification, Comment

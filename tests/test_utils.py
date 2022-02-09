@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from urllib.parse import urlparse, urlunparse
 from datetime import datetime, timezone
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.app import create_app
 from interface.utils import clean_url, trim_url, since_epoch, from_epoch

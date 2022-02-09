@@ -18,7 +18,7 @@ A job runner that receives events(notifications) and runs relevant jobs on them
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from dataclasses import dataclass
 import requests
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.git import get_forge
 from interface.db import get_db

@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from dataclasses import dataclass
-from dynaconf import settings
+from interface.settings import settings
 from flask import g
 
 from .conn import get_db

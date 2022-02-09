@@ -17,7 +17,7 @@ from datetime import datetime
 from urllib.parse import urlparse, urlunparse
 
 import pytest
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.forges.base import Forge
 from interface.forges.payload import (

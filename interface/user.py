@@ -21,7 +21,7 @@ from dataclasses import asdict
 import json
 
 from flask import Blueprint, jsonify, Response, request, redirect
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.db import DBIssue, DBUser, DBRepo, INTERFACE_DOMAIN
 from interface.git import get_forge, get_user

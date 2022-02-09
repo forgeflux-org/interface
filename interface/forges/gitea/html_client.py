@@ -23,7 +23,7 @@ from requests import Session
 from requests.auth import HTTPBasicAuth
 
 from rfc3339 import rfc3339
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.forges.base import (
     Forge,
