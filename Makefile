@@ -67,6 +67,7 @@ lint: ## Run linter
 	@./venv/bin/black ./interface/*
 	@./venv/bin/black ./tests/*
 	@./venv/bin/black ./migrations/*
+	@./venv/bin/black setup.py
 	. ./venv/bin/activate && ./scripts/spellcheck.sh --check #--write
 
 migrate: ## Run migrations

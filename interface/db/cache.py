@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from functools import lru_cache
 
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.utils import since_epoch
 from .conn import get_db

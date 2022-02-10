@@ -22,7 +22,7 @@ import rfc3339
 from flask import g
 
 from libgit import InterfaceAdmin, Repo, Patch, System
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.db import get_db, get_git_system, DBUser, DBRepo, DBIssue
 from interface.forges.utils import get_branch_name

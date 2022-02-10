@@ -15,7 +15,7 @@
 from urllib.parse import urlparse, urlunparse
 from dateutil.parser import parse
 
-from dynaconf import settings
+from interface.settings import settings
 import pytest
 
 from interface.utils import get_rand

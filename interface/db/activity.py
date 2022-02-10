@@ -16,7 +16,7 @@ from enum import Enum, unique
 from dataclasses import dataclass
 from functools import lru_cache
 
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.utils import since_epoch
 from .conn import get_db

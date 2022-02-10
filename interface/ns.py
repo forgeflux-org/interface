@@ -21,7 +21,7 @@ from functools import lru_cache
 
 import requests
 
-from dynaconf import settings
+from interface.settings import settings
 from interface.utils import clean_url, since_epoch, trim_url
 from interface.error import Error
 

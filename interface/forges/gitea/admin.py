@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from dynaconf import settings
+from interface.settings import settings
 from flask import g
 
 from interface.utils import clean_url, trim_url

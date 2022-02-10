@@ -21,7 +21,7 @@ from dataclasses import asdict
 import requests
 from rfc3339 import rfc3339
 
-from dynaconf import settings
+from interface.settings import settings
 from . import utils
 from .base import CreateIssue, Forge, RepositoryInfo, CreatePullrequest
 from .notifications import Notification, Comment, NotificationResp

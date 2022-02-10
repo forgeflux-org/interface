@@ -19,8 +19,8 @@ Run ForgeFed Interface flask application
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import time
 from threading import Thread
-from dynaconf import settings
 
+from interface.settings import settings
 from interface.app import create_app
 from interface.runner import runner
 from interface.git import get_forge
@@ -35,6 +35,7 @@ class Init:
         with self.app.app_context():
             time.sleep(3)
             get_forge()
+
 
 if __name__ == "__main__":
     app = create_app()

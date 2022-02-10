@@ -23,7 +23,7 @@ from yoyo import read_migrations
 from yoyo import get_backend
 from libgit import System
 
-from dynaconf import settings
+from interface.settings import settings
 
 
 def get_db() -> sqlite3.Connection:

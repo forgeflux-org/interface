@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from dateutil.parser import parse as date_parse
 
 from flask import current_app
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.forges.notifications import (
     CreatePrEvent,

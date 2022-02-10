@@ -17,7 +17,7 @@ import tempfile
 
 import pytest
 import requests_mock
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.app import create_app
 from interface.db import get_db, init_db

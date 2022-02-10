@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import time
 
-from dynaconf import settings
+from interface.settings import settings
 from interface.ns import NameService
 from interface.git import get_forge
 from interface.utils import clean_url

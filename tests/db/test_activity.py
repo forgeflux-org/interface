@@ -16,7 +16,7 @@ import time
 from datetime import datetime
 
 import pytest
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.db import get_db, DBActivity, ActivityType, DBComment
 from interface.db.cache import CACHE_TTL

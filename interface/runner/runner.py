@@ -26,7 +26,7 @@ from dateutil.parser import parse as date_parse
 
 from flask import g
 
-from dynaconf import settings
+from interface.settings import settings
 from interface.git import get_forge
 from interface.forges.notifications import PULL, ISSUE
 from interface.forges.utils import get_patch, get_branch_name

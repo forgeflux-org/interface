@@ -18,7 +18,7 @@ from dataclasses import dataclass
 import requests
 
 # from flask import current_app
-from dynaconf import settings
+from interface.settings import settings
 
 #
 # from interface.forges.notifications import (

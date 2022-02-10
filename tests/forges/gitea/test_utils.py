@@ -20,7 +20,7 @@ from urllib.parse import parse_qs, urlparse
 
 from requests import Request
 from requests_mock import CookieJar
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.utils import trim_url
 from interface.forges.payload import CreateIssue

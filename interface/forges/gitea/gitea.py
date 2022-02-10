@@ -21,7 +21,7 @@ from dateutil.parser import parse as date_parse
 import requests
 
 from rfc3339 import rfc3339
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.forges.base import (
     Forge,

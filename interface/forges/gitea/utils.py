@@ -18,7 +18,7 @@ Gitea-specific utilities
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from urllib.parse import urlparse
 
-from dynaconf import settings
+from interface.settings import settings
 
 from interface.utils import trim_url
 from interface.forges.base import F_D_INVALID_ISSUE_URL
