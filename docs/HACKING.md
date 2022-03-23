@@ -100,7 +100,7 @@ directory named `venv`) and run `make env` to recreate the environment.
 Delete `instance` directory and run `make migrate`.
 
 ```bash
-rm -rf ./instalnce && make migrate
+rm -rf ./instance && make migrate
 ```
 
 ## 4. Support
