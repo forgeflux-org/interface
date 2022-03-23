@@ -37,4 +37,4 @@ Coming soon
 
 ## Hacking
 
-Coming soon
+Please see [HACKING.md](./docs/HACKING.md)
