@@ -76,6 +76,7 @@ class DBUser:
                     ),
                 )
                 conn.commit()
+                self.id = self.load(self.user_id).id
                 break
             except IntegrityError as e:
                 count += 1
