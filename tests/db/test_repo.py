@@ -16,59 +16,23 @@ import pytest
 
 from interface.db import DBRepo, DBUser
 
-from .test_user import cmp_user
-
-
-def cmp_repo(lhs: DBRepo, rhs: DBRepo) -> bool:
-    """Compare two DBRepo objects"""
-    assert lhs is not None
-    assert rhs is not None
-    return all(
-        [
-            lhs.name == rhs.name,
-            lhs.description == rhs.description,
-            lhs.html_url == rhs.html_url,
-            cmp_user(lhs.owner, rhs.owner),
-        ]
-    )
+from .utils import cmp_repo, get_repo
 
 
 def test_repo(client):
     """Test repo"""
 
-    # user data signed by interface1
-    username = "db_test_user"
-    user_id = f"{username}@git.batsense.net"
-    profile_url = f"https://git.batsense.net/{username}"
-    user = DBUser(
-        name=username,
-        user_id=user_id,
-        profile_url=profile_url,
-        avatar_url=profile_url,
-        description="description",
-        id=None,
-    )
-
-    name = "foo"
-
-    repo = DBRepo(
-        name=name,
-        owner=user,
-        description="foo",
-        id=None,
-        html_url=f"{profile_url}/{name}",
-    )
-    assert DBRepo.load(name, user.user_id) is None
+    repo = get_repo()
+    assert DBRepo.load(repo.name, repo.owner.user_id) is None
     assert DBRepo.load_with_id(11) is None
 
-    user.save()
     repo.save()
-    from_db = DBRepo.load(name, user.user_id)
+    from_db = DBRepo.load(repo.name, repo.owner.user_id)
     with_id = DBRepo.load_with_id(from_db.id)
 
     assert cmp_repo(from_db, repo)
     assert cmp_repo(from_db, with_id)
-    from_db2 = DBRepo.load(name, user.user_id)
+    from_db2 = DBRepo.load(repo.name, repo.owner.user_id)
     assert cmp_repo(from_db, from_db2)
     assert from_db.id == from_db2.id
 
