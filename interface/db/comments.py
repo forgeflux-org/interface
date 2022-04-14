@@ -241,6 +241,7 @@ class DBComment:
              gitea_issue_comments
          WHERE
              belongs_to_issue = ?
+         ORDER BY created
              """,
             (issue.id,),
         ).fetchall()
