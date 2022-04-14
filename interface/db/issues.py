@@ -125,35 +125,52 @@ class DBIssue:
             self.is_merged = False
         self.__update()
 
-    def __update(self):
+    def __update(self, from_db: "DBIssue" = None):
         """
         Update changes in database
         Only fields that can be mutated on the forge will be updated in the DB
         """
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute(
-            """
-            UPDATE gitea_forge_issues
-            SET
-                title = ?,
-                description = ?,
-                updated = ?,
-                is_closed = ?,
-                is_merged = ?
-            WHERE
-                id = ?
-            """,
-            (
-                self.title,
-                self.description,
-                self.updated,
-                self.is_closed,
-                self.is_merged,
-                self.id,
-            ),
-        )
-        conn.commit()
+        issue = from_db
+        if from_db is None:
+            issue = self.load_with_id(db_id=self.id)
+        if any(
+            [
+                issue.title != self.title,
+                issue.description != self.description,
+                issue.is_closed != self.is_closed,
+                issue.is_merged != self.is_merged,
+            ]
+        ):
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute(
+                """
+                UPDATE gitea_forge_issues
+                SET
+                    title = ?,
+                    description = ?,
+                    updated = ?,
+                    is_closed = ?,
+                    is_merged = ?
+                WHERE
+                    id = ?
+                """,
+                (
+                    self.title,
+                    self.description,
+                    self.updated,
+                    self.is_closed,
+                    self.is_merged,
+                    self.id,
+                ),
+            )
+            conn.commit()
+            DBActivity(
+                user_id=self.user.id,
+                activity=ActivityType.UPDATE,
+                created=self.updated,
+                issue_id=self.id,
+            ).save()
 
     def save(self):
         """Save Issue to database"""
@@ -164,6 +181,7 @@ class DBIssue:
             self.user = issue.user
             self.repository = issue.repository
             self.id = issue.id
+            self.__update(from_db=issue)
             return
 
         self.user.save()
