@@ -23,6 +23,7 @@ from .repo import DBRepo
 from .issues import DBIssue
 from .interfaces import DBInterfaces
 from .cache import RecordCount
+from .activity import DBActivity, ActivityType
 
 
 @dataclass
@@ -37,6 +38,8 @@ class DBComment:
     belongs_to_issue: DBIssue
     count = RecordCount("gitea_issue_comments")
 
+    id = None
+
     __belongs_to_issue_id: int = None
 
     def __set_sqlite_to_bools(self):
@@ -48,28 +51,44 @@ class DBComment:
         """
         self.is_native = bool(self.is_native)
 
-    def __update(self):
+    def __update(self, from_db: "DBComment" = None):
         """
         Update changes in database
         Only fields that can be mutated on the forge will be updated in the DB
         """
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute(
-            """
-            UPDATE gitea_issue_comments
-            SET
-                body = ?,
-                updated = ?
-            WHERE
-                comment_id = ?;
-            """,
-            (self.body, self.updated, self.comment_id),
-        )
-        conn.commit()
+        comment = from_db
+        if from_db is None:
+            comment = self.load_from_id(self.id)
+        if any([comment.body != self.body, comment.updated != self.updated]):
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute(
+                """
+                UPDATE gitea_issue_comments
+                SET
+                    body = ?,
+                    updated = ?
+                WHERE
+                    comment_id = ?;
+                """,
+                (self.body, self.updated, self.comment_id),
+            )
+            conn.commit()
+            DBActivity(
+                user_id=self.user.id,
+                activity=ActivityType.UPDATE,
+                created=self.updated,
+                comment_id=self.id,
+            ).save()
 
     def save(self):
         """Save COmment to database"""
+
+        comment = self.load_from_comment_url(self.html_url)
+        if comment is not None:
+            self.id = comment.id
+            self.__update(from_db=comment)
+
         self.user.save()
         self.belongs_to_issue.save()
 
@@ -106,13 +125,18 @@ class DBComment:
         conn.commit()
         data = cur.execute(
             """
-                    SELECT ID from gitea_issue_comments WHERE html_url = ?
-
-                    """,
+            SELECT ID from gitea_issue_comments WHERE html_url = ?
+            """,
             (self.html_url,),
         ).fetchone()
         self.id = data[0]
         self.__update()
+        DBActivity(
+            user_id=self.user.id,
+            activity=ActivityType.CREATE,
+            created=self.created,
+            comment_id=self.id,
+        ).save()
 
     @classmethod
     def load_from_comment_url(cls, comment_url: str) -> "DBComment":
@@ -128,7 +152,8 @@ class DBComment:
              updated,
              comment_id,
              is_native,
-             user
+             user,
+             ID
          FROM
              gitea_issue_comments
          WHERE
@@ -144,6 +169,48 @@ class DBComment:
         comment = cls(
             body=data[0],
             html_url=comment_url,
+            created=data[2],
+            updated=data[3],
+            comment_id=data[4],
+            is_native=data[5],
+            user=user,
+            belongs_to_issue=belongs_to_issue,
+        )
+        comment.id = data[7]
+        comment.__set_sqlite_to_bools()
+        return comment
+
+    @classmethod
+    def load_from_id(cls, db_id: int) -> "DBComment":
+        """Load comment based on ID assigned by database"""
+        conn = get_db()
+        cur = conn.cursor()
+        data = cur.execute(
+            """
+         SELECT
+             body,
+             belongs_to_issue,
+             created,
+             updated,
+             comment_id,
+             is_native,
+             user,
+             html_url
+         FROM
+             gitea_issue_comments
+         WHERE
+             ID = ?
+             """,
+            (db_id,),
+        ).fetchone()
+        if data is None:
+            return None
+
+        user = DBUser.load_with_db_id(data[6])
+        belongs_to_issue = DBIssue.load_with_id(data[1])
+        comment = cls(
+            body=data[0],
+            html_url=data[7],
             created=data[2],
             updated=data[3],
             comment_id=data[4],
@@ -168,7 +235,8 @@ class DBComment:
              updated,
              comment_id,
              is_native,
-             user
+             user,
+             ID
          FROM
              gitea_issue_comments
          WHERE
@@ -182,7 +250,7 @@ class DBComment:
         comments = []
         for comment in data:
             user = DBUser.load_with_db_id(comment[6])
-            comment = cls(
+            obj = cls(
                 body=comment[0],
                 html_url=comment[1],
                 created=comment[2],
@@ -192,8 +260,9 @@ class DBComment:
                 user=user,
                 belongs_to_issue=issue,
             )
-            comment.__set_sqlite_to_bools()
-            comments.append(comment)
+            obj.id = comment[7]
+            obj.__set_sqlite_to_bools()
+            comments.append(obj)
 
         if len(comments) == 0:
             return None
