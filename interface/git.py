@@ -18,6 +18,8 @@ Helper class to interact with git repositories
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
 from urllib.parse import urlparse
+from functools import lru_cache
+
 import rfc3339
 from flask import g
 
@@ -29,6 +31,8 @@ from interface.forges.utils import get_branch_name
 from interface.forges.base import Forge
 from interface.forges.gitea import Gitea
 from interface.forges.payload import RepositoryInfo
+
+REPOSITORY_READ_LIMIT = 50
 
 
 class Git:
@@ -114,6 +118,7 @@ def get_forge() -> Git:
     return g.git
 
 
+@lru_cache(maxsize=20)
 def get_user(username: str) -> DBUser:
     """
     Get user from database.
@@ -128,6 +133,7 @@ def get_user(username: str) -> DBUser:
     return user
 
 
+@lru_cache(maxsize=20)
 def __get_and_store_repo(owner: str, name: str) -> DBRepo:
     git = get_forge()
     print(f" requesting data for user {owner}")
@@ -167,6 +173,7 @@ def get_repo(owner: str, name: str) -> DBRepo:
     return repo
 
 
+@lru_cache(maxsize=20)
 def __get_and_store_issue(owner: str, repo: str, issue_id: int) -> DBRepo:
     git = get_forge()
     issue_url = git.forge.get_issue_html_url(owner=owner, repo=repo, issue_id=issue_id)

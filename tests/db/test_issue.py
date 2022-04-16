@@ -22,84 +22,17 @@ from interface.db.issues import DBIssue, OPEN, MERGED, CLOSED
 from interface.utils import since_epoch
 from interface.db.users import DBUser
 
-from .test_repo import cmp_repo
-from .test_user import cmp_user
 
-
-def cmp_issue(lhs: DBIssue, rhs: DBIssue) -> bool:
-    assert lhs is not None
-    assert rhs is not None
-
-    return all(
-        [
-            lhs.title == rhs.title,
-            lhs.description == rhs.description,
-            lhs.repo_scope_id == rhs.repo_scope_id,
-            lhs.html_url == rhs.html_url,
-            lhs.created == rhs.created,
-            lhs.updated == rhs.updated,
-            lhs.is_closed == rhs.is_closed,
-            lhs.is_merged == rhs.is_merged,
-            lhs.is_native == rhs.is_native,
-            cmp_repo(lhs.repository, rhs.repository),
-            cmp_user(lhs.user, rhs.user),
-        ]
-    )
+from .utils import cmp_issue, get_issue, get_pr
 
 
 def test_issue(client):
     """Test user route"""
 
-    # user data signed by interface1
-    username = "db_test_user"
-    user_id = username
-    profile_url = f"https://git.batsense.net/{username}"
-    user = DBUser(
-        name=username,
-        user_id=user_id,
-        profile_url=profile_url,
-        avatar_url=profile_url,
-        description="description",
-        id=None,
-    )
-
-    user.save()
-
-    # repository data
-    repo_name = "foo"
-    repo = DBRepo(
-        name=repo_name,
-        description="foo",
-        owner=user,
-        html_url=f"{profile_url}/{repo_name}",
-    )
-
-    title = "Test issue"
-    description = "foo bar"
-    repo_scope_id = 8
-    html_url = f"https://git.batsense/{user.user_id}/{repo_name}/issues/{repo_scope_id}"
-    created = since_epoch()
-    updated = since_epoch()
-    # repository= repo
-    is_closed = False
-    is_merged = None
-    is_native = True
-
-    issue = DBIssue(
-        title=title,
-        description=description,
-        html_url=html_url,
-        created=created,
-        updated=updated,
-        repo_scope_id=repo_scope_id,
-        repository=repo,
-        user=user,
-        is_closed=is_closed,
-        is_merged=is_merged,
-        is_native=is_native,
-    )
-    assert DBIssue.load(repository=repo, repo_scope_id=repo_scope_id) is None
-    assert DBIssue.load_with_html_url(html_url=html_url) is None
+    issue_id = 1
+    issue = get_issue(repo_scope_id=issue_id)
+    assert DBIssue.load(repository=issue.repository, repo_scope_id=issue_id) is None
+    assert DBIssue.load_with_html_url(html_url=issue.html_url) is None
     assert DBIssue.load_with_id(db_id=11) is None
 
     issue.save()
@@ -107,31 +40,16 @@ def test_issue(client):
     assert issue.id is not None
 
     pr_repo_scope_id = 2
-    html_url_of_pr = (
-        f"https://git.batsense/{user.user_id}/{repo_name}/issues/{pr_repo_scope_id}"
-    )
-    pr = DBIssue(
-        title="test issue PR",
-        description=description,
-        html_url=html_url_of_pr,
-        created=created,
-        updated=updated,
-        repo_scope_id=pr_repo_scope_id,
-        repository=repo,
-        user=user,
-        is_closed=is_closed,
-        is_merged=False,
-        is_native=is_native,
-    )
 
+    pr = get_pr(repo_scope_id=pr_repo_scope_id)
     pr.save()
 
-    pr_from_db = DBIssue.load(repo, repo_scope_id=pr_repo_scope_id)
+    pr_from_db = DBIssue.load(pr.repository, repo_scope_id=pr.repo_scope_id)
     assert cmp_issue(pr, pr_from_db) is True
 
-    issue_from_db = DBIssue.load(repo, repo_scope_id=repo_scope_id)
+    issue_from_db = DBIssue.load(issue.repository, repo_scope_id=issue.repo_scope_id)
     with_id = DBIssue.load_with_id(issue_from_db.id)
-    with_html_url = DBIssue.load_with_html_url(html_url)
+    with_html_url = DBIssue.load_with_html_url(issue.html_url)
     assert cmp_issue(issue_from_db, issue) is True
     assert cmp_issue(issue_from_db, with_id) is True
     assert cmp_issue(issue_from_db, with_html_url) is True

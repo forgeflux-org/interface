@@ -18,36 +18,15 @@ from interface.db.issues import DBIssue
 from interface.db.users import DBUser
 from interface.db.webfinger import INTERFACE_BASE_URL, INTERFACE_DOMAIN
 
-
-def cmp_user(lhs: DBUser, rhs: DBUser) -> bool:
-    assert lhs is not None
-    assert rhs is not None
-
-    return all(
-        [
-            lhs.name == rhs.name,
-            lhs.user_id == rhs.user_id,
-            lhs.profile_url == rhs.profile_url,
-            lhs.avatar_url == rhs.avatar_url,
-            lhs.description == rhs.description,
-        ]
-    )
+from .utils import cmp_user, get_user
 
 
 def test_user(client):
     """Test user route"""
 
-    name = "db_test_user"
-    user_id = name
-    user = DBUser(
-        name=name,
-        user_id=user_id,
-        profile_url=f"https://git.batsense.net/{user_id}",
-        avatar_url=f"https://git.batsense.net/{user_id}",
-        description="description",
-    )
+    user = get_user()
 
-    assert DBUser.load(user_id) is None
+    assert DBUser.load(user.user_id) is None
     assert DBUser.load_with_db_id(11) is None
 
     user.save()
